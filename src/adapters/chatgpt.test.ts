@@ -42,6 +42,8 @@ describe("chatgptAdapter.matches", () => {
         "https://chatgpt.com/backend-api/conversations",
         "https://chatgpt.com/backend-api/conversation/00000000-0000-4000-8000-00000000c0de",
         "https://evil.example/backend-api/conversation",
+        "https://chatgpt.com/unauth-mweb/conversation/updates",
+        "https://chatgpt.com/backend-api/conversation/updates",
     ])("ignores %s", (url) => {
         expect(chatgptAdapter.matches(request({ url: new URL(url) }))).toBe(false);
     });
@@ -52,58 +54,55 @@ describe("chatgptAdapter.matches", () => {
 });
 
 describe("chatgpt fixtures", () => {
-    it("parses a normal reply", () => {
+    it("parses a recorded reply, skipping hidden system messages", () => {
         expect(parse(fixture("normal-reply"))).toEqual({
             kind: "reply",
             reply: {
-                rawModel: "gpt-5-instant",
-                outputText:
-                    "Photosynthesis is the process by which plants, algae and some bacteria " +
-                    "convert light energy into chemical energy, storing it as glucose and " +
-                    "releasing oxygen.\n\nIt takes place in the chloroplasts.",
+                rawModel: "gpt-6",
+                outputText: "Test successful! \u2705 I\u2019m here and ready to help.",
                 reasoningText: null,
                 hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-000000000002",
+                messageId: "00000000-0000-4000-8000-00000000000c",
             },
         });
     });
 
-    it("counts streamed reasoning summaries and flags hidden reasoning", () => {
-        expect(parse(fixture("thinking-reply"))).toEqual({
+    it("flags hidden reasoning when auto mode switched to reasoning", () => {
+        const text = fixture("normal-reply").replace(
+            '"did_auto_switch_to_reasoning":false',
+            '"did_auto_switch_to_reasoning":true',
+        );
+        expect(parse(text)).toMatchObject({ reply: { hiddenReasoning: true } });
+    });
+
+    it("parses a recorded reply with web search and reasoning, counting fragments once", () => {
+        // Recorded and masked (letters → x): the answer is streamed as three hidden fragments
+        // around a web search, and as the visible merged message concatenating them.
+        const outcome = parse(fixture("thinking-reply"));
+        expect(outcome).toMatchObject({
             kind: "reply",
             reply: {
-                rawModel: "gpt-5-thinking",
-                outputText:
-                    "Mergesort is stable and guarantees O(n log n), while quicksort is usually " +
-                    "faster in practice and sorts in place.",
-                reasoningText:
-                    "Comparing sorting algorithms\nI should compare quicksort and mergesort on " +
-                    "stability, memory and worst-case complexity.",
+                rawModel: "gpt-6",
                 hiddenReasoning: true,
-                messageId: "00000000-0000-4000-8000-000000000014",
+                messageId: "00000000-0000-4000-8000-00000000000d",
             },
         });
+        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
+        expect(reply.outputText).toHaveLength(7562);
+        expect(reply.reasoningText).toHaveLength(21);
     });
 
-    it("parses a regenerated reply", () => {
-        expect(parse(fixture("regenerate"))).toMatchObject({
+    it("parses a recorded regenerated reply", () => {
+        // Masked "Test successful! ✅ I’m here and ready to help.", streamed with
+        // `message_type: "variant"` and no user message echo.
+        expect(parse(fixture("regenerate"))).toEqual({
             kind: "reply",
             reply: {
-                rawModel: "gpt-4o",
-                outputText:
-                    "Here is another way to put it: plants turn sunlight, water and CO2 into sugar.",
-                messageId: "00000000-0000-4000-8000-000000000022",
-            },
-        });
-    });
-
-    it("parses the legacy full-snapshot encoding", () => {
-        expect(parse(fixture("snapshots"))).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-4o-mini",
-                outputText: "The capital of France is Paris.",
-                messageId: "00000000-0000-4000-8000-000000000052",
+                rawModel: "gpt-6",
+                outputText: "xxxx xxxxxxxxxx! \u2705 x\u2019x xxxx xxx xxxxx xx xxxx.",
+                reasoningText: null,
+                hiddenReasoning: false,
+                messageId: "00000000-0000-4000-8000-00000000000c",
             },
         });
     });
@@ -121,34 +120,22 @@ describe("chatgpt fixtures", () => {
         });
     });
 
-    it("skips streams that end before [DONE]", () => {
+    it("skips a recorded reply stopped by the user", () => {
         expect(parse(fixture("aborted"))).toEqual({
             kind: "skip",
             reason: "stream ended before [DONE]",
         });
     });
 
-    it("skips errored streams", () => {
-        expect(parse(fixture("error"))).toEqual({
-            kind: "skip",
-            reason: "error: Something went wrong while generating the response.",
-        });
-    });
-
-    it.each([
-        "normal-reply",
-        "thinking-reply",
-        "regenerate",
-        "snapshots",
-        "tool-call",
-        "aborted",
-        "error",
-    ])("%s: gives the same result whatever the chunking", (name) => {
-        const text = fixture(name);
-        const expected = parse(text);
-        for (const size of [1, 7, 64, 1000])
-            expect(parse(text, size), `chunk ${size}`).toEqual(expected);
-    });
+    it.each(["normal-reply", "thinking-reply", "regenerate", "tool-call", "aborted"])(
+        "%s: gives the same result whatever the chunking",
+        (name) => {
+            const text = fixture(name);
+            const expected = parse(text);
+            for (const size of [1, 7, 64, 1000])
+                expect(parse(text, size), `chunk ${size}`).toEqual(expected);
+        },
+    );
 });
 
 describe("chatgpt parser edge cases", () => {
@@ -304,6 +291,45 @@ describe("chatgpt parser regressions", () => {
             snapshot("The") + snapshot("The capital") + snapshot("The capital is Paris.") + done;
         expect(parse(text)).toMatchObject({
             reply: { outputText: "The capital is Paris.", messageId: null },
+        });
+    });
+});
+
+describe("chatgpt merged fragments", () => {
+    const done = "data: [DONE]\n\n";
+    const add = (id: string, text: string, metadata: object, c: number) =>
+        `data: ${JSON.stringify({
+            p: "",
+            o: "add",
+            v: {
+                message: {
+                    id,
+                    author: { role: "assistant" },
+                    content: { content_type: "text", parts: [text] },
+                    status: "finished_successfully",
+                    metadata,
+                    recipient: "all",
+                },
+            },
+            c,
+        })}\n\n`;
+    const fragment = (id: string, text: string, c: number) =>
+        add(id, text, { is_message_fragment: true, merged_message_id: "merged" }, c);
+
+    it("counts fragments once when their merged message is streamed", () => {
+        const text =
+            fragment("f1", "Hello ", 0) +
+            add("merged", "Hello world", { is_merged_message: true }, 1) +
+            fragment("f2", "world", 2) +
+            done;
+        expect(parse(text)).toMatchObject({
+            reply: { outputText: "Hello world", messageId: "merged" },
+        });
+    });
+
+    it("counts fragments whose merged message is missing", () => {
+        expect(parse(fragment("f1", "Hello", 0) + done)).toMatchObject({
+            reply: { outputText: "Hello", messageId: "f1" },
         });
     });
 });

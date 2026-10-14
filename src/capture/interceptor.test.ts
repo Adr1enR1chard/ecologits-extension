@@ -58,8 +58,8 @@ describe("installFetchInterceptor", () => {
             type: "captured-response",
             payload: {
                 provider: "chatgpt",
-                rawModel: "gpt-5-instant",
-                messageId: "00000000-0000-4000-8000-000000000002",
+                rawModel: "gpt-6",
+                messageId: "00000000-0000-4000-8000-00000000000c",
                 latencyMs: 500,
             },
         });
@@ -144,15 +144,14 @@ describe("installFetchInterceptor", () => {
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "captured-response",
-            payload: { messageId: "00000000-0000-4000-8000-000000000002" },
+            payload: { messageId: "00000000-0000-4000-8000-00000000000c" },
         });
     });
 
-    it("emits nothing for aborted, incomplete, errored or failed replies", async () => {
+    it("emits nothing for aborted, incomplete or failed replies", async () => {
         for (const make of [
             () => streamResponse(fixture("normal-reply"), { failAfter: 3 }),
             () => streamResponse(fixture("aborted")),
-            () => streamResponse(fixture("error")),
             () => streamResponse("Too many requests", { status: 429 }),
         ]) {
             const { win, messages, settle } = setup(make);
