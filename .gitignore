@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.output/
+.wxt/
+*.zip
+*.xpi
+.env
+.env.*
+.DS_Store
+*.log
