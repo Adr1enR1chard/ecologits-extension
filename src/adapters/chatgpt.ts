@@ -195,6 +195,8 @@ class ChatGptParser implements StreamParser {
     private done = false;
     private error: string | null = null;
     private metadataModel: string | null = null;
+    /** `server_ste_metadata` reported that auto mode switched to a reasoning model. */
+    private autoSwitchedToReasoning = false;
 
     constructor(private readonly request: CapturedRequest) {}
 
@@ -243,6 +245,7 @@ class ChatGptParser implements StreamParser {
             requestedModel(this.request.body);
         // ChatGPT only streams reasoning summaries, never the full chain of thought.
         const reasoned =
+            this.autoSwitchedToReasoning ||
             assistant.some(
                 (m) =>
                     REASONING_CONTENT_TYPES.has(m.content?.content_type ?? "") ||
@@ -298,6 +301,9 @@ class ChatGptParser implements StreamParser {
         } else if (event.type === "server_ste_metadata" && isObject(event.metadata)) {
             const slug = event.metadata.model_slug;
             if (typeof slug === "string") this.metadataModel = slug;
+            if (event.metadata.did_auto_switch_to_reasoning === true) {
+                this.autoSwitchedToReasoning = true;
+            }
         }
     }
 
