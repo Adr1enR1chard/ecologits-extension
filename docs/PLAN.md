@@ -111,17 +111,17 @@ Each phase ends with its acceptance criteria green in CI.
 
 ### Phase 1 — Core pipeline (provider-agnostic)
 
-- [ ] `messaging.ts`: typed message contracts (`CapturedResponse`, `ImpactResult`, `AdapterStatus`).
-- [ ] `impacts/compute.ts`:
+- [x] `messaging.ts`: typed message contracts (`CapturedResponse`, `ImpactResult`, `AdapterStatus`).
+- [x] `impacts/compute.ts`:
     - token counting with `gpt-tokenizer` (`o200k_base`), loaded once in the service worker;
     - call `llmImpacts({ provider, modelName, outputTokenCount, requestLatency })` (latency in seconds);
     - normalise each criterion to `{ median, min, max }` (handle both scalar and `RangeValue`);
     - propagate `ImpactsOutput.errors` / `warnings` and our own flags (`lowerBound`, `approximatedModel`).
-- [ ] `models/mapping.ts`: interface + fallback model per provider (e.g. `gpt-5`, `claude-sonnet-4-5`, `gemini-2.5-flash` — to be confirmed per phase); unit tests asserting every mapped target resolves via `models.findModel()`.
-- [ ] `storage/`: daily aggregates keyed by `YYYY-MM-DD/provider/model` (sum of min/median/max per criterion + request & token counts), rolling event log capped at 500, schema version for future migrations.
-- [ ] `storage/export.ts`: CSV + JSON export.
-- [ ] `impacts/equivalences.ts`: ADEME factors (car km, smartphone charges, water litres…) with source URL and retrieval date per constant.
-- [ ] Unit tests for all of the above.
+- [x] `models/mapping.ts`: interface + fallback model per provider (e.g. `gpt-5`, `claude-sonnet-4-5`, `gemini-2.5-flash` — to be confirmed per phase); unit tests asserting every mapped target resolves via `models.findModel()`.
+- [x] `storage/`: daily aggregates keyed by `YYYY-MM-DD/provider/model` (sum of min/median/max per criterion + request & token counts), rolling event log capped at 500, schema version for future migrations.
+- [x] `storage/export.ts`: CSV + JSON export.
+- [x] `impacts/equivalences.ts`: ADEME (Impact CO2) factors only (car km, video streaming, email, web search) with source URL and retrieval date per constant.
+- [x] Unit tests for all of the above.
 
 **Acceptance:** given a synthetic `CapturedResponse`, the background produces a correct `ImpactResult` and updates storage; tests cover range handling, unknown model fallback, and the 500-event cap.
 
