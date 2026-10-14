@@ -49,7 +49,12 @@ interface ChatMessage {
         text?: Json;
         thoughts?: Json;
     };
-    metadata?: { model_slug?: Json; reasoning_status?: Json };
+    metadata?: {
+        model_slug?: Json;
+        reasoning_status?: Json;
+        is_message_fragment?: Json;
+        merged_message_id?: Json;
+    };
 }
 
 function isObject(value: unknown): value is JsonObject {
@@ -210,14 +215,23 @@ class ChatGptParser implements StreamParser {
         const assistant = this.roots
             .map((r) => messageOf(r.value))
             .filter((m): m is ChatMessage => m?.author?.role === "assistant");
-        const texts = assistant.filter((m) =>
-            TEXT_CONTENT_TYPES.has(m.content?.content_type ?? ""),
+        // Replies interrupted by tool calls are streamed twice: as hidden fragments, and as the
+        // visible merged message that concatenates them. Count the merged message only.
+        const ids = new Set(assistant.map(idOf));
+        const isMergedFragment = (m: ChatMessage) =>
+            m.metadata?.is_message_fragment === true &&
+            ids.has(stringOrNull(m.metadata.merged_message_id));
+        const texts = assistant.filter(
+            (m) => TEXT_CONTENT_TYPES.has(m.content?.content_type ?? "") && !isMergedFragment(m),
         );
         const reply = texts.findLast((m) => (m.recipient ?? "all") === "all") ?? texts.at(-1);
         if (!reply) return { kind: "skip", reason: "no assistant reply" };
         if (reply.status === "in_progress") return { kind: "skip", reason: "reply not finished" };
 
-        const outputText = texts.map(textOf).join("\n");
+        const outputText = texts
+            .map(textOf)
+            .filter((t) => t !== "")
+            .join("\n");
         const reasoningText = assistant
             .map(thoughtsOf)
             .filter((t) => t !== "")
