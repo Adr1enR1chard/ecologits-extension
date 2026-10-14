@@ -164,7 +164,7 @@ Implementation notes:
 - [x] **Popup**: period selector (today / 7d / 30d / all-time), energy and CO₂eq totals, lower-bound / approximated-model counts, equivalences, breakdown by provider and by model, detail view (water, ADPe, PE, usage vs embodied), adapter status, link to options. Updates live from storage.
 - [x] **Options page**: toggle badge (applied live to open tabs), export CSV (daily totals, last replies) / JSON, clear data (settings are kept; done by the background so it is ordered with the replies it records), methodology (EcoLogits version, tokenizer approximation, lower-bound and approximated-model explanations, electricity mix).
 - [x] All strings in `en` + `fr` locales; message keys are typed from `en/messages.json` and a test checks keys and placeholders match across locales.
-- [ ] Validate end to end on chatgpt.com, logged in, in Chrome: badge under each reply (light and dark themes, regenerated reply, navigation between conversations), popup totals, badge toggle, exports.
+- [x] Validate end to end on chatgpt.com, logged in, in Chrome: badge under each reply (light and dark themes, regenerated reply, navigation between conversations), popup totals, badge toggle, exports. Done manually on 2026-10-14.
 
 Implementation notes:
 
