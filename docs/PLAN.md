@@ -98,14 +98,14 @@ Each phase ends with its acceptance criteria green in CI.
 
 ### Phase 0 — Project bootstrap
 
-- [ ] Scaffold WXT project (Preact template) with pnpm, TypeScript strict (target ES2022).
-- [ ] Add Tailwind CSS (v4, `@tailwindcss/vite`); shared `tailwind.css` entry.
-- [ ] ESLint 9 flat config (typescript-eslint, eslint-config-prettier) + Prettier (`printWidth: 100`, `tabWidth: 4`, double quotes, trailing commas) — same as `ecologits.js`.
-- [ ] Vitest setup (+ coverage-v8).
-- [ ] Add dependencies: `@ecologits/ecologits.js@3.0.0`, `gpt-tokenizer`.
-- [ ] WXT i18n with `en` and `fr` locales.
-- [ ] GitHub Actions CI: `lint`, `typecheck`, `test`, `build` for `chrome` and `firefox` (zip artifacts).
-- [ ] Add `LICENSE` (MPL-2.0), update README.
+- [x] Scaffold WXT project (Preact template) with pnpm, TypeScript strict (target ES2022).
+- [x] Add Tailwind CSS (v4, `@tailwindcss/vite`); shared `tailwind.css` entry.
+- [x] ESLint 9 flat config (typescript-eslint, eslint-config-prettier) + Prettier (`printWidth: 100`, `tabWidth: 4`, double quotes, trailing commas) — same as `ecologits.js`.
+- [x] Vitest setup (+ coverage-v8).
+- [x] Add dependencies: `@ecologits/ecologits.js@3.0.0`, `gpt-tokenizer`.
+- [x] WXT i18n with `en` and `fr` locales.
+- [x] GitHub Actions CI: `lint`, `typecheck`, `test`, `build` for `chrome` and `firefox` (zip artifacts).
+- [x] Add `LICENSE` (MPL-2.0), update README.
 
 **Acceptance:** `pnpm dev` loads an empty popup in Chrome and Firefox; CI is green.
 
