@@ -1,4 +1,8 @@
 {
+    "messagesLocale": {
+        "message": "en",
+        "description": "Language of these messages (BCP 47), used to format numbers and dates. Do not translate."
+    },
     "extName": {
         "message": "EcoLogits"
     },
@@ -6,6 +10,274 @@
         "message": "Estimate the environmental impact of your generative AI usage on ChatGPT, Claude and Gemini."
     },
     "popupEmpty": {
-        "message": "No usage recorded yet."
+        "message": "No usage recorded over this period."
+    },
+    "periodLabel": {
+        "message": "Period"
+    },
+    "periodToday": {
+        "message": "Today"
+    },
+    "period7d": {
+        "message": "7 days"
+    },
+    "period30d": {
+        "message": "30 days"
+    },
+    "periodAll": {
+        "message": "All time"
+    },
+    "criterionEnergy": {
+        "message": "Energy"
+    },
+    "criterionGwp": {
+        "message": "GHG emissions"
+    },
+    "criterionAdpe": {
+        "message": "Abiotic resources"
+    },
+    "criterionPe": {
+        "message": "Primary energy"
+    },
+    "criterionWcf": {
+        "message": "Water"
+    },
+    "rangeLabel": {
+        "message": "Range: $RANGE$",
+        "placeholders": {
+            "range": {
+                "content": "$1"
+            }
+        }
+    },
+    "repliesCount": {
+        "message": "Replies: $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "outputTokensCount": {
+        "message": "Output tokens: $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "flagLowerBoundTitle": {
+        "message": "Lower-bound estimate"
+    },
+    "flagLowerBoundHelp": {
+        "message": "The model reasoned without showing all of its reasoning: hidden reasoning tokens are not counted, so the actual impact is higher."
+    },
+    "flagApproximatedTitle": {
+        "message": "Approximated model"
+    },
+    "flagApproximatedHelp": {
+        "message": "The model used by the web app is not exposed or unknown to EcoLogits: the impact is computed with a comparable model."
+    },
+    "popupLowerBoundCount": {
+        "message": "Replies with a lower-bound estimate: $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "popupApproximatedCount": {
+        "message": "Replies with an approximated model: $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalencesTitle": {
+        "message": "GHG emissions equivalent to"
+    },
+    "equivalenceCarKm": {
+        "message": "$COUNT$ km by car",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceVideoStreamingHour": {
+        "message": "$COUNT$ h of video streaming",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceEmail": {
+        "message": "$COUNT$ emails",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceWebSearch": {
+        "message": "$COUNT$ web searches",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalencesSource": {
+        "message": "Source: ADEME Impact CO2"
+    },
+    "byProviderTitle": {
+        "message": "By provider"
+    },
+    "byModelTitle": {
+        "message": "By model"
+    },
+    "detailsTitle": {
+        "message": "Details"
+    },
+    "detailsTotal": {
+        "message": "Total"
+    },
+    "detailsUsage": {
+        "message": "Usage"
+    },
+    "detailsEmbodied": {
+        "message": "Embodied"
+    },
+    "adapterStatusTitle": {
+        "message": "Capture status"
+    },
+    "adapterUnsupported": {
+        "message": "Coming soon"
+    },
+    "adapterUnknown": {
+        "message": "No reply captured yet"
+    },
+    "adapterOk": {
+        "message": "Working, last capture $DATE$",
+        "placeholders": {
+            "date": {
+                "content": "$1"
+            }
+        }
+    },
+    "adapterFailing": {
+        "message": "Last capture failed ($DATE$): $ERROR$",
+        "placeholders": {
+            "date": {
+                "content": "$1"
+            },
+            "error": {
+                "content": "$2"
+            }
+        }
+    },
+    "openOptions": {
+        "message": "Settings"
+    },
+    "poweredBy": {
+        "message": "Estimates by EcoLogits $VERSION$",
+        "placeholders": {
+            "version": {
+                "content": "$1"
+            }
+        }
+    },
+    "badgeLabel": {
+        "message": "Estimated impact of this reply"
+    },
+    "badgeModel": {
+        "message": "Model: $MODEL$",
+        "placeholders": {
+            "model": {
+                "content": "$1"
+            }
+        }
+    },
+    "badgeModelMapped": {
+        "message": "Model: $RAW$ (computed as $MODEL$)",
+        "placeholders": {
+            "raw": {
+                "content": "$1"
+            },
+            "model": {
+                "content": "$2"
+            }
+        }
+    },
+    "optionsTitle": {
+        "message": "EcoLogits settings"
+    },
+    "optionsDisplay": {
+        "message": "Display"
+    },
+    "optionsShowBadge": {
+        "message": "Show the impact under each reply"
+    },
+    "optionsShowBadgeHelp": {
+        "message": "A badge with the estimated energy and GHG emissions of the reply, on the provider's page."
+    },
+    "optionsData": {
+        "message": "Your data"
+    },
+    "optionsDataHelp": {
+        "message": "Everything stays in this browser: no message content is stored, only metadata and impacts, and nothing is sent anywhere."
+    },
+    "exportAggregatesCsv": {
+        "message": "Export daily totals (CSV)"
+    },
+    "exportEventsCsv": {
+        "message": "Export last $COUNT$ replies (CSV)",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "exportJson": {
+        "message": "Export everything (JSON)"
+    },
+    "clearData": {
+        "message": "Delete all data"
+    },
+    "clearDataConfirm": {
+        "message": "Delete all recorded usage? This cannot be undone."
+    },
+    "clearDataDone": {
+        "message": "All data deleted."
+    },
+    "optionsMethodology": {
+        "message": "Methodology"
+    },
+    "methodologyEcologits": {
+        "message": "Impacts are estimated with EcoLogits $VERSION$ from the model, the number of generated tokens and the generation time. Each value is a range: the badge and the popup show its midpoint, and the range on hover.",
+        "placeholders": {
+            "version": {
+                "content": "$1"
+            }
+        }
+    },
+    "methodologyTokenizer": {
+        "message": "Generated tokens are counted in the browser with OpenAI's o200k_base tokenizer. For Claude and Gemini, whose tokenizers are not public, this is an approximation."
+    },
+    "methodologyMix": {
+        "message": "The electricity mix is the EcoLogits default for each provider."
+    },
+    "methodologyLink": {
+        "message": "Learn more on ecologits.ai"
+    },
+    "aboutVersion": {
+        "message": "Extension version $VERSION$",
+        "placeholders": {
+            "version": {
+                "content": "$1"
+            }
+        }
     }
 }
