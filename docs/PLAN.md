@@ -125,18 +125,35 @@ Each phase ends with its acceptance criteria green in CI.
 
 **Acceptance:** given a synthetic `CapturedResponse`, the background produces a correct `ImpactResult` and updates storage; tests cover range handling, unknown model fallback, and the 500-event cap.
 
-### Phase 2 — ChatGPT adapter + capture plumbing (Chrome & Firefox) — **MVP**
+### Phase 2 — ChatGPT adapter + capture plumbing (Chrome) — **MVP**
 
-- [ ] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
-- [ ] `bridge.content.ts`: validate and relay messages; handle background reply.
-- [ ] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
-- [ ] Record and anonymise SSE fixtures (normal reply, thinking model, regenerate, aborted stream, error).
-- [ ] Fixture-based adapter tests.
-- [ ] ChatGPT model mapping (including `auto` and thinking variants).
-- [ ] Adapter health: track last success / last failure per provider; parse errors never thrown into the page.
-- [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
+- [x] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
+- [x] `bridge.content.ts`: validate and relay messages; handle background reply.
+- [x] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
+- [x] Record and anonymise real SSE fixtures, replacing the synthetic ones written from the known stream format (procedure in `test/fixtures/README.md`). Logged in, `POST /backend-api/f/conversation`:
+    - [x] normal reply (instant model) — `normal-reply.sse`, recorded: new messages arrive as bare `{ v: { message }, c }` and patches as `{ o: "patch", v }` without `p`; the parser handled both unchanged;
+    - [x] thinking model with streamed reasoning summaries — `thinking-reply.sse`, recorded and masked: the answer is streamed both as hidden fragments (`is_message_fragment`, `merged_message_id`) and as the visible merged message (`is_merged_message`) concatenating them; the parser counts the merged message only;
+    - [x] regenerated reply — `regenerate.sse`, recorded and masked: same format, `message_type: "variant"`, no user message echo;
+    - [x] reply with a tool call (web search) — covered by the recorded `thinking-reply.sse` (`web.run` call, tool results); `tool-call.sse` stays as a synthetic complement;
+    - [x] reply stopped by the user — `aborted.sse`, recorded and masked: the stream ends mid-patch, without `message_stream_complete` nor `[DONE]`;
+    - [x] server error mid-stream: no fixture. By design, a reply that ends in a server error is ignored like any unfinished stream (and error events are skipped explicitly, covered by inline tests); it cannot be triggered reliably to record it;
+    - [x] client abort after `message_stream_complete` (the case met live, no `[DONE]`): observed live, and replayed by the interceptor tests by cutting the recorded `normal-reply.sse` before `[DONE]` and failing it with an `AbortError`;
+    - [x] drop `snapshots.sse`: no recording shows the legacy full-snapshot encoding anymore. The parser still accepts it as a fallback, covered by inline tests.
+- [x] Logged-out mode: the web app uses `/unauth-mweb/…` (`conversation/prepare`, then `conversation/updates?operationId=…`), streaming newline-delimited JSON (`content` lines with `replace`/`append` markdown, `control` lifecycle ending with `terminal-received`). Dedicated adapter `adapters/chatgpt-logged-out.ts`, tested against a recorded fixture. The model is not exposed: the `gpt-5` fallback applies with `approximatedModel`.
+    - [x] Reply stopped by the user: recorded, the stream just ends with no `terminal-received` and is skipped.
+- [x] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply. Done on 2026-10-14 with the development build: normal reply (`gpt-6`), regenerated reply, regenerated reply with extended thinking (`gpt-6-t-mini`, `lowerBound`) each stored one event with a distinct `messageId` (75–86 output tokens, 0.15–0.18 Wh, 0.07–0.08 gCO₂eq); the reply stopped by the user stored none; no adapter failure. ChatGPT keeps the stream open for several seconds after `message_stream_complete`, so the measured latency can exceed the visible generation time (10.1 s for a regenerated reply).
+- [x] Fixture-based adapter tests.
+- [x] ChatGPT model mapping (including `auto` and thinking variants).
+- [x] Adapter health: track last success / last failure per provider; parse errors never thrown into the page.
 
-**Acceptance:** on chatgpt.com, each assistant reply produces one stored event with plausible values in both Chrome and Firefox; aborted/failed streams don't crash the page or produce events; fixture tests green.
+Implementation notes:
+
+- The interceptor and the bridge talk over a private `MessageChannel` set up at `document_start` (see `src/capture/channel.ts`) rather than `window.postMessage` with a token: captures never transit on `window`, so page scripts cannot read them or inject fake ones through window messages. This is best effort, not a security boundary: the interceptor shares its realm with the page, which could patch built-ins the parser relies on and distort captures; the bridge validates every message and the worst outcome is wrong local stats for that user.
+- ChatGPT aborts its own request right after `message_stream_complete`, so the stream copy usually ends with an `AbortError` instead of `[DONE]`. Interrupted streams are therefore still handed to the parser, which only records a reply if it saw a completion marker; streams stopped by the user, errored or unfinished produce no event and are not adapter failures. Only parser exceptions are reported as failures.
+- Development builds log each capture step to the page console (`[ecologits] …`, `console.debug`): matched or ignored requests, interruptions, skip reasons, relay to the background.
+- ChatGPT model slugs are canonicalised (`gpt-5-1-thinking` → `gpt-5.1`, `gpt-5-2-instant` → `gpt-5.2-chat-latest`); `auto`, `o3` and other unknown slugs use the `gpt-5` fallback with the `approximatedModel` flag.
+
+**Acceptance:** on chatgpt.com, each assistant reply produces one stored event with plausible values in Chrome; aborted/failed streams don't crash the page or produce events; fixture tests green.
 
 ### Phase 3 — UI (MVP)
 
@@ -146,31 +163,41 @@ Each phase ends with its acceptance criteria green in CI.
 - [ ] **Options page**: toggle badge, export CSV/JSON, clear data, about / methodology (EcoLogits version via `ECOLOGITS_VERSION`, tokenizer approximation, lower-bound and approximated-model explanations).
 - [ ] All strings in `en` + `fr` locales.
 
-**Acceptance:** MVP usable end-to-end on ChatGPT in Chrome and Firefox; badge can be disabled; export produces valid files; UI fully translated.
+**Acceptance:** MVP usable end-to-end on ChatGPT in Chrome; badge can be disabled; export produces valid files; UI fully translated.
 
-### Phase 4 — Claude adapter
+### Phase 4 — ChatGPT on Firefox + capture follow-ups — **MVP**
+
+Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) makes captures visible without the service worker console.
+
+- [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
+- [ ] Validate end to end on chatgpt.com, logged in, in Firefox: one stored event per reply.
+- [ ] Logged-out mode: record a reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
+
+**Acceptance:** phase 2 and phase 3 acceptance criteria also met in Firefox.
+
+### Phase 5 — Claude adapter
 
 - [ ] `adapters/claude.ts`: completion endpoint SSE parsing, model extraction, streamed thinking summaries counted, hidden reasoning flag.
 - [ ] Fixtures + tests; Claude model mapping (web labels → IDs such as `claude-sonnet-4-5`, `claude-opus-4-5`, `claude-sonnet-4-6`…).
 - [ ] Badge anchoring on claude.ai.
 
-**Acceptance:** same as Phase 2 for claude.ai.
+**Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for claude.ai.
 
-### Phase 5 — Gemini adapter
+### Phase 6 — Gemini adapter
 
 - [ ] `adapters/gemini.ts`: Gemini web uses a non-standard batched RPC stream — parse it robustly, extract model when exposed, otherwise fallback + `approximatedModel` flag.
 - [ ] Fixtures + tests; Gemini model mapping (e.g. `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`…).
 - [ ] Badge anchoring on gemini.google.com.
 
-**Acceptance:** same as Phase 2 for gemini.google.com.
+**Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for gemini.google.com.
 
-### Phase 6 — Edge
+### Phase 7 — Edge
 
 - [ ] Add `edge` build target to CI; manual smoke test on the three providers.
 
 **Acceptance:** Edge build works on all three providers.
 
-### Phase 7 — Safari
+### Phase 8 — Safari
 
 - [ ] Build Safari target with WXT, convert with `xcrun safari-web-extension-converter`, Xcode project in repo (or generated in CI).
 - [ ] Verify main-world injection and stream teeing on Safari; document any limitations.
@@ -178,7 +205,7 @@ Each phase ends with its acceptance criteria green in CI.
 
 **Acceptance:** extension runs in Safari (macOS) on the three providers.
 
-### Phase 8 — Release
+### Phase 9 — Release
 
 - [ ] `PRIVACY.md` / hosted privacy policy (local-only, no content stored, no telemetry).
 - [ ] Store assets (icons, screenshots, descriptions in EN/FR).

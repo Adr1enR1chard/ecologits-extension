@@ -1,0 +1,29 @@
+event: delta_encoding
+data: "v1"
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000062", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "code", "language": "unknown", "text": ""}, "status": "in_progress", "end_turn": false, "metadata": {"model_slug": "gpt-5-instant"}, "recipient": "web.run", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 0}
+
+event: delta
+data: {"p": "/message/content/text", "o": "append", "v": "{\"search_query\": [{\"q\": \"REDACTED\"}]}"}
+
+event: delta
+data: {"p": "/message/status", "o": "replace", "v": "finished_successfully"}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000063", "author": {"role": "tool", "name": "web.run", "metadata": {}}, "content": {"content_type": "text", "parts": ["REDACTED SEARCH RESULTS"]}, "status": "finished_successfully", "metadata": {}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 1}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000064", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": [""]}, "status": "in_progress", "end_turn": null, "metadata": {"model_slug": "gpt-5-instant"}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 2}
+
+event: delta
+data: {"p": "/message/content/parts/0", "o": "append", "v": "According to recent sources,"}
+
+event: delta
+data: {"v": " the event takes place in May."}
+
+event: delta
+data: {"p": "", "o": "patch", "v": [{"p": "/message/status", "o": "replace", "v": "finished_successfully"}, {"p": "/message/end_turn", "o": "replace", "v": true}]}
+
+data: [DONE]
+
