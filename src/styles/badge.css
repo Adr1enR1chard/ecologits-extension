@@ -1,0 +1,22 @@
+/* Badge mounted in provider pages, inside a shadow root (`createShadowRootUi`). */
+@import "tailwindcss" source(none);
+@source "../badge";
+@source "../ui";
+
+/* `rem` follows the host page's root font size: use pixels for everything the badge relies on. */
+@theme {
+    --spacing: 4px;
+    --text-xs: 12px;
+    --text-xs--line-height: 16px;
+    --text-sm: 14px;
+    --text-sm--line-height: 20px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+}
+
+:host {
+    /* Block below the reply; WXT resets the host with `all: initial !important`. */
+    display: block !important;
+    /* Overridden on the host element with the text color of the reply. */
+    --ecologits-fg: #6b7280;
+}

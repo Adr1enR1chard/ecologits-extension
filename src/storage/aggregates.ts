@@ -58,7 +58,7 @@ function addPhase<K extends string>(
     >;
 }
 
-function addImpacts(a: Impacts, b: Impacts): Impacts {
+export function addImpacts(a: Impacts, b: Impacts): Impacts {
     return {
         total: addPhase(CRITERIA, a.total, b.total),
         usage: addPhase(CRITERIA, a.usage, b.usage),

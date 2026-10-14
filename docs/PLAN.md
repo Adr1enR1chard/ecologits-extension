@@ -84,7 +84,9 @@ ecologits-extension/
 │   │   ├── events.ts              # rolling log (500)
 │   │   └── export.ts              # CSV / JSON
 │   ├── messaging.ts               # typed messages between worlds / background
-│   ├── ui/                        # shared Preact components (Badge, ImpactValue, RangeTooltip…)
+│   ├── badge/                     # in-page badge: component, reply anchoring, mounting
+│   ├── stats/                     # popup summaries per period, provider and model
+│   ├── ui/                        # shared Preact components (ImpactValue, RangeTooltip, flags…)
 │   └── styles/tailwind.css
 ├── public/_locales/{en,fr}/messages.json
 ├── test/fixtures/{chatgpt,claude,gemini}/*.sse   # recorded, anonymised streams
@@ -157,11 +159,20 @@ Implementation notes:
 
 ### Phase 3 — UI (MVP)
 
-- [ ] Shared Preact components: `ImpactValue` (unit formatting Wh/kWh, g/kg), `RangeTooltip`, flag icons with explanations.
-- [ ] **Badge**: mounted under each assistant reply via WXT `createShadowRootUi` (Tailwind CSS injected into the shadow root; avoid relying on host `rem` sizing). Shows median energy + CO₂eq, range on hover, flags. Locate reply anchor using `messageId` where possible.
-- [ ] **Popup**: period selector (today / 7d / 30d / all-time), totals, breakdown by provider and model, equivalences, detail view (water, ADPe, PE, usage vs embodied), adapter status, link to options.
-- [ ] **Options page**: toggle badge, export CSV/JSON, clear data, about / methodology (EcoLogits version via `ECOLOGITS_VERSION`, tokenizer approximation, lower-bound and approximated-model explanations).
-- [ ] All strings in `en` + `fr` locales.
+- [x] Shared Preact components (`src/ui/`): `ImpactValue` (unit scaling Wh/kWh, gCO₂eq/kgCO₂eq, mL/L, kJ/MJ, ngSbeq/µgSbeq…, in the locale of the messages), `RangeTooltip`, flag icons with explanations (`≥` lower bound, `≈` approximated model).
+- [x] **Badge** (`src/badge/`): mounted right after each assistant reply via WXT `createShadowRootUi` (`cssInjectionMode: "ui"`, dedicated `badge.css` with pixel spacing and font sizes, so the host `rem` does not matter). Shows median energy + CO₂eq, ranges, model and output tokens on hover, flags. The badge goes between the reply text and its action bar; the reply is found by its message id (`src/badge/anchor.ts`): logged in, after the reply block `[data-chatgpt-selection-message-id]`; logged out, before the action bar `[data-assistant-message-actions]` of `li[data-message-role="assistant"]`, whose `id` is the message id; the former `data-message-author-role` + `data-message-id` markup is still matched. The id is awaited up to 3 s after the stream ends, then the last reply on the page is used (without id, once the page stops adding nodes); there is no fallback once the user has moved to another conversation. A mutation observer (`src/badge/placement.ts`) inserts the badge once its anchor is on the page and moves it back whenever the page re-renders it: WXT `autoMount` only re-mounts once the selector stops matching, which never happens when the page swaps the reply for a new element with the same id.
+- [x] **Popup**: period selector (today / 7d / 30d / all-time), energy and CO₂eq totals, lower-bound / approximated-model counts, equivalences, breakdown by provider and by model, detail view (water, ADPe, PE, usage vs embodied), adapter status, link to options. Updates live from storage.
+- [x] **Options page**: toggle badge (applied live to open tabs), export CSV (daily totals, last replies) / JSON, clear data (settings are kept; done by the background so it is ordered with the replies it records), methodology (EcoLogits version, tokenizer approximation, lower-bound and approximated-model explanations, electricity mix).
+- [x] All strings in `en` + `fr` locales; message keys are typed from `en/messages.json` and a test checks keys and placeholders match across locales.
+- [x] Validate end to end on chatgpt.com, logged in, in Chrome: badge under each reply (light and dark themes, regenerated reply, navigation between conversations), popup totals, badge toggle, exports. Done manually on 2026-10-14.
+
+Implementation notes:
+
+- Checked in headless Chromium with the production build on a fake chatgpt.com page served by Playwright and replaying the recorded fixtures: the badge is mounted under the reply (by id for `normal-reply.sse`, by the last-reply fallback for `thinking-reply.sse`), follows the page's text colour in light and dark themes, the popup and options page render in French, and disabling the badge removes it from the open page. The first live test showed no badge: chatgpt.com no longer renders `data-message-author-role` / `data-message-id`; the anchor now follows the markup observed on 2026-10-14, logged in and logged out (two different apps).
+- Badges are shown for replies captured since the page was loaded; replies already in the conversation when it is opened get none.
+- Extension pages take `ECOLOGITS_VERSION` from `src/impacts/version.ts` (kept in sync with the library by a test): importing it from `@ecologits/ecologits.js` bundled the whole model database (~125 kB) with the popup and options page.
+- Settings live in `storage.local` (`settings`), separate from usage data.
+- Numbers and dates use the browser locale only when the messages are in its language (`messagesLocale` message), otherwise the language of the messages shown: a German browser gets English text with English number formats.
 
 **Acceptance:** MVP usable end-to-end on ChatGPT in Chrome; badge can be disabled; export produces valid files; UI fully translated.
 
@@ -171,6 +182,7 @@ Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) m
 
 - [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
 - [ ] Validate end to end on chatgpt.com, logged in, in Firefox: one stored event per reply.
+- [ ] Exports in Firefox: `src/ui/download.ts` clicks a detached `<a>` and revokes the object URL right after; attach the link to the document and revoke later if Firefox drops or empties the download.
 - [ ] Logged-out mode: record a reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
 
 **Acceptance:** phase 2 and phase 3 acceptance criteria also met in Firefox.

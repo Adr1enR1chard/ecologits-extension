@@ -9,7 +9,8 @@ export const adapterStatusItem = storage.defineItem<AdapterStatuses>("local:adap
     version: SCHEMA_VERSION,
 });
 
-function emptyStatus(provider: WebProvider): AdapterStatus {
+/** Status of an adapter that never reported anything. */
+export function emptyStatus(provider: WebProvider): AdapterStatus {
     return { provider, lastSuccessAt: null, lastFailureAt: null, lastError: null };
 }
 
@@ -40,4 +41,15 @@ export function recordAdapterFailure(
 export async function getAdapterStatuses(): Promise<AdapterStatus[]> {
     const statuses = await adapterStatusItem.getValue();
     return WEB_PROVIDERS.map((provider) => statuses[provider] ?? emptyStatus(provider));
+}
+
+export type AdapterHealth = "unknown" | "ok" | "failing";
+
+/** An adapter is failing when its last outcome was a failure. */
+export function adapterHealth(status: AdapterStatus): AdapterHealth {
+    const { lastSuccessAt, lastFailureAt } = status;
+    if (lastFailureAt !== null && (lastSuccessAt === null || lastFailureAt > lastSuccessAt)) {
+        return "failing";
+    }
+    return lastSuccessAt === null ? "unknown" : "ok";
 }

@@ -7,6 +7,15 @@ export const PROVIDER_HOSTS: Readonly<Record<WebProvider, readonly string[]>> = 
     gemini: ["gemini.google.com"],
 };
 
+/** Providers whose replies are captured; the others are announced in the popup. */
+export const SUPPORTED_PROVIDERS: readonly WebProvider[] = ["chatgpt"];
+
+export const PROVIDER_NAMES: Readonly<Record<WebProvider, string>> = {
+    chatgpt: "ChatGPT",
+    claude: "Claude",
+    gemini: "Gemini",
+};
+
 export function providerForHost(hostname: string): WebProvider | null {
     for (const [provider, hosts] of Object.entries(PROVIDER_HOSTS)) {
         if (hosts.includes(hostname)) return provider as WebProvider;

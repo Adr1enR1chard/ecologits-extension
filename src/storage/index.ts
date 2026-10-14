@@ -2,6 +2,7 @@ import { storage } from "wxt/utils/storage";
 import type { ImpactResult } from "../messaging";
 import { addToAggregates, aggregatesItem } from "./aggregates";
 import { appendEvent, eventsItem } from "./events";
+import { adapterStatusItem } from "./health";
 import { serialize } from "./schema";
 
 /**
@@ -25,4 +26,14 @@ export function recordImpact(result: ImpactResult): Promise<boolean> {
         ]);
         return true;
     });
+}
+
+/**
+ * Deletes the recorded usage (aggregates, event log, adapter status); settings are kept.
+ * Only call it from the background (`clear-usage-data` message): {@link serialize} orders writes
+ * within one JS context, so a clear from an extension page could be overwritten by a reply the
+ * background is recording.
+ */
+export function clearUsageData(): Promise<void> {
+    return serialize(() => storage.removeItems([aggregatesItem, eventsItem, adapterStatusItem]));
 }

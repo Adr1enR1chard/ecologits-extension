@@ -1,4 +1,4 @@
-import { ECOLOGITS_VERSION } from "@ecologits/ecologits.js";
+import { ECOLOGITS_VERSION } from "../impacts/version";
 import {
     CRITERIA,
     CRITERION_UNITS,

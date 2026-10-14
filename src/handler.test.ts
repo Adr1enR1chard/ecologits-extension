@@ -7,7 +7,7 @@ import { computeImpact } from "./impacts/compute";
 import { isBackgroundMessage } from "./messaging";
 import { getAggregates } from "./storage/aggregates";
 import { MAX_EVENTS, getEvents } from "./storage/events";
-import { getAdapterStatuses } from "./storage/health";
+import { emptyStatus, getAdapterStatuses } from "./storage/health";
 import { capturedResponse, impactResult } from "./test-utils";
 
 vi.mock("./impacts/compute", async (importOriginal) => {
@@ -143,6 +143,20 @@ describe("handleBackgroundMessage", () => {
     });
 });
 
+describe("clear-usage-data", () => {
+    it("clears the recorded usage", async () => {
+        await handleBackgroundMessage(
+            { type: "captured-response", payload: capturedResponse() },
+            now,
+        );
+        expect(await handleBackgroundMessage({ type: "clear-usage-data" })).toBeNull();
+        expect(await getEvents()).toEqual([]);
+        expect((await handleBackgroundMessage({ type: "get-adapter-status" }))[0]).toEqual(
+            emptyStatus("chatgpt"),
+        );
+    });
+});
+
 describe("replyToMessage", () => {
     it("wraps the reply value", async () => {
         const reply = await replyToMessage({ type: "get-adapter-status" });
@@ -167,6 +181,7 @@ describe("isBackgroundMessage", () => {
             isBackgroundMessage({ type: "captured-response", payload: capturedResponse() }),
         ).toBe(true);
         expect(isBackgroundMessage({ type: "get-adapter-status" })).toBe(true);
+        expect(isBackgroundMessage({ type: "clear-usage-data" })).toBe(true);
     });
 
     it("rejects malformed messages", () => {
