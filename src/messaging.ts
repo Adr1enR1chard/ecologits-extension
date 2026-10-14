@@ -109,7 +109,7 @@ export interface BackgroundReplies {
 /** What the background actually sends back: the reply value, or why it could not be produced. */
 export type BackgroundReply<T> = { ok: true; value: T } | { ok: false; error: string };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
 }
 
