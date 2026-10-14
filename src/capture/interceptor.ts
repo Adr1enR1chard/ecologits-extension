@@ -10,6 +10,22 @@ export interface InterceptorOptions {
     now?: () => number;
     /** Receives a trace of each capture step, for development builds. */
     debug?: Debug;
+    /** Receives the raw text of each matched stream, to record fixtures in development builds. */
+    record?: (stream: RecordedStream) => void;
+}
+
+export interface RecordedStream {
+    url: string;
+    /** Why the stream ended: `"done"`, or the interruption error. */
+    end: string;
+    text: string;
+}
+
+interface CaptureContext {
+    emit: InterceptorOptions["emit"];
+    now: () => number;
+    debug: Debug;
+    record: InterceptorOptions["record"];
 }
 
 export type Debug = (step: string, details?: unknown) => void;
@@ -64,9 +80,7 @@ async function capture(
     requestBody: Promise<string | null>,
     body: ReadableStream<Uint8Array>,
     startedAt: number,
-    emit: InterceptorOptions["emit"],
-    now: () => number,
-    debug: Debug,
+    { emit, now, debug, record }: CaptureContext,
 ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
@@ -80,12 +94,16 @@ async function capture(
         return;
     }
     let parseError: unknown = null;
+    const recorded: string[] = [];
+    let end = "done";
     try {
         for (;;) {
             const { done, value } = await reader.read();
             if (done) break;
+            const text = decoder.decode(value, { stream: true });
+            if (record) recorded.push(text);
             try {
-                parser.push(decoder.decode(value, { stream: true }));
+                parser.push(text);
             } catch (error) {
                 parseError = error;
                 break;
@@ -95,7 +113,9 @@ async function capture(
         // The page aborted the request or the network failed. ChatGPT aborts its own request
         // once the reply is complete, so let the parser decide from what it received.
         debug("stream interrupted", error);
+        end = String(error);
     }
+    record?.({ url: request.url.href, end, text: recorded.join("") });
     if (parseError !== null) {
         void reader.cancel();
     } else {
@@ -167,7 +187,8 @@ export function installFetchInterceptor(win: FetchWindow, options: InterceptorOp
                 const copy = response.clone().body;
                 if (copy) {
                     const { emit } = options;
-                    void capture(adapter, request, requestBody, copy, startedAt, emit, now, debug);
+                    const context = { emit, now, debug, record: options.record };
+                    void capture(adapter, request, requestBody, copy, startedAt, context);
                 }
             }
         } catch {
