@@ -1,13 +1,13 @@
 # EcoLogits Extension
 
-Extension navigateur cross-browser (Chrome, Firefox, Edge, Safari) qui estime l'impact environnemental (énergie, émissions GES, etc.) de vos usages d'IA générative grâce à [EcoLogits](https://ecologits.ai).
+Cross-browser extension (Chrome, Firefox, Edge, Safari) that estimates the environmental impact (energy, GHG emissions, etc.) of your generative AI usage, powered by [EcoLogits](https://ecologits.ai).
 
-## Fournisseurs supportés
+## Supported providers
 
 - OpenAI (ChatGPT)
 - Anthropic (Claude)
 - Google (Gemini)
 
-## Statut
+## Status
 
-🚧 Projet en cours d'initialisation.
+🚧 Work in progress — repository just initialized.
