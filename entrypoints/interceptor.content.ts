@@ -1,4 +1,5 @@
 import { chatgptAdapter } from "@/src/adapters/chatgpt";
+import { chatgptLoggedOutAdapter } from "@/src/adapters/chatgpt-logged-out";
 import { offerChannel } from "@/src/capture/channel";
 import { installFetchInterceptor, type RecordedStream } from "@/src/capture/interceptor";
 import { matchPatterns } from "@/src/providers";
@@ -25,7 +26,7 @@ export default defineContentScript({
             : undefined;
         const emit = offerChannel(window, window.location.origin);
         installFetchInterceptor(window, {
-            adapters: [chatgptAdapter],
+            adapters: [chatgptAdapter, chatgptLoggedOutAdapter],
             emit,
             debug,
             record,

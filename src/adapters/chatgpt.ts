@@ -8,7 +8,8 @@ import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } fro
  * ChatGPT web app (chatgpt.com).
  *
  * Replies are streamed as SSE by `POST /backend-api/conversation` (`/backend-api/f/conversation`
- * in newer clients, `/backend-anon/...` when logged out). Each stream holds one or more messages
+ * in newer clients, `/backend-anon/...` in older logged-out clients; see `chatgpt-logged-out.ts`
+ * for the current logged-out app). Each stream holds one or more messages
  * (tool calls, reasoning summaries, the visible reply), sent either as full snapshots
  * (`{ message, conversation_id, error }`) or, with `delta_encoding: "v1"`, as JSON-patch-like
  * operations: `{ p: path, o: op, v: value, c: messageIndex }`, where a bare `{ v }` repeats the
