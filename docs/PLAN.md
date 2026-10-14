@@ -125,7 +125,7 @@ Each phase ends with its acceptance criteria green in CI.
 
 **Acceptance:** given a synthetic `CapturedResponse`, the background produces a correct `ImpactResult` and updates storage; tests cover range handling, unknown model fallback, and the 500-event cap.
 
-### Phase 2 — ChatGPT adapter + capture plumbing (Chrome & Firefox) — **MVP**
+### Phase 2 — ChatGPT adapter + capture plumbing (Chrome) — **MVP**
 
 - [x] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
 - [x] `bridge.content.ts`: validate and relay messages; handle background reply.
@@ -141,12 +141,10 @@ Each phase ends with its acceptance criteria green in CI.
     - [x] drop `snapshots.sse`: no recording shows the legacy full-snapshot encoding anymore. The parser still accepts it as a fallback, covered by inline tests.
 - [x] Logged-out mode: the web app uses `/unauth-mweb/…` (`conversation/prepare`, then `conversation/updates?operationId=…`), streaming newline-delimited JSON (`content` lines with `replace`/`append` markdown, `control` lifecycle ending with `terminal-received`). Dedicated adapter `adapters/chatgpt-logged-out.ts`, tested against a recorded fixture. The model is not exposed: the `gpt-5` fallback applies with `approximatedModel`.
     - [x] Reply stopped by the user: recorded, the stream just ends with no `terminal-received` and is skipped.
-    - [ ] Record a logged-out reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
-- [ ] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply.
+- [x] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply. Done on 2026-10-14 with the development build: normal reply (`gpt-6`), regenerated reply, regenerated reply with extended thinking (`gpt-6-t-mini`, `lowerBound`) each stored one event with a distinct `messageId` (75–86 output tokens, 0.15–0.18 Wh, 0.07–0.08 gCO₂eq); the reply stopped by the user stored none; no adapter failure. ChatGPT keeps the stream open for several seconds after `message_stream_complete`, so the measured latency can exceed the visible generation time (10.1 s for a regenerated reply).
 - [x] Fixture-based adapter tests.
 - [x] ChatGPT model mapping (including `auto` and thinking variants).
 - [x] Adapter health: track last success / last failure per provider; parse errors never thrown into the page.
-- [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
 
 Implementation notes:
 
@@ -155,7 +153,7 @@ Implementation notes:
 - Development builds log each capture step to the page console (`[ecologits] …`, `console.debug`): matched or ignored requests, interruptions, skip reasons, relay to the background.
 - ChatGPT model slugs are canonicalised (`gpt-5-1-thinking` → `gpt-5.1`, `gpt-5-2-instant` → `gpt-5.2-chat-latest`); `auto`, `o3` and other unknown slugs use the `gpt-5` fallback with the `approximatedModel` flag.
 
-**Acceptance:** on chatgpt.com, each assistant reply produces one stored event with plausible values in both Chrome and Firefox; aborted/failed streams don't crash the page or produce events; fixture tests green.
+**Acceptance:** on chatgpt.com, each assistant reply produces one stored event with plausible values in Chrome; aborted/failed streams don't crash the page or produce events; fixture tests green.
 
 ### Phase 3 — UI (MVP)
 
@@ -165,31 +163,41 @@ Implementation notes:
 - [ ] **Options page**: toggle badge, export CSV/JSON, clear data, about / methodology (EcoLogits version via `ECOLOGITS_VERSION`, tokenizer approximation, lower-bound and approximated-model explanations).
 - [ ] All strings in `en` + `fr` locales.
 
-**Acceptance:** MVP usable end-to-end on ChatGPT in Chrome and Firefox; badge can be disabled; export produces valid files; UI fully translated.
+**Acceptance:** MVP usable end-to-end on ChatGPT in Chrome; badge can be disabled; export produces valid files; UI fully translated.
 
-### Phase 4 — Claude adapter
+### Phase 4 — ChatGPT on Firefox + capture follow-ups — **MVP**
+
+Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) makes captures visible without the service worker console.
+
+- [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
+- [ ] Validate end to end on chatgpt.com, logged in, in Firefox: one stored event per reply.
+- [ ] Logged-out mode: record a reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
+
+**Acceptance:** phase 2 and phase 3 acceptance criteria also met in Firefox.
+
+### Phase 5 — Claude adapter
 
 - [ ] `adapters/claude.ts`: completion endpoint SSE parsing, model extraction, streamed thinking summaries counted, hidden reasoning flag.
 - [ ] Fixtures + tests; Claude model mapping (web labels → IDs such as `claude-sonnet-4-5`, `claude-opus-4-5`, `claude-sonnet-4-6`…).
 - [ ] Badge anchoring on claude.ai.
 
-**Acceptance:** same as Phase 2 for claude.ai.
+**Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for claude.ai.
 
-### Phase 5 — Gemini adapter
+### Phase 6 — Gemini adapter
 
 - [ ] `adapters/gemini.ts`: Gemini web uses a non-standard batched RPC stream — parse it robustly, extract model when exposed, otherwise fallback + `approximatedModel` flag.
 - [ ] Fixtures + tests; Gemini model mapping (e.g. `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`…).
 - [ ] Badge anchoring on gemini.google.com.
 
-**Acceptance:** same as Phase 2 for gemini.google.com.
+**Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for gemini.google.com.
 
-### Phase 6 — Edge
+### Phase 7 — Edge
 
 - [ ] Add `edge` build target to CI; manual smoke test on the three providers.
 
 **Acceptance:** Edge build works on all three providers.
 
-### Phase 7 — Safari
+### Phase 8 — Safari
 
 - [ ] Build Safari target with WXT, convert with `xcrun safari-web-extension-converter`, Xcode project in repo (or generated in CI).
 - [ ] Verify main-world injection and stream teeing on Safari; document any limitations.
@@ -197,7 +205,7 @@ Implementation notes:
 
 **Acceptance:** extension runs in Safari (macOS) on the three providers.
 
-### Phase 8 — Release
+### Phase 9 — Release
 
 - [ ] `PRIVACY.md` / hosted privacy policy (local-only, no content stored, no telemetry).
 - [ ] Store assets (icons, screenshots, descriptions in EN/FR).
