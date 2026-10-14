@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - "@ecologits/ecologits.js@3.0.0"

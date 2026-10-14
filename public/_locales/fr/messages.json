@@ -1,0 +1,11 @@
+{
+    "extName": {
+        "message": "EcoLogits"
+    },
+    "extDescription": {
+        "message": "Estimez l'impact environnemental de votre usage de l'IA générative sur ChatGPT, Claude et Gemini."
+    },
+    "popupEmpty": {
+        "message": "Aucune utilisation enregistrée pour l'instant."
+    }
+}

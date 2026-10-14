@@ -1,0 +1,48 @@
+{
+    "name": "ecologits-extension",
+    "description": "Estimate the environmental impact of your generative AI usage, powered by EcoLogits.",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "license": "MPL-2.0",
+    "scripts": {
+        "dev": "wxt",
+        "dev:firefox": "wxt -b firefox",
+        "build": "wxt build",
+        "build:firefox": "wxt build -b firefox",
+        "zip": "wxt zip",
+        "zip:firefox": "wxt zip -b firefox",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "postinstall": "wxt prepare"
+    },
+    "dependencies": {
+        "@ecologits/ecologits.js": "3.0.0",
+        "gpt-tokenizer": "^4.0.0",
+        "preact": "^11.0.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.5",
+        "@preact/preset-vite": "^2.10.6",
+        "@tailwindcss/vite": "^4.3.3",
+        "@vitest/coverage-v8": "^5.0.4",
+        "eslint": "^9.39.5",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.13.0",
+        "prettier": "^3.9.10",
+        "tailwindcss": "^4.3.3",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.71.2",
+        "vitest": "^5.0.4",
+        "web-ext": "^10.7.0",
+        "wxt": "^0.21.4"
+    },
+    "packageManager": "pnpm@12.11.2",
+    "engines": {
+        "node": ">=20"
+    }
+}

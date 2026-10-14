@@ -1,0 +1,13 @@
+{
+    "extends": "./.wxt/tsconfig.json",
+    "compilerOptions": {
+        "target": "ES2022",
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "allowImportingTsExtensions": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact",
+        "resolveJsonModule": true
+    }
+}
