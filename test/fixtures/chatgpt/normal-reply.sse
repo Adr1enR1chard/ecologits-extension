@@ -1,0 +1,36 @@
+event: delta_encoding
+data: "v1"
+
+data: {"type": "resume_conversation_token", "kind": "topic", "token": "REDACTED", "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000001", "author": {"role": "user", "name": null, "metadata": {}}, "create_time": 1760000000.0, "content": {"content_type": "text", "parts": ["REDACTED"]}, "status": "finished_successfully", "end_turn": null, "weight": 1.0, "metadata": {}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 0}
+
+data: {"type": "input_message", "input_message": {"id": "00000000-0000-4000-8000-000000000001", "author": {"role": "user"}, "content": {"content_type": "text", "parts": ["REDACTED"]}}, "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000002", "author": {"role": "assistant", "name": null, "metadata": {}}, "create_time": 1760000001.0, "content": {"content_type": "text", "parts": [""]}, "status": "in_progress", "end_turn": null, "weight": 1.0, "metadata": {"citations": [], "content_references": [], "message_type": "next", "model_slug": "gpt-5-instant", "default_model_slug": "auto", "parent_id": "00000000-0000-4000-8000-000000000001", "model_switcher_deny": []}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 1}
+
+event: delta
+data: {"p": "/message/content/parts/0", "o": "append", "v": "Photosynthesis is the process"}
+
+event: delta
+data: {"v": " by which plants, algae and some bacteria"}
+
+event: delta
+data: {"v": " convert light energy into chemical energy,"}
+
+event: delta
+data: {"v": " storing it as glucose and releasing oxygen."}
+
+event: delta
+data: {"p": "", "o": "patch", "v": [{"p": "/message/content/parts/0", "o": "append", "v": "\n\nIt takes place in the chloroplasts."}, {"p": "/message/status", "o": "replace", "v": "finished_successfully"}, {"p": "/message/end_turn", "o": "replace", "v": true}, {"p": "/message/metadata", "o": "append", "v": {"is_complete": true, "finish_details": {"type": "stop", "stop_tokens": [200002]}}}]}
+
+data: {"type": "message_stream_complete", "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+data: {"type": "conversation_detail_metadata", "banner_info": null, "blocked_features": [], "model_limits": [], "limits_progress": [], "default_model_slug": "auto", "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+data: {"type": "title_generation", "title": "REDACTED", "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+data: [DONE]
+

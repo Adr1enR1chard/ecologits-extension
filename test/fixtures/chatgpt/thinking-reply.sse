@@ -1,0 +1,42 @@
+event: delta_encoding
+data: "v1"
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000011", "author": {"role": "user", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": ["REDACTED"]}, "status": "finished_successfully", "metadata": {}, "recipient": "all"}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 0}
+
+data: {"type": "server_ste_metadata", "metadata": {"conduit_prewarmed": false, "plan_type": "plus", "model_slug": "gpt-5-thinking", "did_auto_switch_to_reasoning": false}, "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000012", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "thoughts", "thoughts": [], "source_analysis_msg_id": "00000000-0000-4000-8000-0000000000aa"}, "status": "in_progress", "end_turn": false, "metadata": {"reasoning_status": "is_reasoning", "model_slug": "gpt-5-thinking", "parent_id": "00000000-0000-4000-8000-000000000011"}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 1}
+
+event: delta
+data: {"p": "/message/content/thoughts", "o": "append", "v": [{"summary": "Comparing sorting algorithms", "content": "", "chunks": [], "finished": false}]}
+
+event: delta
+data: {"p": "/message/content/thoughts/0/content", "o": "append", "v": "I should compare quicksort and mergesort"}
+
+event: delta
+data: {"v": " on stability, memory and worst-case complexity."}
+
+event: delta
+data: {"p": "", "o": "patch", "v": [{"p": "/message/content/thoughts/0/finished", "o": "replace", "v": true}, {"p": "/message/status", "o": "replace", "v": "finished_successfully"}]}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000013", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "reasoning_recap", "content": "Thought for 7s"}, "status": "finished_successfully", "metadata": {"reasoning_status": "reasoning_ended", "model_slug": "gpt-5-thinking"}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 2}
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000014", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": [""]}, "status": "in_progress", "end_turn": null, "metadata": {"model_slug": "gpt-5-thinking", "default_model_slug": "gpt-5-thinking", "parent_id": "00000000-0000-4000-8000-000000000013"}, "recipient": "all", "channel": "final"}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 3}
+
+event: delta
+data: {"p": "/message/content/parts/0", "o": "append", "v": "Mergesort is stable and guarantees O(n log n),"}
+
+event: delta
+data: {"v": " while quicksort is usually faster in practice and sorts in place."}
+
+event: delta
+data: {"p": "", "o": "patch", "v": [{"p": "/message/status", "o": "replace", "v": "finished_successfully"}, {"p": "/message/end_turn", "o": "replace", "v": true}]}
+
+data: {"type": "message_stream_complete", "conversation_id": "00000000-0000-4000-8000-00000000c0de"}
+
+data: [DONE]
+

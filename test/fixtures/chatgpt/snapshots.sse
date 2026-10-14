@@ -1,0 +1,8 @@
+data: {"message": {"id": "00000000-0000-4000-8000-000000000052", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": ["The capital"]}, "status": "in_progress", "end_turn": null, "metadata": {"model_slug": "gpt-4o-mini"}, "recipient": "all"}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}
+
+data: {"message": {"id": "00000000-0000-4000-8000-000000000052", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": ["The capital of France"]}, "status": "in_progress", "end_turn": null, "metadata": {"model_slug": "gpt-4o-mini"}, "recipient": "all"}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}
+
+data: {"message": {"id": "00000000-0000-4000-8000-000000000052", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": ["The capital of France is Paris."]}, "status": "finished_successfully", "end_turn": true, "metadata": {"model_slug": "gpt-4o-mini", "finish_details": {"type": "stop"}}, "recipient": "all"}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}
+
+data: [DONE]
+

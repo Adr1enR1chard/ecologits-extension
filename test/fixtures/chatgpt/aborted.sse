@@ -1,0 +1,12 @@
+event: delta_encoding
+data: "v1"
+
+event: delta
+data: {"p": "", "o": "add", "v": {"message": {"id": "00000000-0000-4000-8000-000000000032", "author": {"role": "assistant", "name": null, "metadata": {}}, "content": {"content_type": "text", "parts": [""]}, "status": "in_progress", "end_turn": null, "metadata": {"model_slug": "gpt-5-instant"}, "recipient": "all", "channel": null}, "conversation_id": "00000000-0000-4000-8000-00000000c0de", "error": null}, "c": 0}
+
+event: delta
+data: {"p": "/message/content/parts/0", "o": "append", "v": "Once upon a time"}
+
+event: delta
+data: {"v": ", in a land far"}
+
