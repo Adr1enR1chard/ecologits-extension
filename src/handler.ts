@@ -6,7 +6,7 @@ import type {
     CapturedResponse,
     ImpactResult,
 } from "./messaging";
-import { recordImpact } from "./storage";
+import { clearUsageData, recordImpact } from "./storage";
 import { getAdapterStatuses, recordAdapterFailure, recordAdapterSuccess } from "./storage/health";
 
 function errorMessage(error: unknown): string {
@@ -53,6 +53,9 @@ export async function handleBackgroundMessage(
             return null;
         case "get-adapter-status":
             return getAdapterStatuses();
+        case "clear-usage-data":
+            await clearUsageData();
+            return null;
     }
 }
 

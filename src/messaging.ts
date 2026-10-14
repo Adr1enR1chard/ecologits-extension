@@ -97,13 +97,15 @@ export interface AdapterStatus {
 export type BackgroundMessage =
     | { type: "captured-response"; payload: CapturedResponse }
     | { type: "adapter-failure"; provider: WebProvider; error: string }
-    | { type: "get-adapter-status" };
+    | { type: "get-adapter-status" }
+    | { type: "clear-usage-data" };
 
 /** Reply value for each background message. */
 export interface BackgroundReplies {
     "captured-response": ImpactResult;
     "adapter-failure": null;
     "get-adapter-status": AdapterStatus[];
+    "clear-usage-data": null;
 }
 
 /** What the background actually sends back: the reply value, or why it could not be produced. */
@@ -115,6 +117,10 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNullableString(value: unknown): value is string | null {
     return value === null || typeof value === "string";
+}
+
+export function isEmbodiedCriterion(criterion: Criterion): criterion is EmbodiedCriterion {
+    return (EMBODIED_CRITERIA as readonly Criterion[]).includes(criterion);
 }
 
 export function isWebProvider(value: unknown): value is WebProvider {
@@ -142,6 +148,7 @@ export function isBackgroundMessage(value: unknown): value is BackgroundMessage 
         case "adapter-failure":
             return isWebProvider(value.provider) && typeof value.error === "string";
         case "get-adapter-status":
+        case "clear-usage-data":
             return true;
         default:
             return false;
