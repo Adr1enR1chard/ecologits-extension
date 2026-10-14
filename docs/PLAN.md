@@ -130,16 +130,18 @@ Each phase ends with its acceptance criteria green in CI.
 - [x] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
 - [x] `bridge.content.ts`: validate and relay messages; handle background reply.
 - [x] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
-- [ ] Record and anonymise real SSE fixtures, replacing the synthetic ones written from the known stream format (procedure in `test/fixtures/README.md`). Logged in, `POST /backend-api/f/conversation`:
-    - [ ] normal reply (instant model) — `normal-reply.sse`;
-    - [ ] thinking model with streamed reasoning summaries — `thinking-reply.sse`;
-    - [ ] regenerated reply — `regenerate.sse`;
-    - [ ] reply with a tool call (web search) — `tool-call.sse`;
-    - [ ] reply stopped by the user — `aborted.sse`;
-    - [ ] server error mid-stream — `error.sse`;
-    - [ ] full stream as the page receives it, ending on the client abort after `message_stream_complete` (the case met live, no `[DONE]`);
-    - [ ] drop `snapshots.sse` (legacy encoding) if no recording shows it anymore.
-- [ ] Logged-out mode: the web app uses `/unauth-mweb/…` instead of `/backend-api/…` (`conversation/prepare`, then `conversation/updates?operationId=…`, with no `POST /conversation` stream seen). Record these responses, identify which one carries the reply and its format, then extend the matching and the parser (or add a dedicated parser) with fixtures and tests.
+- [x] Record and anonymise real SSE fixtures, replacing the synthetic ones written from the known stream format (procedure in `test/fixtures/README.md`). Logged in, `POST /backend-api/f/conversation`:
+    - [x] normal reply (instant model) — `normal-reply.sse`, recorded: new messages arrive as bare `{ v: { message }, c }` and patches as `{ o: "patch", v }` without `p`; the parser handled both unchanged;
+    - [x] thinking model with streamed reasoning summaries — `thinking-reply.sse`, recorded and masked: the answer is streamed both as hidden fragments (`is_message_fragment`, `merged_message_id`) and as the visible merged message (`is_merged_message`) concatenating them; the parser counts the merged message only;
+    - [x] regenerated reply — `regenerate.sse`, recorded and masked: same format, `message_type: "variant"`, no user message echo;
+    - [x] reply with a tool call (web search) — covered by the recorded `thinking-reply.sse` (`web.run` call, tool results); `tool-call.sse` stays as a synthetic complement;
+    - [x] reply stopped by the user — `aborted.sse`, recorded and masked: the stream ends mid-patch, without `message_stream_complete` nor `[DONE]`;
+    - [x] server error mid-stream: no fixture. By design, a reply that ends in a server error is ignored like any unfinished stream (and error events are skipped explicitly, covered by inline tests); it cannot be triggered reliably to record it;
+    - [x] client abort after `message_stream_complete` (the case met live, no `[DONE]`): observed live, and replayed by the interceptor tests by cutting the recorded `normal-reply.sse` before `[DONE]` and failing it with an `AbortError`;
+    - [x] drop `snapshots.sse`: no recording shows the legacy full-snapshot encoding anymore. The parser still accepts it as a fallback, covered by inline tests.
+- [x] Logged-out mode: the web app uses `/unauth-mweb/…` (`conversation/prepare`, then `conversation/updates?operationId=…`), streaming newline-delimited JSON (`content` lines with `replace`/`append` markdown, `control` lifecycle ending with `terminal-received`). Dedicated adapter `adapters/chatgpt-logged-out.ts`, tested against a recorded fixture. The model is not exposed: the `gpt-5` fallback applies with `approximatedModel`.
+    - [x] Reply stopped by the user: recorded, the stream just ends with no `terminal-received` and is skipped.
+    - [ ] Record a logged-out reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
 - [ ] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply.
 - [x] Fixture-based adapter tests.
 - [x] ChatGPT model mapping (including `auto` and thinking variants).
