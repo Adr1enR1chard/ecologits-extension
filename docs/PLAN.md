@@ -127,14 +127,31 @@ Each phase ends with its acceptance criteria green in CI.
 
 ### Phase 2 — ChatGPT adapter + capture plumbing (Chrome & Firefox) — **MVP**
 
-- [ ] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
-- [ ] `bridge.content.ts`: validate and relay messages; handle background reply.
-- [ ] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
-- [ ] Record and anonymise SSE fixtures (normal reply, thinking model, regenerate, aborted stream, error).
-- [ ] Fixture-based adapter tests.
-- [ ] ChatGPT model mapping (including `auto` and thinking variants).
-- [ ] Adapter health: track last success / last failure per provider; parse errors never thrown into the page.
+- [x] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
+- [x] `bridge.content.ts`: validate and relay messages; handle background reply.
+- [x] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
+- [ ] Record and anonymise real SSE fixtures, replacing the synthetic ones written from the known stream format (procedure in `test/fixtures/README.md`). Logged in, `POST /backend-api/f/conversation`:
+    - [ ] normal reply (instant model) — `normal-reply.sse`;
+    - [ ] thinking model with streamed reasoning summaries — `thinking-reply.sse`;
+    - [ ] regenerated reply — `regenerate.sse`;
+    - [ ] reply with a tool call (web search) — `tool-call.sse`;
+    - [ ] reply stopped by the user — `aborted.sse`;
+    - [ ] server error mid-stream — `error.sse`;
+    - [ ] full stream as the page receives it, ending on the client abort after `message_stream_complete` (the case met live, no `[DONE]`);
+    - [ ] drop `snapshots.sse` (legacy encoding) if no recording shows it anymore.
+- [ ] Logged-out mode: the web app uses `/unauth-mweb/…` instead of `/backend-api/…` (`conversation/prepare`, then `conversation/updates?operationId=…`, with no `POST /conversation` stream seen). Record these responses, identify which one carries the reply and its format, then extend the matching and the parser (or add a dedicated parser) with fixtures and tests.
+- [ ] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply.
+- [x] Fixture-based adapter tests.
+- [x] ChatGPT model mapping (including `auto` and thinking variants).
+- [x] Adapter health: track last success / last failure per provider; parse errors never thrown into the page.
 - [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
+
+Implementation notes:
+
+- The interceptor and the bridge talk over a private `MessageChannel` set up at `document_start` (see `src/capture/channel.ts`) rather than `window.postMessage` with a token: captures never transit on `window`, so page scripts cannot read them or inject fake ones through window messages. This is best effort, not a security boundary: the interceptor shares its realm with the page, which could patch built-ins the parser relies on and distort captures; the bridge validates every message and the worst outcome is wrong local stats for that user.
+- ChatGPT aborts its own request right after `message_stream_complete`, so the stream copy usually ends with an `AbortError` instead of `[DONE]`. Interrupted streams are therefore still handed to the parser, which only records a reply if it saw a completion marker; streams stopped by the user, errored or unfinished produce no event and are not adapter failures. Only parser exceptions are reported as failures.
+- Development builds log each capture step to the page console (`[ecologits] …`, `console.debug`): matched or ignored requests, interruptions, skip reasons, relay to the background.
+- ChatGPT model slugs are canonicalised (`gpt-5-1-thinking` → `gpt-5.1`, `gpt-5-2-instant` → `gpt-5.2-chat-latest`); `auto`, `o3` and other unknown slugs use the `gpt-5` fallback with the `approximatedModel` flag.
 
 **Acceptance:** on chatgpt.com, each assistant reply produces one stored event with plausible values in both Chrome and Firefox; aborted/failed streams don't crash the page or produce events; fixture tests green.
 
