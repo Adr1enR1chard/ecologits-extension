@@ -10,7 +10,7 @@ Cross-browser extension (Chrome, Firefox, Edge, Safari) that estimates the envir
 
 ## Status
 
-🚧 Work in progress — see [`docs/PLAN.md`](docs/PLAN.md) for the roadmap.
+🚧 Work in progress
 
 ## Development
 
