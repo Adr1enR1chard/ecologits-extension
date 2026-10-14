@@ -107,6 +107,22 @@ describe("installFetchInterceptor", () => {
         expect(messages[0]).toMatchObject({ payload: { rawModel: "gpt-5-2-thinking" } });
     });
 
+    it("records the raw text of matched streams and how they ended", async () => {
+        const text = fixture("normal-reply");
+        const records: unknown[] = [];
+        const original = async () => streamResponse(text);
+        const win = { fetch: original as typeof fetch, location: { href: "https://chatgpt.com/" } };
+        installFetchInterceptor(win, {
+            adapters: [chatgptAdapter],
+            emit: () => undefined,
+            record: (stream) => records.push(stream),
+        });
+        await (await win.fetch(URL_CONVERSATION, post)).text();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        expect(records).toEqual([{ url: URL_CONVERSATION, end: "done", text }]);
+    });
+
     it("leaves unmatched requests alone", async () => {
         const { win, original, messages, settle } = setup(() => new Response("{}"));
         const response = await win.fetch("https://chatgpt.com/backend-api/me");
