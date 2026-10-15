@@ -47,13 +47,13 @@ describe("summarize", () => {
         expect(summarize(aggregates, "all", now).total?.requests).toBe(4);
     });
 
-    it("breaks totals down by provider and model, by decreasing energy", () => {
+    it("breaks totals down by provider and model, by decreasing GHG emissions", () => {
         const summary = summarize(aggregates, "all", now);
         expect(summary.byProvider.map((p) => [p.provider, p.requests])).toEqual([
             ["chatgpt", 3],
             ["claude", 1],
         ]);
-        expect(summary.byModel.map((m) => [m.model, m.impacts.total.energy.median])).toEqual([
+        expect(summary.byModel.map((m) => [m.model, m.impacts.total.gwp.median])).toEqual([
             ["gpt-4o", 3],
             ["gpt-5", 2],
             ["claude-sonnet-4-5", 1],
