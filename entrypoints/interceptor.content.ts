@@ -1,12 +1,13 @@
 import { chatgptAdapter } from "@/src/adapters/chatgpt";
 import { chatgptLoggedOutAdapter } from "@/src/adapters/chatgpt-logged-out";
+import { claudeAdapter } from "@/src/adapters/claude";
 import { offerChannel } from "@/src/capture/channel";
 import { installFetchInterceptor, type RecordedStream } from "@/src/capture/interceptor";
-import { matchPatterns } from "@/src/providers";
+import { SUPPORTED_PROVIDERS, matchPatterns } from "@/src/providers";
 
 // Main world: no extension APIs here, results go to the bridge content script.
 export default defineContentScript({
-    matches: matchPatterns("chatgpt"),
+    matches: matchPatterns(...SUPPORTED_PROVIDERS),
     world: "MAIN",
     runAt: "document_start",
     main() {
@@ -26,7 +27,7 @@ export default defineContentScript({
             : undefined;
         const emit = offerChannel(window, window.location.origin);
         installFetchInterceptor(window, {
-            adapters: [chatgptAdapter, chatgptLoggedOutAdapter],
+            adapters: [chatgptAdapter, chatgptLoggedOutAdapter, claudeAdapter],
             emit,
             debug,
             record,
