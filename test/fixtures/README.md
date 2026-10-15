@@ -36,6 +36,14 @@ Response streams of each provider's reply endpoint, replayed by the adapter test
 | `logged-out-reply.ndjson`   | **Recorded.** Logged-out reply from `/unauth-mweb/conversation/updates` (NDJSON); the safety HTML partial of the last `shared` line was trimmed                                                                                                            |
 | `logged-out-stopped.ndjson` | **Recorded.** Logged-out reply stopped by the user: `append` lines, then the stream just ends (no `terminal-received`, no `end`)                                                                                                                           |
 
-Fixtures not marked **Recorded** were written from the known ChatGPT stream
+## Claude
+
+| File               | Case                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `normal-reply.sse` | **Recorded.** Reply (`claude-sonnet-5-5`): `ping` and `conversation_ready` keep-alives, one text block, `message_limit` (account usage neutralised), `message_stop`                                          |
+| `tool-call.sse`    | **Recorded.** Reply with a tool call (`weather_fetch`): `tool_use` input streamed as `input_json_delta`, `tool_result` from the server, then the text. The location is replaced with `REDACTED` and `0.0000` |
+| `aborted.sse`      | **Recorded.** Reply with thinking, stopped by the user: the thinking block only streams a summary (`thinking_summary_delta`), then the text ends mid-block, without `message_stop`                           |
+
+Fixtures not marked **Recorded** were written from the known stream
 format, not recorded. Replace them
 with anonymised recordings as soon as possible: they are what keeps the adapter honest.
