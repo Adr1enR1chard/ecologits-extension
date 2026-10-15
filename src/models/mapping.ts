@@ -1,6 +1,7 @@
 import { models, type Providers } from "@ecologits/ecologits.js";
 import type { WebProvider } from "../messaging";
 import { canonicalizeChatGptSlug } from "./chatgpt-slugs";
+import { canonicalizeClaudeSlug } from "./claude-slugs";
 
 export interface ProviderModelMapping {
     ecologitsProvider: Providers;
@@ -24,7 +25,13 @@ export const MODEL_MAPPINGS: Readonly<Record<WebProvider, ProviderModelMapping>>
         },
         canonicalize: canonicalizeChatGptSlug,
     },
-    claude: { ecologitsProvider: "anthropic", fallback: "claude-sonnet-4-5", aliases: {} },
+    claude: {
+        ecologitsProvider: "anthropic",
+        // claude.ai only sends the model when it is not the default one.
+        fallback: "claude-sonnet-4-5",
+        aliases: {},
+        canonicalize: canonicalizeClaudeSlug,
+    },
     gemini: { ecologitsProvider: "google_genai", fallback: "gemini-2.5-flash", aliases: {} },
 };
 
