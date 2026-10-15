@@ -28,7 +28,7 @@ export const MODEL_MAPPINGS: Readonly<Record<WebProvider, ProviderModelMapping>>
     claude: {
         ecologitsProvider: "anthropic",
         // claude.ai only sends the model when it is not the default one.
-        fallback: "claude-sonnet-4-5",
+        fallback: "claude-sonnet-5-5",
         aliases: {},
         canonicalize: canonicalizeClaudeSlug,
     },
