@@ -186,6 +186,7 @@ function FlagNotes({ totals }: { totals: Totals }) {
             count: totals.approximatedModelRequests,
             label: "popupApproximatedCount",
         },
+        { flag: "partial", count: totals.partialRequests, label: "popupPartialCount" },
     ] as const;
     const shown = notes.filter(({ count }) => count > 0);
     if (shown.length === 0) return null;

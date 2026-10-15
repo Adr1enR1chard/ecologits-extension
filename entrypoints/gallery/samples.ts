@@ -45,7 +45,7 @@ export function sampleResult(overrides: Partial<ImpactResult> = {}): ImpactResul
         outputTokens: 742,
         latencySeconds: 9,
         impacts: impacts(0.0042),
-        flags: { lowerBound: false, approximatedModel: false },
+        flags: { lowerBound: false, approximatedModel: false, partial: false },
         warnings: [],
         errors: [],
         ...overrides,
@@ -55,7 +55,7 @@ export function sampleResult(overrides: Partial<ImpactResult> = {}): ImpactResul
 const REPLIES: [WebProvider, string, number, Partial<ImpactResult["flags"]>][] = [
     ["chatgpt", "gpt-5", 0.0042, {}],
     ["chatgpt", "gpt-5", 0.0031, { lowerBound: true }],
-    ["chatgpt", "gpt-5-mini", 0.0006, {}],
+    ["chatgpt", "gpt-5-mini", 0.0006, { partial: true }],
     ["claude", "claude-sonnet-5-5", 0.0027, {}],
     ["claude", "claude-opus-5-5", 0.0089, { approximatedModel: true }],
 ];
@@ -76,7 +76,12 @@ export function sampleAggregates(
                     model,
                     timestamp: now - day * 24 * HOUR - i * HOUR,
                     impacts: impacts(energy),
-                    flags: { lowerBound: false, approximatedModel: false, ...flags },
+                    flags: {
+                        lowerBound: false,
+                        approximatedModel: false,
+                        partial: false,
+                        ...flags,
+                    },
                 }),
             );
         });

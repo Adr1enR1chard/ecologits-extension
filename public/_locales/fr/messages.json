@@ -97,6 +97,20 @@
             }
         }
     },
+    "flagPartialTitle": {
+        "message": "Réponse interrompue"
+    },
+    "flagPartialHelp": {
+        "message": "La réponse a été arrêtée avant la fin : seule la partie générée jusque-là est comptée."
+    },
+    "popupPartialCount": {
+        "message": "Réponses arrêtées avant la fin : $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalencesTitle": {
         "message": "Émissions de GES équivalentes à"
     },
