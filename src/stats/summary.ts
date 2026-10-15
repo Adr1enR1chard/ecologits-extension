@@ -37,9 +37,9 @@ export interface ModelTotals extends Totals {
 export interface UsageSummary {
     /** `null` when nothing was recorded over the period. */
     total: Totals | null;
-    /** Sorted by decreasing median energy. */
+    /** Sorted by decreasing median GHG emissions. */
     byProvider: ProviderTotals[];
-    /** Sorted by decreasing median energy. */
+    /** Sorted by decreasing median GHG emissions. */
     byModel: ModelTotals[];
 }
 
@@ -82,8 +82,8 @@ export function periodStart(period: Period, now: number = Date.now()): string | 
     return toLocalDate(start.getTime());
 }
 
-function byEnergy(a: Totals, b: Totals): number {
-    return b.impacts.total.energy.median - a.impacts.total.energy.median;
+function byGwp(a: Totals, b: Totals): number {
+    return b.impacts.total.gwp.median - a.impacts.total.gwp.median;
 }
 
 /** Sums the daily aggregates of the period, overall, per provider and per model. */
@@ -112,7 +112,7 @@ export function summarize(
     }
     return {
         total,
-        byProvider: [...providers.values()].sort(byEnergy),
-        byModel: [...models.values()].sort(byEnergy),
+        byProvider: [...providers.values()].sort(byGwp),
+        byModel: [...models.values()].sort(byGwp),
     };
 }

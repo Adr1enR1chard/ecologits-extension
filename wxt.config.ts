@@ -17,6 +17,14 @@ export default defineConfig({
             },
         },
     },
+    hooks: {
+        // The gallery (`entrypoints/gallery/`) is for development only.
+        "entrypoints:resolved": (wxt, entrypoints) => {
+            if (wxt.config.mode !== "production") return;
+            const index = entrypoints.findIndex((entrypoint) => entrypoint.name === "gallery");
+            if (index !== -1) entrypoints.splice(index, 1);
+        },
+    },
     vite: () => ({
         plugins: [preact(), tailwindcss()],
     }),

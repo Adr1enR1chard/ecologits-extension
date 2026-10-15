@@ -1,0 +1,37 @@
+/*
+ * Design tokens shared by the popup, the options page and the badge.
+ *
+ * Colors resolve with `light-dark()`, so they follow the `color-scheme` of the element using
+ * them: the system theme in the popup and the options page, the host page's theme in the badge.
+ * `inline`, because Lightning CSS turns `light-dark()` into variables resolved where the value is
+ * declared: inlined in the utilities, it follows the nearest `color-scheme` (`scheme-*` classes).
+ * Brand colors come from ecologits.ai. Text colors keep a 4.5:1 contrast on every surface.
+ */
+@theme inline {
+    --color-brand: #00bf63;
+    --color-brand-ink: #0b3b36;
+
+    /* Page background, cards and segmented controls, raised elements (tooltips, selection). */
+    --color-canvas: light-dark(#ffffff, #101816);
+    --color-surface: light-dark(#f3f6f5, #18231f);
+    --color-raised: light-dark(#ffffff, #22302c);
+    --color-line: light-dark(#dfe6e3, #2c3b37);
+    --color-line-strong: light-dark(#c3cfcb, #415551);
+
+    --color-fg: light-dark(#0b2420, #e6eeeb);
+    --color-fg-muted: light-dark(#4b5d59, #a8b8b3);
+    --color-fg-subtle: light-dark(#5f716c, #8fa19c);
+
+    /* Links and selected states; `brand` is for fills only, too light for text on white. */
+    --color-accent: light-dark(#00773f, #2fd383);
+    --color-danger: light-dark(#b42318, #ff8b7e);
+    --color-danger-surface: light-dark(#fef3f2, #3a1a16);
+    --color-danger-line: light-dark(#f4b8b1, #7a2e26);
+}
+
+/* Keyboard focus ring, on everything focusable. */
+@utility focus-ring {
+    &:focus-visible {
+        @apply outline-2 outline-offset-2 outline-accent;
+    }
+}

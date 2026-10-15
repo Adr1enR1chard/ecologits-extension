@@ -19,10 +19,10 @@ describe("EQUIVALENCES", () => {
 describe("computeEquivalences", () => {
     it("divides the value by each matching factor", () => {
         const equivalences = [
-            { id: "a", criterion: "gwp", factor: 0.5, source: "", retrievedOn: "" },
-            { id: "b", criterion: "energy", factor: 2, source: "", retrievedOn: "" },
+            { id: "carKm", criterion: "gwp", factor: 0.5, source: "", retrievedOn: "" },
+            { id: "email", criterion: "energy", factor: 2, source: "", retrievedOn: "" },
         ] as const;
-        expect(computeEquivalences("gwp", 2, equivalences)).toEqual([{ id: "a", count: 4 }]);
+        expect(computeEquivalences("gwp", 2, equivalences)).toEqual([{ id: "carKm", count: 4 }]);
         expect(computeEquivalences("wcf", 2, equivalences)).toEqual([]);
     });
 });

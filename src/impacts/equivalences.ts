@@ -1,7 +1,9 @@
 import type { Criterion } from "../messaging";
 
+export type EquivalenceId = "carKm" | "videoStreamingHour" | "email" | "webSearch";
+
 export interface Equivalence {
-    id: string;
+    id: EquivalenceId;
     criterion: Criterion;
     /** Impact of one unit of the equivalent, in the criterion's EcoLogits unit. */
     factor: number;
@@ -49,7 +51,7 @@ export const EQUIVALENCES: readonly Equivalence[] = [
 ];
 
 export interface EquivalenceValue {
-    id: string;
+    id: EquivalenceId;
     /** How many units of the equivalent the impact amounts to. */
     count: number;
 }

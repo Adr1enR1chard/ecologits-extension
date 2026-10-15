@@ -4,6 +4,7 @@ import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { Badge } from "./Badge";
 import type { MountBadge } from "./manager";
 import { createPlacementKeeper } from "./placement";
+import { schemeOfText } from "./theme";
 
 /**
  * Mounts badges in a shadow root next to their reply, kept there while the page re-renders.
@@ -21,8 +22,10 @@ export function shadowRootBadgeMount(ctx: ContentScriptContext, locale: string):
             onMount(container, _shadow, host) {
                 // Match the text color around the reply, whatever the page theme.
                 const reply = document.querySelector(anchor.selector);
-                if (reply) host.style.setProperty("--ecologits-fg", getComputedStyle(reply).color);
-                render(<Badge result={result} locale={locale} />, container);
+                const color = reply ? getComputedStyle(reply).color : null;
+                if (color) host.style.setProperty("--ecologits-fg", color);
+                const scheme = color ? schemeOfText(color) : "light";
+                render(<Badge result={result} locale={locale} scheme={scheme} />, container);
                 return container;
             },
             onRemove(container) {
