@@ -193,7 +193,7 @@ Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) m
 - [ ] Validate end to end on chatgpt.com, logged in, in Firefox: one stored event per reply.
 - [ ] Exports in Firefox: `src/ui/download.ts` clicks a detached `<a>` and revokes the object URL right after; attach the link to the document and revoke later if Firefox drops or empties the download.
 - [x] Replies stopped by the user (#11): recorded with the output streamed until the stop, flagged `partial` (badge `…`, popup count, `partial` / `partial_requests` export columns). Storage schema v2 adds the flag to stored events and aggregates.
-- [ ] Validate replies stopped by the user end to end on chatgpt.com (logged in and out) and claude.ai: one stored event flagged `partial`, badge under the stopped reply.
+- [x] Validate replies stopped by the user end to end on chatgpt.com (logged in and out) and claude.ai: one stored event flagged `partial`, badge under the stopped reply. Done on 2026-10-15.
 - [ ] Logged-out mode: record a reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
 
 Implementation notes:
