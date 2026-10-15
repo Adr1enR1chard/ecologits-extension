@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { chatgptAdapter } from "../adapters/chatgpt";
+import { claudeAdapter } from "../adapters/claude";
 import type { ProviderAdapter } from "../adapters/types";
 import type { CaptureMessage } from "./channel";
 import { installFetchInterceptor } from "./interceptor";
@@ -202,5 +203,40 @@ describe("installFetchInterceptor", () => {
         expect(await (await win.fetch(URL_CONVERSATION, post)).text()).toBe("ok");
         await settle();
         expect(messages).toEqual([]);
+    });
+});
+
+describe("installFetchInterceptor on claude.ai", () => {
+    const COMPLETION =
+        "https://claude.ai/api/organizations/00000000-0000-4000-8000-0000000000aa/chat_conversations/00000000-0000-4000-8000-0000000000bb/completion";
+    const claudeFixture = (name: string) =>
+        readFileSync(new URL(`../../test/fixtures/claude/${name}.sse`, import.meta.url), "utf8");
+
+    it("captures a recorded reply and ignores one stopped by the user", async () => {
+        const responses = [claudeFixture("normal-reply"), claudeFixture("aborted")];
+        const { win, messages, settle } = setup(
+            () => streamResponse(responses.shift()!),
+            [chatgptAdapter, claudeAdapter],
+        );
+        for (let i = 0; i < 2; i++) {
+            const response = await win.fetch(COMPLETION, { method: "POST", body: "{}" });
+            await response.text();
+        }
+        await settle();
+
+        expect(messages).toEqual([
+            {
+                type: "captured-response",
+                payload: {
+                    provider: "claude",
+                    rawModel: "claude-sonnet-5-5",
+                    outputText: "Hello! How can I help you today?",
+                    reasoningText: null,
+                    hiddenReasoning: false,
+                    latencyMs: 500,
+                    messageId: "00000000-0000-4000-8000-000000000002",
+                },
+            },
+        ]);
     });
 });

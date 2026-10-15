@@ -1,0 +1,228 @@
+event: ping
+data: {"type":"ping"              }
+
+event: ping
+data: {"type":"ping"      }
+
+event: ping
+data: {"type":"ping"               }
+
+event: ping
+data: {"type":"ping" }
+
+event: ping
+data: {"type":"ping"    }
+
+event: ping
+data: {"type":"ping"  }
+
+event: ping
+data: {"type":"ping" }
+
+event: conversation_ready
+data: {"type":"conversation_ready"               }
+
+event: message_start
+data: {"type":"message_start","message":{"id":"chatcompl_00000000000000000000000005","type":"message","role":"assistant","model":"claude-sonnet-5-5","parent_uuid":"00000000-0000-4000-8000-000000000005","uuid":"00000000-0000-4000-8000-000000000006","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"trace_id":"REDACTED","request_id":"REDACTED"},"discarded_parent_message_uuid":null               }
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_00000000000000000000000001","name":"weather_fetch","input":{},"message":"Fetching weather","integration_name":null,"integration_icon_url":null,"tool_identifier":null,"icon_name":null,"context":null,"display_content":null,"approval_options":null,"approval_key":null,"approval_key_legacy":null,"is_mcp_app":null,"hidden_in_chat":null,"mcp_server_url":null,"start_timestamp":"2026-10-15T07:43:47.996841958Z","stop_timestamp":null,"flags":null}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}           }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"latit"}              }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ude\": 0"}    }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":".0000"}        }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":", \"long"}         }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"itude\":"} }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":" 0.0000"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":", \"loca"}  }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"tion_na"}           }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"me\": \"R"}       }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"EDACT"}    }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ED\"}"}              }
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":0,"stop_timestamp":"2026-10-15T07:43:48.363420624Z" }
+
+event: content_block_start
+data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_result","tool_use_id":"toolu_00000000000000000000000001","name":"weather_fetch","content":[{"text":"{\"location\":\"REDACTED\",\"country\":\"REDACTED\",\"current\":{\"temperature\":12.3,\"condition\":\"clear\",\"condition_text\":\"Mostly sunny\",\"is_day\":true},\"daily\":[{\"date\":\"2026-10-15\",\"day_of_week\":\"Thursday\",\"high\":23.5,\"low\":10.8,\"precipitation_chance\":10,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-16\",\"day_of_week\":\"Friday\",\"high\":19.7,\"low\":8.5,\"precipitation_chance\":10,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-17\",\"day_of_week\":\"Saturday\",\"high\":15.1,\"low\":5.5,\"precipitation_chance\":5,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-18\",\"day_of_week\":\"Sunday\",\"high\":12.8,\"low\":4.9,\"precipitation_chance\":20,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-19\",\"day_of_week\":\"Monday\",\"high\":14.4,\"low\":7.2,\"precipitation_chance\":15,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-20\",\"day_of_week\":\"Tuesday\",\"high\":15.1,\"low\":8.5,\"precipitation_chance\":0,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-21\",\"day_of_week\":\"Wednesday\",\"high\":15.1,\"low\":9.1,\"precipitation_chance\":15,\"precipitation_type\":\"rain\"},{\"date\":\"2026-10-22\",\"day_of_week\":\"Thursday\",\"high\":16.1,\"low\":9.6,\"precipitation_chance\":15,\"precipitation_type\":\"rain\"}]}","type":"text"}],"is_error":false,"structured_content":null,"meta":null,"message":null,"integration_name":null,"mcp_server_url":null,"integration_icon_url":null,"icon_name":null,"display_content":null,"hidden_in_chat":null,"start_timestamp":"2026-10-15T07:43:48.689676184Z","stop_timestamp":null,"flags":null} }
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":1,"stop_timestamp":"2026-10-15T07:43:48.689743007Z"         }
+
+event: content_block_start
+data: {"type":"content_block_start","index":2,"content_block":{"type":"text","text":"","citations":[],"start_timestamp":"2026-10-15T07:43:51.02420192Z","stop_timestamp":null,"flags":null}       }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"Aujourd'hui"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" à REDACTED, le tem"}       }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ps est pl"}    }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"utôt be"}          }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"au : "}             }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ens"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"oleillé en gr"}          }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ande partie, av"}        }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ec 12 "}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"°C en"}   }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" ce moment. L"}         }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"'après-midi s"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"era agréable, avec un"}               }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" maximum de 23,5"}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" °C, et la"}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" température"}       }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" min"} }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"imale est"}      }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" de 10,8 °C"} }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":". Le risque de plu"}              }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ie est faible (10 %"}  }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"),"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" donc p"}          }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"as besoin de paraplu"}              }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ie."} }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"\n\nPr"}        }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"évoyez une pet"}       }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ite veste pour le"}           }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" matin et la"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" soirée, car"}   }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" l"}           }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"'écart est mar"}     }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"qué entre le début et le"}              }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" milieu de journ"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ée. Les températures v"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ont baisser d"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ans les prochains jours :"}         }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" environ"}   }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" 20"}               }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" °C dem"}  }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"ain, pu"} }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"is 15 °C sam"}             }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"edi,"}        }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" avec des n"}            }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":"uits plus"}    }
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"text_delta","text":" fraîches."}           }
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":2,"stop_timestamp":"2026-10-15T07:43:51.036862639Z"            }
+
+event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null}               }
+
+event: message_limit
+data: {"type":"message_limit","message_limit":{"type":"within_limit","resetsAt":null,"remaining":null,"perModelLimit":null,"representativeClaim":"five_hour","overageDisabledReason":null,"overageInUse":false,"windows":{"5h":{"status":"within_limit","resets_at":0,"utilization":0},"7d":{"status":"within_limit","resets_at":0,"utilization":0}},"resolved":{"status":"ok","limit":{"kind":"session","group":"session","percent":0,"severity":"normal","resets_at":null,"scope":null,"is_active":true},"spend":null,"disabled_reason":null,"notice":null}}            }
+
+event: message_stop
+data: {"type":"message_stop"      }
+
