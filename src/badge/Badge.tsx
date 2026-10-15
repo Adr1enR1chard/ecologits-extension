@@ -1,11 +1,15 @@
+import { Fragment } from "preact";
 import { t } from "../i18n";
-import type { ImpactResult, Impacts } from "../messaging";
+import type { Criterion, ImpactResult, Impacts } from "../messaging";
 import { FlagIcons } from "../ui/FlagIcons";
 import { LeafIcon } from "../ui/Leaf";
 import { formatCount, formatImpact, formatRange } from "../ui/format";
 import { CRITERION_LABELS } from "../ui/labels";
 import { Tooltip } from "../ui/Tooltip";
 import type { ColorScheme } from "./theme";
+
+/** The criteria shown on the badge, and in its tooltip. */
+const BADGE_CRITERIA = ["energy", "gwp", "wcf"] as const satisfies readonly Criterion[];
 
 function Details({ result, impacts, locale }: BadgeProps & { impacts: Impacts }) {
     const model =
@@ -16,7 +20,7 @@ function Details({ result, impacts, locale }: BadgeProps & { impacts: Impacts })
         <>
             <span class="block font-semibold">{t("badgeLabel")}</span>
             <span class="mt-1 grid grid-cols-[auto_auto] gap-x-3">
-                {(["energy", "gwp"] as const).map((criterion) => (
+                {BADGE_CRITERIA.map((criterion) => (
                     <span key={criterion} class="contents">
                         <span class="text-fg-muted">{t(CRITERION_LABELS[criterion])}</span>
                         <span class="whitespace-nowrap">
@@ -40,7 +44,7 @@ interface BadgeProps {
     scheme?: ColorScheme;
 }
 
-/** Median energy and GHG emissions of a reply, with ranges and details on hover. */
+/** Median energy, GHG emissions and water of a reply, with ranges and details on hover. */
 export function Badge({ result, locale, scheme = "light" }: BadgeProps) {
     const { impacts } = result;
     if (impacts === null) return null;
@@ -55,9 +59,14 @@ export function Badge({ result, locale, scheme = "light" }: BadgeProps) {
                 <span class="inline-flex items-center gap-1.5 rounded-full border border-current/25 px-2 py-0.5 tabular-nums transition-colors group-hover:text-(--ecologits-fg) group-focus-visible:text-(--ecologits-fg)">
                     <LeafIcon />
                     <span class="sr-only">{t("badgeLabel")}</span>
-                    <span>{formatImpact("energy", impacts.total.energy.median, locale)}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{formatImpact("gwp", impacts.total.gwp.median, locale)}</span>
+                    {BADGE_CRITERIA.map((criterion, i) => (
+                        <Fragment key={criterion}>
+                            {i > 0 && <span aria-hidden="true">·</span>}
+                            <span>
+                                {formatImpact(criterion, impacts.total[criterion].median, locale)}
+                            </span>
+                        </Fragment>
+                    ))}
                 </span>
             </Tooltip>
             <span class="inline-flex items-center gap-1">

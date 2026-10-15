@@ -267,7 +267,7 @@
         "message": "Show the impact under each reply"
     },
     "optionsShowBadgeHelp": {
-        "message": "A badge with the estimated energy and GHG emissions of the reply, on the provider's page."
+        "message": "A badge with the estimated energy, GHG emissions and water of the reply, on the provider's page."
     },
     "optionsData": {
         "message": "Your data"
