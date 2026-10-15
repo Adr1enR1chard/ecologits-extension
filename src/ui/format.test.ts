@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatImpact, formatNumber, formatRange } from "./format";
+import {
+    formatCompactCount,
+    formatCompactNumber,
+    formatDateTime,
+    formatImpact,
+    formatNumber,
+    formatRange,
+} from "./format";
 
 describe("formatImpact", () => {
     it("picks the largest unit the value reaches", () => {
@@ -44,6 +51,28 @@ describe("formatNumber", () => {
     it("rounds to significant digits", () => {
         expect(formatNumber(1234.5678, "en")).toBe("1,230");
         expect(formatNumber(0.012345, "en", 2)).toBe("0.012");
+    });
+});
+
+describe("formatCompactCount", () => {
+    it("abbreviates large counts", () => {
+        expect(formatCompactCount(742, "en")).toBe("742");
+        expect(formatCompactCount(12_345, "en")).toBe("12K");
+        expect(formatCompactCount(1_500_000, "en")).toBe("1.5M");
+    });
+});
+
+describe("formatCompactNumber", () => {
+    it("keeps two significant digits and abbreviates large numbers", () => {
+        expect(formatCompactNumber(1.234, "en")).toBe("1.2");
+        expect(formatCompactNumber(0.0123, "en")).toBe("0.012");
+        expect(formatCompactNumber(12_345, "en")).toBe("12K");
+        expect(formatCompactNumber(0, "en")).toBe("0");
+    });
+
+    it("bounds tiny numbers", () => {
+        expect(formatCompactNumber(0.00031, "en")).toBe("<0.01");
+        expect(formatCompactNumber(0.00031, "fr")).toBe("<0,01");
     });
 });
 

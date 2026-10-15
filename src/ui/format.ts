@@ -55,6 +55,23 @@ export function formatCount(value: number, locale: string): string {
     return new Intl.NumberFormat(locale).format(value);
 }
 
+/** A count where room is short, e.g. `12K`; `formatCount` gives the full one. */
+export function formatCompactCount(value: number, locale: string): string {
+    return new Intl.NumberFormat(locale, { notation: "compact" }).format(value);
+}
+
+/**
+ * A number where room is short, e.g. `12K` or `1.5`; below `floor` it reads `<0.01`. `formatNumber`
+ * gives the precise one.
+ */
+export function formatCompactNumber(value: number, locale: string, floor = 0.01): string {
+    const { format } = new Intl.NumberFormat(locale, {
+        notation: "compact",
+        maximumSignificantDigits: 2,
+    });
+    return value > 0 && value < floor ? `<${format(floor)}` : format(value);
+}
+
 /** Formats a value given in the criterion's EcoLogits unit, e.g. `0.00017` kWh → `0.17 Wh`. */
 export function formatImpact(criterion: Criterion, value: number, locale: string): string {
     if (!Number.isFinite(value)) return "–";
