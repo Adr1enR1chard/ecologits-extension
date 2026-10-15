@@ -1,5 +1,6 @@
 /* Badge mounted in provider pages, inside a shadow root (`createShadowRootUi`). */
 @import "tailwindcss" source(none);
+@import "./tokens.css";
 @source "../badge";
 @source "../ui";
 
@@ -10,6 +11,7 @@
     --text-xs--line-height: 16px;
     --text-sm: 14px;
     --text-sm--line-height: 20px;
+    --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
 }

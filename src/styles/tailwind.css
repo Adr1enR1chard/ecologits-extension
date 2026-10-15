@@ -1,1 +1,13 @@
+/* Popup and options page, which follow the system theme. */
 @import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+    :root {
+        color-scheme: light dark;
+    }
+
+    body {
+        @apply bg-canvas text-fg;
+    }
+}
