@@ -10,15 +10,20 @@ const URL_CONVERSATION = "https://chatgpt.com/backend-api/f/conversation";
 const fixture = (name: string) =>
     readFileSync(new URL(`../../test/fixtures/chatgpt/${name}.sse`, import.meta.url), "utf8");
 
+const abortError = (): Error => new DOMException("The user aborted a request.", "AbortError");
+
 /** A response streaming `text` in small chunks, optionally erroring after `failAfter` chunks. */
-function streamResponse(text: string, { status = 200, failAfter = Infinity } = {}): Response {
+function streamResponse(
+    text: string,
+    { status = 200, failAfter = Infinity, error = abortError } = {},
+): Response {
     const bytes = new TextEncoder().encode(text);
     let offset = 0;
     let chunks = 0;
     const body = new ReadableStream<Uint8Array>({
         pull(controller) {
             if (chunks++ >= failAfter) {
-                controller.error(new DOMException("The user aborted a request.", "AbortError"));
+                controller.error(error());
             } else if (offset >= bytes.length) {
                 controller.close();
             } else {
@@ -153,10 +158,36 @@ describe("installFetchInterceptor", () => {
         });
     });
 
-    it("emits nothing for aborted, incomplete or failed replies", async () => {
+    it("captures replies stopped by the user as partial, timed until the stop", async () => {
+        const text = fixture("aborted");
+        const chunks = Math.ceil(new TextEncoder().encode(text).length / 50);
+        const { win, messages, settle } = setup(() => streamResponse(text, { failAfter: chunks }));
+        const response = await win.fetch(URL_CONVERSATION, post);
+        await response.text().catch(() => undefined);
+        await settle();
+
+        expect(messages).toHaveLength(1);
+        expect(messages[0]).toMatchObject({
+            type: "captured-response",
+            payload: {
+                messageId: "00000000-0000-4000-8000-00000000000c",
+                partial: true,
+                latencyMs: 500,
+            },
+        });
+    });
+
+    it("emits nothing for unfinished, failed or empty replies", async () => {
+        const text = fixture("aborted");
+        const chunks = Math.ceil(new TextEncoder().encode(text).length / 50);
+        const networkError = () => new TypeError("network error");
         for (const make of [
+            // Aborted before the assistant message.
             () => streamResponse(fixture("normal-reply"), { failAfter: 3 }),
-            () => streamResponse(fixture("aborted")),
+            // Closed before the end, without abort.
+            () => streamResponse(text),
+            // Cut by the network.
+            () => streamResponse(text, { failAfter: chunks, error: networkError }),
             () => streamResponse("Too many requests", { status: 429 }),
         ]) {
             const { win, messages, settle } = setup(make);
@@ -253,15 +284,20 @@ describe("installFetchInterceptor on claude.ai", () => {
     const claudeFixture = (name: string) =>
         readFileSync(new URL(`../../test/fixtures/claude/${name}.sse`, import.meta.url), "utf8");
 
-    it("captures a recorded reply and ignores one stopped by the user", async () => {
-        const responses = [claudeFixture("normal-reply"), claudeFixture("aborted")];
-        const { win, messages, settle } = setup(() => streamResponse(responses.shift()!), {
+    it("captures a recorded reply and one stopped by the user, flagged as partial", async () => {
+        const stopped = claudeFixture("aborted");
+        const chunks = Math.ceil(new TextEncoder().encode(stopped).length / 50);
+        const responses = [
+            () => streamResponse(claudeFixture("normal-reply")),
+            () => streamResponse(stopped, { failAfter: chunks }),
+        ];
+        const { win, messages, settle } = setup(() => responses.shift()!(), {
             ...chatgpt(),
             claude: { endpoints: [claudeCompletionEndpoint] },
         });
         for (let i = 0; i < 2; i++) {
             const response = await win.fetch(COMPLETION, { method: "POST", body: "{}" });
-            await response.text();
+            await response.text().catch(() => undefined);
         }
         await settle();
 
@@ -276,7 +312,16 @@ describe("installFetchInterceptor on claude.ai", () => {
                     hiddenReasoning: false,
                     latencyMs: 500,
                     messageId: "00000000-0000-4000-8000-000000000002",
+                    partial: false,
                 },
+            },
+            {
+                type: "captured-response",
+                payload: expect.objectContaining({
+                    provider: "claude",
+                    messageId: "00000000-0000-4000-8000-000000000009",
+                    partial: true,
+                }),
             },
         ]);
     });

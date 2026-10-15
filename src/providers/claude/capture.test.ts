@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { claudeCompletionEndpoint } from "./capture";
-import type { CapturedRequest, ParseOutcome } from "../../capture/types";
+import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ claude: { endpoints: [claudeCompletionEndpoint] } }, request)?.endpoint ===
@@ -28,10 +28,15 @@ function fixture(name: string): string {
     );
 }
 
-function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcome {
+function parse(
+    text: string,
+    chunkSize = Infinity,
+    req = request(),
+    end: StreamEnd = "done",
+): ParseOutcome {
     const parser = claudeCompletionEndpoint.createParser(req);
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
-    return parser.finish();
+    return parser.finish(end);
 }
 
 const event = (data: object) =>
@@ -88,6 +93,7 @@ describe("claude fixtures", () => {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: "00000000-0000-4000-8000-000000000002",
+                partial: false,
             },
         });
     });
@@ -113,10 +119,39 @@ describe("claude fixtures", () => {
         expect(reply.outputText).not.toContain("precipitation_chance");
     });
 
-    it("skips a recorded reply stopped by the user", () => {
-        expect(parse(fixture("aborted"))).toEqual({
+    it("records a recorded reply stopped by the user as partial", () => {
+        const outcome = parse(fixture("aborted"), Infinity, request(), "aborted");
+        expect(outcome).toMatchObject({
+            kind: "reply",
+            reply: {
+                rawModel: "claude-sonnet-5-5",
+                reasoningText: "Clarification d'une demande de texte sans sujet précisé.",
+                hiddenReasoning: true,
+                messageId: "00000000-0000-4000-8000-000000000009",
+                partial: true,
+            },
+        });
+        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
+        expect(reply.outputText).toMatch(/^# L'art de prendre son temps\n\nIl fut un temps/);
+    });
+
+    it("skips a reply cut before message_stop by a network error or a closed stream", () => {
+        for (const end of ["done", "failed"] as const) {
+            expect(parse(fixture("aborted"), Infinity, request(), end)).toEqual({
+                kind: "skip",
+                reason: "stream ended before message_stop",
+            });
+        }
+    });
+
+    it("skips an aborted stream with an error event", () => {
+        const text =
+            start() +
+            textBlock(0, "Hi") +
+            event({ type: "error", error: { type: "overloaded_error", message: "Overloaded" } });
+        expect(parse(text, Infinity, request(), "aborted")).toEqual({
             kind: "skip",
-            reason: "stream ended before message_stop",
+            reason: "error: Overloaded",
         });
     });
 
@@ -279,6 +314,7 @@ describe("claude parser edge cases", () => {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: "c1",
+                partial: false,
             },
         });
         expect(parse(completion("Hel", null))).toMatchObject({ kind: "skip" });

@@ -1,6 +1,6 @@
 import { isObject, parseJson, stringOrNull, type JsonObject } from "../../capture/decoders/json";
 import { NdjsonDecoder } from "../../capture/decoders/ndjson";
-import type { ParseOutcome, ReplyEndpoint, StreamParser } from "../../capture/types";
+import type { ParseOutcome, ReplyEndpoint, StreamEnd, StreamParser } from "../../capture/types";
 
 /**
  * ChatGPT web app when logged out (chatgpt.com).
@@ -12,6 +12,7 @@ import type { ParseOutcome, ReplyEndpoint, StreamParser } from "../../capture/ty
  * - `control`: lifecycle in `detail.kind`; `assistant-content-started` names the assistant
  *   message, `terminal-received` ends the turn with `terminalKind` (`"complete"` on success);
  * - `end`: last line. `shared` (HTML partials) and `state` lines are ignored.
+ * A reply stopped by the user ends with an `AbortError`, without `terminal-received` nor `end`.
  *
  * The model is not exposed, so the provider fallback applies.
  */
@@ -30,12 +31,15 @@ class LoggedOutParser implements StreamParser {
         for (const line of this.decoder.push(text)) this.handleLine(line);
     }
 
-    finish(): ParseOutcome {
+    finish(end: StreamEnd): ParseOutcome {
         for (const line of this.decoder.flush()) this.handleLine(line);
-        if (this.terminalKind === null) {
+        // A stopped reply only counts once the assistant message started.
+        const partial =
+            this.terminalKind === null && end === "aborted" && this.assistantIds.size > 0;
+        if (this.terminalKind === null && !partial) {
             return { kind: "skip", reason: "stream ended before terminal-received" };
         }
-        if (this.terminalKind !== "complete") {
+        if (this.terminalKind !== null && this.terminalKind !== "complete") {
             return { kind: "skip", reason: `terminal: ${this.terminalKind}` };
         }
         // Without an assistant marker, every content line belongs to the reply.
@@ -51,6 +55,7 @@ class LoggedOutParser implements StreamParser {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: this.replyId ?? ids.at(-1) ?? null,
+                partial,
             },
         };
     }

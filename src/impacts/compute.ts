@@ -103,6 +103,7 @@ export function computeImpact(
         flags: {
             lowerBound: captured.hiddenReasoning,
             approximatedModel: resolved.approximated,
+            partial: captured.partial,
         },
         warnings: toStatusCodes(output.warnings),
         errors: toStatusCodes(output.errors),

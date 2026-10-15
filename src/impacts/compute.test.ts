@@ -93,6 +93,13 @@ describe("computeImpact", () => {
         expect(result.flags.lowerBound).toBe(true);
     });
 
+    it("flags replies stopped by the user as partial", () => {
+        expect(computeImpact(capturedResponse(), timestamp).flags.partial).toBe(false);
+        const result = computeImpact(capturedResponse({ partial: true }), timestamp);
+        expect(result.flags.partial).toBe(true);
+        expect(result.impacts).not.toBeNull();
+    });
+
     it("falls back for unknown models and flags it", () => {
         const result = computeImpact(capturedResponse({ rawModel: "gpt-unknown" }), timestamp);
         expect(result.model).toBe(MODEL_MAPPINGS.chatgpt.fallback);
