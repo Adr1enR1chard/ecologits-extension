@@ -18,7 +18,8 @@
         "format:check": "prettier --check .",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
-        "postinstall": "wxt prepare"
+        "postinstall": "wxt prepare",
+        "icons": "node scripts/icons.mjs"
     },
     "dependencies": {
         "@ecologits/ecologits.js": "3.0.0",
