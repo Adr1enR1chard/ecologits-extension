@@ -22,6 +22,7 @@ export const PERIOD_LABELS: Readonly<Record<Period, MessageKey>> = {
 export const CRITERION_SHORT_LABELS: Readonly<Record<Criterion, MessageKey>> = {
     ...CRITERION_LABELS,
     gwp: "criterionGwpShort",
+    wcf: "criterionWcfShort",
 };
 
 export interface EquivalenceLabel {

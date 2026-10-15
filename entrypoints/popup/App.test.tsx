@@ -78,6 +78,19 @@ describe("Popup", () => {
         expect(screen.queryByText(/^popupApproximatedCount/)).toBeNull();
     });
 
+    it("shows the usage-only criteria up front, and not again in the details", () => {
+        const { container } = render(
+            <Popup aggregates={sampleAggregates(NOW)} statuses={sampleStatuses(NOW)} />,
+        );
+        expect(screen.getByText("criterionWcfShort")).toBeTruthy();
+        const details = [...container.querySelectorAll("details")].find((d) =>
+            d.textContent?.includes("detailsTitle"),
+        )!;
+        expect(details.textContent).toContain("criterionPe");
+        expect(details.textContent).not.toContain("criterionWcf");
+        expect(details.textContent).not.toContain("criterionEnergy");
+    });
+
     it("names the criterion of every breakdown value", () => {
         const { container } = render(
             <Popup
@@ -86,7 +99,7 @@ describe("Popup", () => {
             />,
         );
         const row = container.querySelector("button[aria-expanded]")!.closest("div")!;
-        expect(accessibleText(row)).toMatch(/criterionEnergy: .+criterionGwp: /);
+        expect(accessibleText(row)).toMatch(/criterionEnergy: .+criterionGwp: .+criterionWcf: /);
     });
 
     it("folds the models of each provider, unless there is a single one", () => {

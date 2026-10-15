@@ -43,6 +43,9 @@
         "message": "Primary energy"
     },
     "criterionWcf": {
+        "message": "Water (usage only)"
+    },
+    "criterionWcfShort": {
         "message": "Water"
     },
     "rangeLabel": {
