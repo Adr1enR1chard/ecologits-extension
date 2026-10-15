@@ -8,6 +8,11 @@ export const MAX_EVENTS = 500;
 export const eventsItem = storage.defineItem<ImpactResult[]>("local:events", {
     fallback: [],
     version: SCHEMA_VERSION,
+    migrations: {
+        // v2: replies stopped by the user are recorded, flagged as partial.
+        2: (events: ImpactResult[]): ImpactResult[] =>
+            events.map((e) => ({ ...e, flags: { ...e.flags, partial: false } })),
+    },
 });
 
 /** Returns a copy of `events` with `event` appended, keeping only the newest `max` events. */

@@ -1,5 +1,5 @@
 /** Version of every stored item; bump it and add WXT `migrations` when a shape changes. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 let queue: Promise<unknown> = Promise.resolve();
 

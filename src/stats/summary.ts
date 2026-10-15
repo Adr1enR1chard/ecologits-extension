@@ -22,6 +22,7 @@ export interface Totals {
     outputTokens: number;
     lowerBoundRequests: number;
     approximatedModelRequests: number;
+    partialRequests: number;
     impacts: Impacts;
 }
 
@@ -55,6 +56,7 @@ export function emptyTotals(): Totals {
         outputTokens: 0,
         lowerBoundRequests: 0,
         approximatedModelRequests: 0,
+        partialRequests: 0,
         impacts: {
             total: zeroPhase(CRITERIA) as CriterionImpacts,
             usage: zeroPhase(CRITERIA) as CriterionImpacts,
@@ -70,6 +72,7 @@ function addTotals<T extends Totals>(a: T, b: Totals): T {
         outputTokens: a.outputTokens + b.outputTokens,
         lowerBoundRequests: a.lowerBoundRequests + b.lowerBoundRequests,
         approximatedModelRequests: a.approximatedModelRequests + b.approximatedModelRequests,
+        partialRequests: a.partialRequests + b.partialRequests,
         impacts: addImpacts(a.impacts, b.impacts),
     };
 }

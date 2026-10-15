@@ -15,7 +15,7 @@ describe("aggregatesToCsv", () => {
         const aggregates = addToAggregates({}, impactResult());
         const [header, row, ...rest] = parseCsv(aggregatesToCsv(aggregates));
         const columns = header!.split(",");
-        expect(columns.slice(0, 7)).toEqual([
+        expect(columns.slice(0, 8)).toEqual([
             "date",
             "provider",
             "model",
@@ -23,11 +23,12 @@ describe("aggregatesToCsv", () => {
             "output_tokens",
             "lower_bound_requests",
             "approximated_model_requests",
+            "partial_requests",
         ]);
         expect(columns).toContain("total_energy_kWh_median");
         expect(columns).toContain("embodied_gwp_kgCO2eq_max");
         // 5 total + 5 usage + 3 embodied criteria, 3 bounds each.
-        expect(columns).toHaveLength(7 + 13 * 3);
+        expect(columns).toHaveLength(8 + 13 * 3);
         const cells = row!.split(",");
         expect(cells).toHaveLength(columns.length);
         expect(cells.slice(0, 5)).toEqual(["2026-10-14", "chatgpt", "gpt-5", "1", "100"]);

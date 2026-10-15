@@ -26,7 +26,7 @@ describe("summarize", () => {
             timestamp: daysAgo(0),
             model: "gpt-4o",
             impacts: uniformImpacts(3),
-            flags: { lowerBound: true, approximatedModel: false },
+            flags: { lowerBound: true, approximatedModel: false, partial: false },
         }),
         impactResult({ timestamp: daysAgo(6), provider: "claude", model: "claude-sonnet-4-5" }),
         impactResult({ timestamp: daysAgo(40) }),
@@ -40,6 +40,7 @@ describe("summarize", () => {
             outputTokens: 200,
             lowerBoundRequests: 1,
             approximatedModelRequests: 0,
+            partialRequests: 0,
             impacts: uniformImpacts(4),
         });
         expect(summarize(aggregates, "7d", now).total?.requests).toBe(3);

@@ -14,7 +14,7 @@ describe("addToAggregates", () => {
     it("creates an entry for a new day, provider and model", () => {
         const aggregates = addToAggregates(
             {},
-            impactResult({ flags: { lowerBound: true, approximatedModel: false } }),
+            impactResult({ flags: { lowerBound: true, approximatedModel: false, partial: true } }),
         );
         expect(aggregates).toEqual({
             [key]: {
@@ -25,6 +25,7 @@ describe("addToAggregates", () => {
                 outputTokens: 100,
                 lowerBoundRequests: 1,
                 approximatedModelRequests: 0,
+                partialRequests: 1,
                 impacts: uniformImpacts(1),
             },
         });
@@ -37,7 +38,7 @@ describe("addToAggregates", () => {
             impactResult({
                 outputTokens: 50,
                 impacts: uniformImpacts(2),
-                flags: { lowerBound: false, approximatedModel: true },
+                flags: { lowerBound: false, approximatedModel: true, partial: false },
             }),
         );
         expect(aggregates[key]).toMatchObject({
@@ -45,6 +46,7 @@ describe("addToAggregates", () => {
             outputTokens: 150,
             lowerBoundRequests: 0,
             approximatedModelRequests: 1,
+            partialRequests: 0,
             impacts: uniformImpacts(3),
         });
         // Inputs are not mutated.
