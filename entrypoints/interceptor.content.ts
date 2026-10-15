@@ -1,9 +1,7 @@
-import { chatgptConversationEndpoint } from "@/src/adapters/chatgpt";
-import { chatgptLoggedOutEndpoint } from "@/src/adapters/chatgpt-logged-out";
-import { claudeCompletionEndpoint } from "@/src/adapters/claude";
 import { offerChannel } from "@/src/capture/channel";
 import { installFetchInterceptor, type RecordedStream } from "@/src/capture/interceptor";
-import { SUPPORTED_PROVIDERS, matchPatterns } from "@/src/providers";
+import { CAPTURES } from "@/src/providers/capture";
+import { SUPPORTED_PROVIDERS, matchPatterns } from "@/src/providers/registry";
 
 // Main world: no extension APIs here, results go to the bridge content script.
 export default defineContentScript({
@@ -27,10 +25,7 @@ export default defineContentScript({
             : undefined;
         const emit = offerChannel(window, window.location.origin);
         installFetchInterceptor(window, {
-            captures: {
-                chatgpt: { endpoints: [chatgptConversationEndpoint, chatgptLoggedOutEndpoint] },
-                claude: { endpoints: [claudeCompletionEndpoint] },
-            },
+            captures: CAPTURES,
             emit,
             debug,
             record,

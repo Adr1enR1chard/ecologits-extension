@@ -5,7 +5,12 @@ import { shadowRootBadgeMount } from "@/src/badge/mount";
 import { relay } from "@/src/capture/bridge";
 import { acceptChannel } from "@/src/capture/channel";
 import { uiLocale } from "@/src/i18n";
-import { SUPPORTED_PROVIDERS, matchPatterns, providerForHost } from "@/src/providers";
+import {
+    SUPPORTED_PROVIDERS,
+    isSupportedProvider,
+    matchPatterns,
+    providerForHost,
+} from "@/src/providers/registry";
 import { DEFAULT_SETTINGS, getSettings, watchSettings } from "@/src/storage/settings";
 
 export default defineContentScript({
@@ -14,7 +19,7 @@ export default defineContentScript({
     cssInjectionMode: "ui",
     async main(ctx) {
         const provider = providerForHost(window.location.hostname);
-        if (provider === null) return;
+        if (!isSupportedProvider(provider)) return;
         const debug = import.meta.env.DEV
             ? (step: string, details?: unknown) => console.debug("[ecologits]", step, details ?? "")
             : () => undefined;
@@ -25,7 +30,7 @@ export default defineContentScript({
         };
         // Disabled until the settings are read; replies captured meanwhile are shown then.
         const badges = createBadgeManager({
-            findAnchor: (messageId) => findReplyAnchor(document, messageId, { provider }),
+            findAnchor: (messageId) => findReplyAnchor(document, messageId, provider),
             mount: shadowRootBadgeMount(ctx, uiLocale()),
             enabled: false,
             debug,

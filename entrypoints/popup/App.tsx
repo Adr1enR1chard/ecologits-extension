@@ -5,13 +5,12 @@ import { t, uiLocale } from "@/src/i18n";
 import { computeEquivalences } from "@/src/impacts/equivalences";
 import {
     CRITERIA,
-    WEB_PROVIDERS,
     isEmbodiedCriterion,
     type AdapterStatus,
     type Criterion,
     type WebProvider,
 } from "@/src/messaging";
-import { PROVIDER_NAMES, SUPPORTED_PROVIDERS } from "@/src/providers";
+import { PROVIDER_META, WEB_PROVIDERS, isSupportedProvider } from "@/src/providers/registry";
 import {
     PERIODS,
     summarize,
@@ -289,7 +288,7 @@ function ProviderBreakdown({
     initiallyOpen: boolean;
 }) {
     const [open, setOpen] = useState(initiallyOpen);
-    const name = PROVIDER_NAMES[totals.provider];
+    const name = PROVIDER_META[totals.provider].name;
     const replies = t("repliesCount", formatCount(totals.requests, locale));
     return (
         <li class="border-t border-line">
@@ -431,7 +430,7 @@ function AdapterStatuses({ statuses }: { statuses: AdapterStatuses }) {
                 const status = statuses[provider] ?? emptyStatus(provider);
                 let dot = "border border-line-strong";
                 let text = t("adapterUnsupported");
-                if (SUPPORTED_PROVIDERS.includes(provider)) {
+                if (isSupportedProvider(provider)) {
                     const health = adapterHealth(status);
                     if (health === "ok") {
                         dot = "bg-brand";
@@ -454,7 +453,7 @@ function AdapterStatuses({ statuses }: { statuses: AdapterStatuses }) {
                             content={
                                 <>
                                     <span class="block font-semibold">
-                                        {PROVIDER_NAMES[provider]}
+                                        {PROVIDER_META[provider].name}
                                     </span>
                                     {text}
                                 </>
@@ -466,7 +465,7 @@ function AdapterStatuses({ statuses }: { statuses: AdapterStatuses }) {
                                     aria-hidden="true"
                                     class={`size-1.5 shrink-0 rounded-full ${dot}`}
                                 />
-                                <span class="sr-only">{PROVIDER_NAMES[provider]}</span>
+                                <span class="sr-only">{PROVIDER_META[provider].name}</span>
                             </span>
                         </Tooltip>
                     </li>

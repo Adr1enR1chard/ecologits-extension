@@ -1,39 +1,7 @@
 import { models, type Providers } from "@ecologits/ecologits.js";
-import type { WebProvider } from "../messaging";
-import { canonicalizeChatGptSlug } from "./chatgpt-slugs";
-import { canonicalizeClaudeSlug } from "./claude-slugs";
-
-export interface ProviderModelMapping {
-    ecologitsProvider: Providers;
-    /** EcoLogits model used when the web model is unknown or not exposed. */
-    fallback: string;
-    /** Normalised web slug → EcoLogits model ID, for slugs EcoLogits does not know as-is. */
-    aliases: Readonly<Record<string, string>>;
-    /** Rewrites a normalised web slug into its EcoLogits form, tried after the aliases. */
-    canonicalize?: (slug: string) => string;
-}
-
-// Aliases are filled in by each provider adapter phase.
-export const MODEL_MAPPINGS: Readonly<Record<WebProvider, ProviderModelMapping>> = {
-    chatgpt: {
-        ecologitsProvider: "openai",
-        // Also used for "auto", where ChatGPT picks the model.
-        fallback: "gpt-5",
-        aliases: {
-            // ChatGPT's former default, absent from EcoLogits as `gpt-4o-chat-latest`.
-            "chatgpt-4o-latest": "gpt-4o",
-        },
-        canonicalize: canonicalizeChatGptSlug,
-    },
-    claude: {
-        ecologitsProvider: "anthropic",
-        // claude.ai only sends the model when it is not the default one.
-        fallback: "claude-sonnet-5-5",
-        aliases: {},
-        canonicalize: canonicalizeClaudeSlug,
-    },
-    gemini: { ecologitsProvider: "google_genai", fallback: "gemini-2.5-flash", aliases: {} },
-};
+import { MODEL_MAPPINGS } from "../providers/models";
+import type { SupportedProvider } from "../providers/registry";
+import type { ProviderModels } from "../providers/types";
 
 export interface ResolvedModel {
     ecologitsProvider: Providers;
@@ -50,9 +18,9 @@ export function normalizeSlug(slug: string): string {
  * canonical slug, then the provider fallback.
  */
 export function resolveModel(
-    provider: WebProvider,
+    provider: SupportedProvider,
     rawModel: string | null,
-    mappings: Readonly<Record<WebProvider, ProviderModelMapping>> = MODEL_MAPPINGS,
+    mappings: Readonly<Record<SupportedProvider, ProviderModels>> = MODEL_MAPPINGS,
 ): ResolvedModel {
     const { ecologitsProvider, fallback, aliases, canonicalize } = mappings[provider];
     if (rawModel !== null) {

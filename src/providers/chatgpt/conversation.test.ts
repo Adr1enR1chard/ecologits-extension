@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../capture/adapter-contract";
-import { findEndpoint } from "../capture/interceptor";
-import { applyDelta, chatgptConversationEndpoint } from "./chatgpt";
-import type { CapturedRequest, ParseOutcome } from "../capture/types";
+import { describeAdapterContract } from "../../capture/adapter-contract";
+import { findEndpoint } from "../../capture/interceptor";
+import { applyDelta, chatgptConversationEndpoint } from "./conversation";
+import type { CapturedRequest, ParseOutcome } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ chatgpt: { endpoints: [chatgptConversationEndpoint] } }, request)?.endpoint ===
@@ -20,7 +20,7 @@ function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
 
 function fixture(name: string): string {
     return readFileSync(
-        new URL(`../../test/fixtures/chatgpt/${name}.sse`, import.meta.url),
+        new URL(`../../../test/fixtures/chatgpt/${name}.sse`, import.meta.url),
         "utf8",
     );
 }

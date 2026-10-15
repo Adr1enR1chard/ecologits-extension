@@ -3,8 +3,13 @@
  * the background service worker and the extension pages.
  */
 
-export const WEB_PROVIDERS = ["chatgpt", "claude", "gemini"] as const;
-export type WebProvider = (typeof WEB_PROVIDERS)[number];
+import {
+    isSupportedProvider,
+    type SupportedProvider,
+    type WebProvider,
+} from "./providers/registry";
+
+export type { SupportedProvider, WebProvider };
 
 /** Impact criteria reported by EcoLogits. */
 export const CRITERIA = ["energy", "gwp", "adpe", "pe", "wcf"] as const;
@@ -55,7 +60,7 @@ export interface StatusCode {
 
 /** What an adapter extracts from a provider response stream. */
 export interface CapturedResponse {
-    provider: WebProvider;
+    provider: SupportedProvider;
     /** Model slug as exposed by the web app, `null` when not exposed. */
     rawModel: string | null;
     outputText: string;
@@ -96,7 +101,7 @@ export interface AdapterStatus {
 
 export type BackgroundMessage =
     | { type: "captured-response"; payload: CapturedResponse }
-    | { type: "adapter-failure"; provider: WebProvider; error: string }
+    | { type: "adapter-failure"; provider: SupportedProvider; error: string }
     | { type: "get-adapter-status" }
     | { type: "clear-usage-data" };
 
@@ -123,14 +128,10 @@ export function isEmbodiedCriterion(criterion: Criterion): criterion is Embodied
     return (EMBODIED_CRITERIA as readonly Criterion[]).includes(criterion);
 }
 
-export function isWebProvider(value: unknown): value is WebProvider {
-    return (WEB_PROVIDERS as readonly unknown[]).includes(value);
-}
-
 export function isCapturedResponse(value: unknown): value is CapturedResponse {
     return (
         isRecord(value) &&
-        isWebProvider(value.provider) &&
+        isSupportedProvider(value.provider) &&
         isNullableString(value.rawModel) &&
         typeof value.outputText === "string" &&
         isNullableString(value.reasoningText) &&
@@ -146,7 +147,7 @@ export function isBackgroundMessage(value: unknown): value is BackgroundMessage 
         case "captured-response":
             return isCapturedResponse(value.payload);
         case "adapter-failure":
-            return isWebProvider(value.provider) && typeof value.error === "string";
+            return isSupportedProvider(value.provider) && typeof value.error === "string";
         case "get-adapter-status":
         case "clear-usage-data":
             return true;

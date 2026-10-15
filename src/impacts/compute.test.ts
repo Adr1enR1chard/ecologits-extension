@@ -1,7 +1,7 @@
 import { RangeValue, logger } from "@ecologits/ecologits.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CRITERIA, EMBODIED_CRITERIA, type ImpactRange } from "../messaging";
-import { MODEL_MAPPINGS } from "../models/mapping";
+import { MODEL_MAPPINGS } from "../providers/models";
 import { capturedResponse } from "../test-utils";
 import { computeImpact, countTokens, toRange } from "./compute";
 

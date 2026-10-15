@@ -14,7 +14,8 @@ import type {
     Impacts,
     StatusCode,
 } from "../messaging";
-import { MODEL_MAPPINGS, resolveModel } from "../models/mapping";
+import { resolveModel } from "../models/mapping";
+import { MODEL_MAPPINGS } from "../providers/models";
 
 // Replies may legitimately contain special-token strings such as "<|endoftext|>": count them
 // as plain text instead of throwing.

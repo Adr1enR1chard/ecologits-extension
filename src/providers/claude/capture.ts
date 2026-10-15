@@ -4,9 +4,15 @@ import {
     requestedModel,
     stringOrNull,
     type JsonObject,
-} from "../capture/decoders/json";
-import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
-import type { CapturedRequest, ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
+} from "../../capture/decoders/json";
+import { SseDecoder, type SseEvent } from "../../capture/decoders/sse";
+import type {
+    CapturedRequest,
+    ParseOutcome,
+    ProviderCapture,
+    ReplyEndpoint,
+    StreamParser,
+} from "../../capture/types";
 
 /**
  * Claude web app (claude.ai).
@@ -209,3 +215,5 @@ export const claudeCompletionEndpoint: ReplyEndpoint = {
     path: COMPLETION_PATH,
     createParser: (request) => new ClaudeParser(request),
 };
+
+export const claudeCapture: ProviderCapture = { endpoints: [claudeCompletionEndpoint] };

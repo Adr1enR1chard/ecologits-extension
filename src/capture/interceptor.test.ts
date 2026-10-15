@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { chatgptConversationEndpoint } from "../adapters/chatgpt";
-import { claudeCompletionEndpoint } from "../adapters/claude";
+import { chatgptConversationEndpoint } from "../providers/chatgpt/conversation";
+import { claudeCompletionEndpoint } from "../providers/claude/capture";
 import type { CaptureMessage } from "./channel";
 import { findEndpoint, installFetchInterceptor, type Captures } from "./interceptor";
 import type { ReplyEndpoint } from "./types";

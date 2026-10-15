@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../capture/adapter-contract";
-import { findEndpoint } from "../capture/interceptor";
-import { chatgptLoggedOutEndpoint } from "./chatgpt-logged-out";
-import type { CapturedRequest, ParseOutcome } from "../capture/types";
+import { describeAdapterContract } from "../../capture/adapter-contract";
+import { findEndpoint } from "../../capture/interceptor";
+import { chatgptLoggedOutEndpoint } from "./logged-out";
+import type { CapturedRequest, ParseOutcome } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ chatgpt: { endpoints: [chatgptLoggedOutEndpoint] } }, request)?.endpoint ===
@@ -11,7 +11,7 @@ const matches = (request: CapturedRequest) =>
 
 const UPDATES = "https://chatgpt.com/unauth-mweb/conversation/updates?operationId=1";
 const read = (name: string) =>
-    readFileSync(new URL(`../../test/fixtures/chatgpt/${name}.ndjson`, import.meta.url), "utf8");
+    readFileSync(new URL(`../../../test/fixtures/chatgpt/${name}.ndjson`, import.meta.url), "utf8");
 const fixture = read("logged-out-reply");
 const stopped = read("logged-out-stopped");
 
