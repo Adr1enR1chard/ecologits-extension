@@ -18,13 +18,32 @@ interface TooltipProps {
     children: ComponentChildren;
     side?: keyof typeof SIDES;
     align?: keyof typeof ALIGNMENTS;
+    /**
+     * Whether the trigger is made focusable. `false` when `children` are focusable themselves (a
+     * button), which then name themselves: the tooltip opens while they have the keyboard focus.
+     */
+    focusable?: boolean;
+    /**
+     * Whether the tooltip describes the trigger to screen readers. `false` when the trigger already
+     * holds the same text, e.g. as an `sr-only` label, so it is not announced twice.
+     */
+    describes?: boolean;
+    class?: string;
 }
 
 /**
  * Shows `content` while `children` are hovered or focused, until Escape is pressed. Tooltips must
  * not be nested: the `group` hover of an outer tooltip would also open the inner ones.
  */
-export function Tooltip({ content, children, side = "top", align = "center" }: TooltipProps) {
+export function Tooltip({
+    content,
+    children,
+    side = "top",
+    align = "center",
+    focusable = true,
+    describes = true,
+    class: className,
+}: TooltipProps) {
     const id = useId();
     const [hovered, setHovered] = useState(false);
     const [dismissed, setDismissed] = useState(false);
@@ -41,15 +60,15 @@ export function Tooltip({ content, children, side = "top", align = "center" }: T
 
     return (
         <span
-            class="group focus-ring relative inline-flex rounded-sm"
-            tabIndex={0}
-            aria-describedby={id}
+            class={`group relative inline-flex rounded-sm ${focusable ? "focus-ring" : ""} ${className ?? ""}`}
+            tabIndex={focusable ? 0 : undefined}
+            aria-describedby={focusable && describes ? id : undefined}
             onMouseEnter={() => {
                 setHovered(true);
                 setDismissed(false);
             }}
             onMouseLeave={() => setHovered(false)}
-            onFocus={() => setDismissed(false)}
+            onFocusIn={() => setDismissed(false)}
             onKeyDown={(event) => {
                 if (event.key === "Escape") setDismissed(true);
             }}
@@ -61,7 +80,11 @@ export function Tooltip({ content, children, side = "top", align = "center" }: T
                 class={`invisible absolute z-10 w-max max-w-72 opacity-0 transition-opacity ${
                     dismissed
                         ? "hidden"
-                        : "group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100"
+                        : `group-hover:visible group-hover:opacity-100 ${
+                              focusable
+                                  ? "group-focus-visible:visible group-focus-visible:opacity-100"
+                                  : "group-has-focus-visible:visible group-has-focus-visible:opacity-100"
+                          }`
                 } ${SIDES[side]} ${ALIGNMENTS[align]}`}
             >
                 <span class="block rounded-md border border-line bg-raised px-2.5 py-2 text-left text-xs leading-snug font-normal whitespace-normal text-fg shadow-lg">

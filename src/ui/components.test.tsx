@@ -36,11 +36,11 @@ describe("Tooltip", () => {
         render(<Tooltip content="Details">Value</Tooltip>);
         const trigger = screen.getByText("Value");
         const tooltip = screen.getByRole("tooltip");
-        fireEvent.focus(trigger);
+        fireEvent.focusIn(trigger);
         expect(isShown(tooltip)).toBe(true);
         fireEvent.keyDown(trigger, { key: "Escape" });
         expect(isShown(tooltip)).toBe(false);
-        fireEvent.focus(trigger);
+        fireEvent.focusIn(trigger);
         expect(isShown(tooltip)).toBe(true);
     });
 
