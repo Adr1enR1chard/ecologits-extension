@@ -8,6 +8,8 @@ Cross-browser extension (Chrome, Firefox, Edge, Safari) that estimates the envir
 - Anthropic (Claude)
 - Google (Gemini) (TODO)
 
+To add one, see [Adding a provider](docs/adding-a-provider.md).
+
 ## Status
 
 🚧 Work in progress

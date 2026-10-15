@@ -1,7 +1,8 @@
 # Adapter fixtures
 
 Response streams of each provider's reply endpoint, replayed by the adapter tests
-(`src/adapters/*.test.ts`), which also re-split them into chunks of various sizes.
+(`src/providers/*/*.test.ts`), which also re-split them into chunks of various sizes
+(`src/capture/adapter-contract.ts`).
 
 ## Recording a fixture
 

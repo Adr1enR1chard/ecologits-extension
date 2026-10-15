@@ -68,14 +68,23 @@ ecologits-extension/
 │   ├── popup/                     # Preact app
 │   └── options/                   # Preact app
 ├── src/
-│   ├── adapters/
-│   │   ├── types.ts               # ProviderAdapter interface, CapturedResponse
-│   │   ├── chatgpt.ts
-│   │   ├── claude.ts
-│   │   └── gemini.ts
+│   ├── providers/                 # one folder per provider, see docs/adding-a-provider.md
+│   │   ├── types.ts               # ProviderMeta, ProviderModels, ProviderPage
+│   │   ├── registry.ts            # dependency-free metadata: ids, hosts, names, status
+│   │   ├── capture.ts             # endpoints registry → main-world interceptor only
+│   │   ├── models.ts              # model mapping registry → background
+│   │   ├── page.ts                # reply markup registry → bridge
+│   │   ├── chatgpt/               # meta, capture (+ parsers), slugs, models, page
+│   │   ├── claude/                # meta, capture, models, page
+│   │   └── gemini/                # meta only (planned)
+│   ├── capture/
+│   │   ├── types.ts               # CapturedRequest, StreamParser, ReplyEndpoint
+│   │   ├── decoders/              # SSE, NDJSON, JSON helpers
+│   │   ├── adapter-contract.ts    # test suite shared by every adapter
+│   │   ├── interceptor.ts         # fetch patch, endpoint matching by host
+│   │   └── channel.ts · bridge.ts # interceptor ↔ bridge
 │   ├── models/
-│   │   ├── mapping.ts             # web slug → EcoLogits model ID, fallbacks
-│   │   └── mapping.test.ts
+│   │   └── mapping.ts             # web slug → EcoLogits model ID resolution
 │   ├── impacts/
 │   │   ├── compute.ts             # tokenizer + llmImpacts wrapper, range → median/min/max
 │   │   └── equivalences.ts        # ADEME factors + sources
@@ -131,7 +140,7 @@ Each phase ends with its acceptance criteria green in CI.
 
 - [x] `interceptor.content.ts` (main world, `document_start`): patch `window.fetch`, route matching URLs to the right adapter, tee the stream, measure latency (request start → stream end), post result to the bridge.
 - [x] `bridge.content.ts`: validate and relay messages; handle background reply.
-- [x] `adapters/chatgpt.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
+- [x] `providers/chatgpt/conversation.ts`: identify the conversation endpoint, parse SSE deltas, extract model slug, final text, reasoning (if streamed), message id; detect hidden reasoning → `lowerBound` flag.
 - [x] Record and anonymise real SSE fixtures, replacing the synthetic ones written from the known stream format (procedure in `test/fixtures/README.md`). Logged in, `POST /backend-api/f/conversation`:
     - [x] normal reply (instant model) — `normal-reply.sse`, recorded: new messages arrive as bare `{ v: { message }, c }` and patches as `{ o: "patch", v }` without `p`; the parser handled both unchanged;
     - [x] thinking model with streamed reasoning summaries — `thinking-reply.sse`, recorded and masked: the answer is streamed both as hidden fragments (`is_message_fragment`, `merged_message_id`) and as the visible merged message (`is_merged_message`) concatenating them; the parser counts the merged message only;
@@ -189,27 +198,28 @@ Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) m
 
 ### Phase 5 — Claude adapter
 
-- [x] `adapters/claude.ts`: completion endpoint SSE parsing, model extraction, streamed thinking summaries counted, hidden reasoning flag.
+- [x] `providers/claude/capture.ts`: completion endpoint SSE parsing, model extraction, streamed thinking summaries counted, hidden reasoning flag.
 - [x] Fixtures + tests; Claude model mapping (web labels → IDs such as `claude-sonnet-4-5`, `claude-opus-4-5`, `claude-sonnet-4-6`…).
 - [x] Anonymised recordings (procedure in `test/fixtures/README.md`): normal reply, tool call, reply with thinking stopped by the user. The model is in `message_start.message.model` (`claude-sonnet-5-5` for the default model); the recordings were made without a `model` in the request body.
 - [x] Record a completed reply with thinking, a regenerated reply (`retry_completion`) and a web search: checked on 2026-10-15, same format as the recorded fixtures.
 - [x] Badge anchoring on claude.ai.
-- [x] `claude` in `SUPPORTED_PROVIDERS` and the content script match patterns.
+- [x] `claude` supported in the provider registry and the content script match patterns.
 - [x] Validate end to end on claude.ai in Chrome and Firefox: one stored event per reply, badge under each reply. Done on 2026-10-15.
 
 Implementation notes:
 
 - Endpoint: `POST /api/organizations/{org}/chat_conversations/{conversation}/completion` (`retry_completion` when regenerating). With `rendering_mode: "messages"` the stream mirrors the Anthropic Messages API events; the reply counts once `message_stop` arrives. Former `{ type: "completion" }` events are still accepted.
 - Output: text blocks and the input of the model's tool calls (`tool_use`, e.g. web search queries, artifacts); `tool_result` blocks come from the server and are not counted. Reasoning: claude.ai does not stream the thinking, only summaries of it (`thinking_summary_delta`): they are counted as reasoning and the reply is flagged `hiddenReasoning`, as are `redacted_thinking` blocks. `thinking_delta` text, as streamed by the API, would be counted instead of the summaries.
-- Model: `message_start.message.model`, else the `model` of the request body, else the `claude-sonnet-5-5` fallback (`approximatedModel`), the default model of claude.ai. Names are canonicalised (`src/models/claude-slugs.ts`): date and `-latest` suffixes dropped, display labels (`Claude Opus 4.5`) rewritten as IDs. Dated IDs EcoLogits knows (`claude-sonnet-4-5-20250929`) are kept as-is. Replayed through the interceptor and `computeImpact`, the recordings resolve to `claude-sonnet-5-5` without approximation (9 tokens and 0.05 Wh for the short reply).
+- Model: `message_start.message.model`, else the `model` of the request body, else the `claude-sonnet-5-5` fallback (`approximatedModel`), the default model of claude.ai. Names are canonicalised (`src/providers/claude/models.ts`): date and `-latest` suffixes dropped, display labels (`Claude Opus 4.5`) rewritten as IDs. Dated IDs EcoLogits knows (`claude-sonnet-4-5-20250929`) are kept as-is. Replayed through the interceptor and `computeImpact`, the recordings resolve to `claude-sonnet-5-5` without approximation (9 tokens and 0.05 Wh for the short reply).
 - Badge: the reply is `[data-testid="assistant-message"]`, whose `data-turn-key` is expected to be the message `uuid` of the stream; it holds a screen-reader heading, the content, then a wrapper of the action bar (`[data-testid="message-actions"]`, rendered once the reply is complete). The badge goes before that wrapper (markup observed on 2026-10-15). If the id is not rendered within 3 s, the last finished reply (`data-is-streaming="false"`) is used, once the latest one is no longer streaming (awaited up to 30 s, then the badge is dropped). Any path other than `/chat/<id>` (`/new`, a project page…) starts a new conversation, whose first move to `/chat/<id>` is not a move to another conversation; a second move is (same rule for ChatGPT from `/`).
 
 **Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for claude.ai.
 
 ### Phase 6 — Gemini adapter
 
-- [ ] `adapters/gemini.ts`: Gemini web uses a non-standard batched RPC stream — parse it robustly, extract model when exposed, otherwise fallback + `approximatedModel` flag.
-- [ ] Fixtures + tests; Gemini model mapping (e.g. `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`…).
+- [ ] Follow `docs/adding-a-provider.md` from `src/providers/gemini/meta.ts`.
+- [ ] `providers/gemini/capture.ts`: Gemini web uses a non-standard batched RPC stream — parse it robustly, extract model when exposed, otherwise fallback + `approximatedModel` flag.
+- [ ] Fixtures + tests; Gemini model mapping (fallback candidate: `gemini-2.5-flash`; e.g. `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.1-pro-preview`…).
 - [ ] Badge anchoring on gemini.google.com.
 
 **Acceptance:** same as Phases 2 and 4 (Chrome and Firefox) for gemini.google.com.
