@@ -1,117 +1,32 @@
-import type { WebProvider } from "../messaging";
+import { PAGES } from "../providers/page";
+import type { SupportedProvider } from "../providers/registry";
+import type { ReplyAnchor } from "../providers/types";
 
-/** Where a badge goes: next to the element matched by `selector`. */
-export interface ReplyAnchor {
-    selector: string;
-    position: "after" | "before";
-}
-
-interface ReplyMarkup {
-    /** Matches the element of any finished reply. */
-    reply: string;
-    /** Attribute holding the message id of a reply element. */
-    idAttribute: string;
-    /** Attributes whose change may make an element match `reply`. */
-    attributes: readonly string[];
-    /** The latest reply is still being rendered: the last finished one is an older reply. */
-    rendering?(root: ParentNode): boolean;
-    /** Where the badge of the reply with that (CSS-escaped) id goes. */
-    anchor(escapedId: string): ReplyAnchor;
-}
-
-/** How each provider renders assistant replies, newest markup first. */
-const MARKUPS: Readonly<Record<WebProvider, readonly ReplyMarkup[]>> = {
-    // chatgpt.com: the badge goes between the reply text and its action bar.
-    chatgpt: [
-        // Logged in: the reply block, followed by the action bar.
-        {
-            reply: "[data-chatgpt-selection-message-id]",
-            idAttribute: "data-chatgpt-selection-message-id",
-            attributes: ["data-chatgpt-selection-message-id"],
-            anchor: (id) => ({
-                selector: `[data-chatgpt-selection-message-id="${id}"]`,
-                position: "after",
-            }),
-        },
-        // Logged out: `<li>` holding the reply text, then the action bar.
-        {
-            reply: 'li[data-message-role="assistant"][id]',
-            idAttribute: "id",
-            attributes: ["id"],
-            anchor: (id) => ({
-                selector: `li[data-message-role="assistant"][id="${id}"] > [data-assistant-message-actions]`,
-                position: "before",
-            }),
-        },
-        // Former logged-in markup.
-        {
-            reply: '[data-message-author-role="assistant"][data-message-id]',
-            idAttribute: "data-message-id",
-            attributes: ["data-message-id"],
-            anchor: (id) => ({
-                selector: `[data-message-author-role="assistant"][data-message-id="${id}"]`,
-                position: "after",
-            }),
-        },
-    ],
-    // claude.ai: `[data-testid="assistant-message"]`, whose `data-turn-key` is the message uuid,
-    // holds a screen-reader heading, the reply content, then a wrapper of the action bar
-    // (`[data-testid="message-actions"]`, rendered once the reply is complete). The badge goes
-    // before that wrapper.
-    claude: [
-        {
-            reply: '[data-testid="assistant-message"][data-turn-key][data-is-streaming="false"]',
-            idAttribute: "data-turn-key",
-            attributes: ["data-turn-key", "data-is-streaming"],
-            rendering: (root) => {
-                const replies = root.querySelectorAll('[data-testid="assistant-message"]');
-                return replies[replies.length - 1]?.getAttribute("data-is-streaming") === "true";
-            },
-            anchor: (id) => ({
-                selector: `[data-testid="assistant-message"][data-turn-key="${id}"] > div:has(> [data-testid="message-actions"])`,
-                position: "before",
-            }),
-        },
-    ],
-    gemini: [],
-};
-
-/** Whether a path is a conversation without id yet: it gets one during its first reply. */
-const NEW_CONVERSATION: Readonly<Record<WebProvider, (path: string) => boolean>> = {
-    // "/" to "/c/<id>" (also from a GPT or project page, whose path the conversation extends).
-    chatgpt: (path) => path === "/",
-    // "/new", a project page or any other entry point to "/chat/<id>".
-    claude: (path) => !path.startsWith("/chat/"),
-    // Set with the Gemini adapter.
-    gemini: () => false,
-};
+export type { ReplyAnchor };
 
 /** Matches the element of any reply, whatever the provider. */
-export const ANY_REPLY = Object.values(MARKUPS)
-    .flatMap((markups) => markups.map((m) => m.reply))
+export const ANY_REPLY = Object.values(PAGES)
+    .flatMap((page) => page.markups.map((m) => m.reply))
     .join(", ");
 
 /** Anchors of the reply with that id, one per markup; selectors stay valid across re-renders. */
-export function replyAnchors(messageId: string, provider: WebProvider = "chatgpt"): ReplyAnchor[] {
+export function replyAnchors(messageId: string, provider: SupportedProvider): ReplyAnchor[] {
     const id = CSS.escape(messageId);
-    return MARKUPS[provider].map((m) => m.anchor(id));
+    return PAGES[provider].markups.map((m) => m.anchor(id));
 }
 
 /** First anchor of the reply with that id present on the page. */
 function renderedAnchor(
     root: ParentNode,
     messageId: string,
-    provider: WebProvider,
+    provider: SupportedProvider,
 ): ReplyAnchor | null {
     return replyAnchors(messageId, provider).find((a) => root.querySelector(a.selector)) ?? null;
 }
 
 /** Anchor of the last reply on the page, when the captured message id is not rendered. */
-export function lastReplyAnchor(
-    root: ParentNode,
-    provider: WebProvider = "chatgpt",
-): ReplyAnchor | null {
-    const markups = MARKUPS[provider];
+export function lastReplyAnchor(root: ParentNode, provider: SupportedProvider): ReplyAnchor | null {
+    const { markups } = PAGES[provider];
     if (markups.length === 0) return null;
     const replies = root.querySelectorAll(markups.map((m) => m.reply).join(", "));
     const last = replies[replies.length - 1];
@@ -130,7 +45,6 @@ export interface FindReplyOptions {
     maxRenderingMs?: number;
     /** Path of the current conversation. */
     conversation?: () => string;
-    provider?: WebProvider;
 }
 
 /**
@@ -145,6 +59,7 @@ export interface FindReplyOptions {
 export function findReplyAnchor(
     root: ParentNode & Node,
     messageId: string | null,
+    provider: SupportedProvider,
     options: FindReplyOptions = {},
 ): Promise<ReplyAnchor | null> {
     const {
@@ -152,9 +67,8 @@ export function findReplyAnchor(
         settleMs = 300,
         maxRenderingMs = 30_000,
         conversation = () => location.pathname,
-        provider = "chatgpt",
     } = options;
-    const markups = MARKUPS[provider];
+    const { markups, isNewConversation } = PAGES[provider];
     const startedIn = conversation();
     // A new conversation moves to its own path during the first reply, which is not a move to
     // another one; a second move is.
@@ -162,7 +76,7 @@ export function findReplyAnchor(
     const sameConversation = () => {
         const path = conversation();
         if (path === startedIn) return true;
-        if (!NEW_CONVERSATION[provider](startedIn)) return path.startsWith(startedIn);
+        if (!isNewConversation(startedIn)) return path.startsWith(startedIn);
         firstMove ??= path;
         return path === firstMove;
     };

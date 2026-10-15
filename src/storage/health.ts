@@ -1,5 +1,6 @@
 import { storage } from "wxt/utils/storage";
-import { WEB_PROVIDERS, type AdapterStatus, type WebProvider } from "../messaging";
+import type { AdapterStatus } from "../messaging";
+import { WEB_PROVIDERS, type WebProvider } from "../providers/registry";
 import { SCHEMA_VERSION, serialize } from "./schema";
 
 type AdapterStatuses = Partial<Record<WebProvider, AdapterStatus>>;

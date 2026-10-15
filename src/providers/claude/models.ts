@@ -1,3 +1,5 @@
+import type { ProviderModels } from "../types";
+
 /**
  * Claude model names, as sent by claude.ai: API IDs, usually dated
  * (`claude-sonnet-4-5-20250929`), sometimes `-latest`, or display labels (`Claude Opus 4.5`).
@@ -13,3 +15,11 @@ export function canonicalizeClaudeSlug(slug: string): string {
     const id = slug.replace(SEPARATORS, "-").replace(DOTTED_VERSION, "$1-$2").replace(SUFFIX, "");
     return id.startsWith("claude-") ? id : `claude-${id}`;
 }
+
+export const claudeModels: ProviderModels = {
+    ecologitsProvider: "anthropic",
+    // claude.ai only sends the model when it is not the default one.
+    fallback: "claude-sonnet-5-5",
+    aliases: {},
+    canonicalize: canonicalizeClaudeSlug,
+};

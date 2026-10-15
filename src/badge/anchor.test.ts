@@ -53,7 +53,7 @@ describe("replyAnchors", () => {
     it("put the badge after the logged-in reply block", () => {
         const reply = addReply(ID);
         addReply("other");
-        const [anchor] = replyAnchors(ID);
+        const [anchor] = replyAnchors(ID, "chatgpt");
         expect(anchor!.position).toBe("after");
         expect(resolve(anchor!)).toEqual([reply]);
     });
@@ -61,7 +61,7 @@ describe("replyAnchors", () => {
     it("put the badge before the action bar of the logged-out reply", () => {
         addLoggedOutMessage(ID, "user");
         const actions = addLoggedOutMessage(ID);
-        const anchor = replyAnchors(ID)[1]!;
+        const anchor = replyAnchors(ID, "chatgpt")[1]!;
         expect(anchor.position).toBe("before");
         expect(resolve(anchor)).toEqual([actions]);
     });
@@ -69,11 +69,11 @@ describe("replyAnchors", () => {
     it("match the former assistant message element, not user messages", () => {
         const reply = addLegacyReply(ID);
         addLegacyReply(ID, "user");
-        expect(resolve(replyAnchors(ID)[2]!)).toEqual([reply]);
+        expect(resolve(replyAnchors(ID, "chatgpt")[2]!)).toEqual([reply]);
     });
 
     it("escape the id", () => {
-        expect(replyAnchors('a"b')[0]!.selector).toBe(
+        expect(replyAnchors('a"b', "chatgpt")[0]!.selector).toBe(
             '[data-chatgpt-selection-message-id="a\\"b"]',
         );
     });
@@ -84,15 +84,15 @@ describe("lastReplyAnchor", () => {
         addLegacyReply("1");
         const last = addReply("2");
         addLegacyReply("3", "user");
-        expect(resolve(lastReplyAnchor(document))).toEqual([last]);
+        expect(resolve(lastReplyAnchor(document, "chatgpt"))).toEqual([last]);
 
         const actions = addLoggedOutMessage("4");
         addLoggedOutMessage("5", "user");
-        expect(resolve(lastReplyAnchor(document))).toEqual([actions]);
+        expect(resolve(lastReplyAnchor(document, "chatgpt"))).toEqual([actions]);
     });
 
     it("returns null without replies", () => {
-        expect(lastReplyAnchor(document)).toBeNull();
+        expect(lastReplyAnchor(document, "chatgpt")).toBeNull();
     });
 });
 
@@ -100,12 +100,12 @@ describe("findReplyAnchor", () => {
     it("resolves at once when the reply is rendered", async () => {
         const reply = addReply("msg-1");
         addReply("msg-2");
-        expect(resolve(await findReplyAnchor(document.body, "msg-1"))).toEqual([reply]);
+        expect(resolve(await findReplyAnchor(document.body, "msg-1", "chatgpt"))).toEqual([reply]);
     });
 
     it("waits for the reply to be rendered", async () => {
         addLoggedOutMessage("msg-1");
-        const anchor = findReplyAnchor(document.body, "msg-2");
+        const anchor = findReplyAnchor(document.body, "msg-2", "chatgpt");
         let actions: HTMLElement | undefined;
         setTimeout(() => (actions = addLoggedOutMessage("msg-2")), 10);
         expect(resolve(await anchor)).toEqual([actions]);
@@ -113,7 +113,7 @@ describe("findReplyAnchor", () => {
 
     it("notices a rendered reply getting its id", async () => {
         const reply = addReply("temporary-id");
-        const anchor = findReplyAnchor(document.body, "msg-1");
+        const anchor = findReplyAnchor(document.body, "msg-1", "chatgpt");
         setTimeout(() => (reply.dataset.chatgptSelectionMessageId = "msg-1"), 10);
         expect(resolve(await anchor)).toEqual([reply]);
     });
@@ -121,13 +121,13 @@ describe("findReplyAnchor", () => {
     it("falls back to the last reply after the timeout", async () => {
         addReply("msg-1");
         const last = addReply("rendered-id");
-        const anchor = findReplyAnchor(document.body, "streamed-id", { timeoutMs: 20 });
+        const anchor = findReplyAnchor(document.body, "streamed-id", "chatgpt", { timeoutMs: 20 });
         expect(resolve(await anchor)).toEqual([last]);
     });
 
     it("without id, takes the last reply once the page stops rendering", async () => {
         addReply("msg-1");
-        const anchor = findReplyAnchor(document.body, null, { settleMs: 20 });
+        const anchor = findReplyAnchor(document.body, null, "chatgpt", { settleMs: 20 });
         let last: HTMLElement | undefined;
         setTimeout(() => (last = addReply("msg-2")), 10);
         expect(resolve(await anchor)).toEqual([last]);
@@ -137,7 +137,7 @@ describe("findReplyAnchor", () => {
         addReply("msg-1");
         let path = "/c/first";
         const conversation = () => path;
-        const anchor = findReplyAnchor(document.body, "streamed-id", {
+        const anchor = findReplyAnchor(document.body, "streamed-id", "chatgpt", {
             timeoutMs: 20,
             conversation,
         });
@@ -149,7 +149,10 @@ describe("findReplyAnchor", () => {
         const last = addReply("msg-1");
         let path = "/";
         const conversation = () => path;
-        const anchor = findReplyAnchor(document.body, null, { settleMs: 20, conversation });
+        const anchor = findReplyAnchor(document.body, null, "chatgpt", {
+            settleMs: 20,
+            conversation,
+        });
         path = "/c/new";
         expect(resolve(await anchor)).toEqual([last]);
     });
@@ -189,8 +192,6 @@ describe("claude.ai replies", () => {
         document.body.append(message);
     }
 
-    const claude = { provider: "claude" as const };
-
     it("put the badge before the action bar of the reply with that turn key", () => {
         addUserMessage("u1");
         const wrapper = addClaudeReply(ID);
@@ -209,14 +210,14 @@ describe("claude.ai replies", () => {
 
     it("resolves at once when the reply is rendered", async () => {
         const wrapper = addClaudeReply(ID);
-        expect(resolve(await findReplyAnchor(document.body, ID, claude))).toEqual([wrapper]);
+        expect(resolve(await findReplyAnchor(document.body, ID, "claude"))).toEqual([wrapper]);
     });
 
     it("waits for the action bar of a reply still streaming", async () => {
         addClaudeReply("a1");
         const wrapper = addClaudeReply(ID, true);
         const reply = wrapper.ownerDocument.querySelector<HTMLElement>(`[data-turn-key="${ID}"]`)!;
-        const anchor = findReplyAnchor(document.body, ID, { ...claude, timeoutMs: 1000 });
+        const anchor = findReplyAnchor(document.body, ID, "claude", { timeoutMs: 1000 });
         setTimeout(() => completeClaudeReply(reply, wrapper), 10);
         expect(resolve(await anchor)).toEqual([wrapper]);
     });
@@ -224,8 +225,7 @@ describe("claude.ai replies", () => {
     it("falls back to the last reply once it finished streaming", async () => {
         const wrapper = addClaudeReply("rendered-id", true);
         const reply = document.querySelector<HTMLElement>('[data-turn-key="rendered-id"]')!;
-        const anchor = findReplyAnchor(document.body, "streamed-id", {
-            ...claude,
+        const anchor = findReplyAnchor(document.body, "streamed-id", "claude", {
             timeoutMs: 20,
             settleMs: 5,
         });
@@ -236,8 +236,7 @@ describe("claude.ai replies", () => {
     it("gives up on a reply stuck streaming", async () => {
         addClaudeReply("a1");
         addClaudeReply("a2", true);
-        const anchor = findReplyAnchor(document.body, "streamed-id", {
-            ...claude,
+        const anchor = findReplyAnchor(document.body, "streamed-id", "claude", {
             settleMs: 5,
             timeoutMs: 10,
             maxRenderingMs: 40,
@@ -248,8 +247,7 @@ describe("claude.ai replies", () => {
     it("falls back when a chat started from a project gets its id", async () => {
         const last = addClaudeReply("a1");
         let path = "/project/00000000-0000-4000-8000-00000000000a";
-        const anchor = findReplyAnchor(document.body, "streamed-id", {
-            ...claude,
+        const anchor = findReplyAnchor(document.body, "streamed-id", "claude", {
             timeoutMs: 20,
             conversation: () => path,
         });
@@ -260,8 +258,7 @@ describe("claude.ai replies", () => {
     it("does not fall back once a new chat moved to another one", async () => {
         addClaudeReply("a1");
         let path = "/new";
-        const anchor = findReplyAnchor(document.body, "streamed-id", {
-            ...claude,
+        const anchor = findReplyAnchor(document.body, "streamed-id", "claude", {
             timeoutMs: 30,
             conversation: () => path,
         });
@@ -279,7 +276,7 @@ describe("findReplyAnchor from a new ChatGPT conversation", () => {
     it("does not fall back once it moved to another conversation", async () => {
         addReply("msg-1");
         let path = "/";
-        const anchor = findReplyAnchor(document.body, null, {
+        const anchor = findReplyAnchor(document.body, null, "chatgpt", {
             settleMs: 30,
             conversation: () => path,
         });

@@ -1,7 +1,12 @@
-import { isObject, parseJson, requestedModel, stringOrNull } from "../capture/decoders/json";
-import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
-import type { CapturedRequest, ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
-import { isChatGptReasoningSlug } from "../models/chatgpt-slugs";
+import { isObject, parseJson, requestedModel, stringOrNull } from "../../capture/decoders/json";
+import { SseDecoder, type SseEvent } from "../../capture/decoders/sse";
+import type {
+    CapturedRequest,
+    ParseOutcome,
+    ReplyEndpoint,
+    StreamParser,
+} from "../../capture/types";
+import { isChatGptReasoningSlug } from "./slugs";
 
 /**
  * ChatGPT web app (chatgpt.com).

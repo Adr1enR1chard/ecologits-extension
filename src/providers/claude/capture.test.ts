@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../capture/adapter-contract";
-import { findEndpoint } from "../capture/interceptor";
-import { claudeCompletionEndpoint } from "./claude";
-import type { CapturedRequest, ParseOutcome } from "../capture/types";
+import { describeAdapterContract } from "../../capture/adapter-contract";
+import { findEndpoint } from "../../capture/interceptor";
+import { claudeCompletionEndpoint } from "./capture";
+import type { CapturedRequest, ParseOutcome } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ claude: { endpoints: [claudeCompletionEndpoint] } }, request)?.endpoint ===
@@ -22,7 +22,10 @@ function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
 }
 
 function fixture(name: string): string {
-    return readFileSync(new URL(`../../test/fixtures/claude/${name}.sse`, import.meta.url), "utf8");
+    return readFileSync(
+        new URL(`../../../test/fixtures/claude/${name}.sse`, import.meta.url),
+        "utf8",
+    );
 }
 
 function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcome {

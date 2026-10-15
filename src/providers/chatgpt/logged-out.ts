@@ -1,6 +1,6 @@
-import { isObject, parseJson, stringOrNull, type JsonObject } from "../capture/decoders/json";
-import { NdjsonDecoder } from "../capture/decoders/ndjson";
-import type { ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
+import { isObject, parseJson, stringOrNull, type JsonObject } from "../../capture/decoders/json";
+import { NdjsonDecoder } from "../../capture/decoders/ndjson";
+import type { ParseOutcome, ReplyEndpoint, StreamParser } from "../../capture/types";
 
 /**
  * ChatGPT web app when logged out (chatgpt.com).
