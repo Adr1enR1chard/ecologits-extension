@@ -267,7 +267,7 @@
         "message": "Afficher l'impact sous chaque réponse"
     },
     "optionsShowBadgeHelp": {
-        "message": "Un badge avec l'énergie et les émissions de GES estimées de la réponse, sur la page du fournisseur."
+        "message": "Un badge avec l'énergie, les émissions de GES et l'eau estimées de la réponse, sur la page du fournisseur."
     },
     "optionsData": {
         "message": "Vos données"
