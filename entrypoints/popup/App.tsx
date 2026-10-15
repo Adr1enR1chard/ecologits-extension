@@ -4,8 +4,7 @@ import { useState } from "preact/hooks";
 import { t, uiLocale } from "@/src/i18n";
 import { computeEquivalences } from "@/src/impacts/equivalences";
 import {
-    CRITERIA,
-    isEmbodiedCriterion,
+    EMBODIED_CRITERIA,
     type AdapterStatus,
     type Criterion,
     type WebProvider,
@@ -53,8 +52,8 @@ import { Tooltip } from "@/src/ui/Tooltip";
 
 const locale = uiLocale();
 
-/** The two criteria shown up front, and in the breakdown. */
-const HEADLINE_CRITERIA = ["energy", "gwp"] as const satisfies readonly Criterion[];
+/** The criteria shown up front, and in the breakdown. */
+const HEADLINE_CRITERIA = ["energy", "gwp", "wcf"] as const satisfies readonly Criterion[];
 
 function SectionTitle({ children }: { children: ComponentChildren }) {
     return <h2 class="text-xs font-semibold text-fg">{children}</h2>;
@@ -133,7 +132,7 @@ function Headline({ totals, criterion }: { totals: Totals; criterion: Criterion 
     const label = t(CRITERION_LABELS[criterion]);
     const shortLabel = t(CRITERION_SHORT_LABELS[criterion]);
     return (
-        <div class="rounded-lg bg-surface px-3 py-2.5">
+        <div class="rounded-lg bg-surface px-2.5 py-2.5">
             <div class="flex items-center gap-1.5 text-xs text-fg-muted">
                 <CriterionIcon criterion={criterion} class="size-3.5" />
                 {shortLabel === label ? (
@@ -148,8 +147,9 @@ function Headline({ totals, criterion }: { totals: Totals; criterion: Criterion 
                 criterion={criterion}
                 range={totals.impacts.total[criterion]}
                 locale={locale}
-                align={criterion === "energy" ? "start" : "end"}
-                class="text-xl font-semibold text-fg tabular-nums"
+                align={criterion === "energy" ? "start" : criterion === "wcf" ? "end" : "center"}
+                class="text-lg font-semibold text-fg tabular-nums"
+                unitClass="text-xs font-normal text-fg-muted"
             />
         </div>
     );
@@ -258,8 +258,8 @@ function Equivalences({ totals }: { totals: Totals }) {
     );
 }
 
-/** Columns of the breakdown: name, energy, GHG emissions. */
-const BREAKDOWN_GRID = "grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem] items-center gap-x-2";
+/** Columns of the breakdown: name, energy, GHG emissions, water. */
+const BREAKDOWN_GRID = "grid grid-cols-[minmax(0,1fr)_3.5rem_5rem_3.5rem] items-center gap-x-2";
 
 function BreakdownValues({ totals }: { totals: Totals }) {
     return (
@@ -271,7 +271,7 @@ function BreakdownValues({ totals }: { totals: Totals }) {
                         criterion={criterion}
                         range={totals.impacts.total[criterion]}
                         locale={locale}
-                        align={criterion === "gwp" ? "end" : "center"}
+                        align={criterion === "wcf" ? "end" : "center"}
                     />
                 </span>
             ))}
@@ -314,7 +314,7 @@ function ProviderBreakdown({
             {open && (
                 <ul class="pb-1.5 text-fg-muted">
                     {models.map((model) => (
-                        <li key={model.model} class={`${BREAKDOWN_GRID} py-1 pl-10`}>
+                        <li key={model.model} class={`${BREAKDOWN_GRID} py-1 pl-5`}>
                             <span class="min-w-0 break-words">
                                 <Tooltip
                                     align="start"
@@ -358,6 +358,7 @@ function Breakdown({ providers, models }: { providers: ProviderTotals[]; models:
     );
 }
 
+/** Usage and embodied parts of the criteria that have both; the others are all up front. */
 function Details({ totals }: { totals: Totals }) {
     const { total, usage, embodied } = totals.impacts;
     return (
@@ -378,44 +379,35 @@ function Details({ totals }: { totals: Totals }) {
                     </tr>
                 </thead>
                 <tbody class="text-fg-muted">
-                    {CRITERIA.map((criterion) => {
-                        const embodiedRange = isEmbodiedCriterion(criterion)
-                            ? embodied[criterion]
-                            : null;
-                        return (
-                            <tr key={criterion} class="border-t border-line">
-                                <th scope="row" class="py-1.5 text-left font-normal">
-                                    <CriterionMark criterion={criterion} align="start" />
-                                </th>
-                                <td class="py-1.5 text-right">
-                                    <ImpactValue
-                                        criterion={criterion}
-                                        range={total[criterion]}
-                                        locale={locale}
-                                    />
-                                </td>
-                                <td class="py-1.5 text-right">
-                                    <ImpactValue
-                                        criterion={criterion}
-                                        range={usage[criterion]}
-                                        locale={locale}
-                                    />
-                                </td>
-                                <td class="py-1.5 text-right">
-                                    {embodiedRange ? (
-                                        <ImpactValue
-                                            criterion={criterion}
-                                            range={embodiedRange}
-                                            locale={locale}
-                                            align="end"
-                                        />
-                                    ) : (
-                                        <span class="text-fg-subtle">–</span>
-                                    )}
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {EMBODIED_CRITERIA.map((criterion) => (
+                        <tr key={criterion} class="border-t border-line">
+                            <th scope="row" class="py-1.5 text-left font-normal">
+                                <CriterionMark criterion={criterion} align="start" />
+                            </th>
+                            <td class="py-1.5 text-right">
+                                <ImpactValue
+                                    criterion={criterion}
+                                    range={total[criterion]}
+                                    locale={locale}
+                                />
+                            </td>
+                            <td class="py-1.5 text-right">
+                                <ImpactValue
+                                    criterion={criterion}
+                                    range={usage[criterion]}
+                                    locale={locale}
+                                />
+                            </td>
+                            <td class="py-1.5 text-right">
+                                <ImpactValue
+                                    criterion={criterion}
+                                    range={embodied[criterion]}
+                                    locale={locale}
+                                    align="end"
+                                />
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </Collapsible>
@@ -489,7 +481,7 @@ function Usage({ aggregates, period }: { aggregates: DailyAggregates; period: Pe
     return (
         <>
             <div class="space-y-2">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
                     {HEADLINE_CRITERIA.map((criterion) => (
                         <Headline key={criterion} totals={total} criterion={criterion} />
                     ))}
