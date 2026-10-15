@@ -151,7 +151,7 @@ Each phase ends with its acceptance criteria green in CI.
     - [x] client abort after `message_stream_complete` (the case met live, no `[DONE]`): observed live, and replayed by the interceptor tests by cutting the recorded `normal-reply.sse` before `[DONE]` and failing it with an `AbortError`;
     - [x] drop `snapshots.sse`: no recording shows the legacy full-snapshot encoding anymore. The parser still accepts it as a fallback, covered by inline tests.
 - [x] Logged-out mode: the web app uses `/unauth-mweb/…` (`conversation/prepare`, then `conversation/updates?operationId=…`), streaming newline-delimited JSON (`content` lines with `replace`/`append` markdown, `control` lifecycle ending with `terminal-received`). Dedicated adapter `adapters/chatgpt-logged-out.ts`, tested against a recorded fixture. The model is not exposed: the `gpt-5` fallback applies with `approximatedModel`.
-    - [x] Reply stopped by the user: recorded, the stream just ends with no `terminal-received` and is skipped.
+    - [x] Reply stopped by the user: recorded, the stream just ends with no `terminal-received`. Recorded as partial since phase 4 (#11).
 - [x] Validate end to end on chatgpt.com, logged in, in Chrome: one stored event per reply. Done on 2026-10-14 with the development build: normal reply (`gpt-6`), regenerated reply, regenerated reply with extended thinking (`gpt-6-t-mini`, `lowerBound`) each stored one event with a distinct `messageId` (75–86 output tokens, 0.15–0.18 Wh, 0.07–0.08 gCO₂eq); the reply stopped by the user stored none; no adapter failure. ChatGPT keeps the stream open for several seconds after `message_stream_complete`, so the measured latency can exceed the visible generation time (10.1 s for a regenerated reply).
 - [x] Fixture-based adapter tests.
 - [x] ChatGPT model mapping (including `auto` and thinking variants).
@@ -160,7 +160,7 @@ Each phase ends with its acceptance criteria green in CI.
 Implementation notes:
 
 - The interceptor and the bridge talk over a private `MessageChannel` set up at `document_start` (see `src/capture/channel.ts`) rather than `window.postMessage` with a token: captures never transit on `window`, so page scripts cannot read them or inject fake ones through window messages. This is best effort, not a security boundary: the interceptor shares its realm with the page, which could patch built-ins the parser relies on and distort captures; the bridge validates every message and the worst outcome is wrong local stats for that user.
-- ChatGPT aborts its own request right after `message_stream_complete`, so the stream copy usually ends with an `AbortError` instead of `[DONE]`. Interrupted streams are therefore still handed to the parser, which only records a reply if it saw a completion marker; streams stopped by the user, errored or unfinished produce no event and are not adapter failures. Only parser exceptions are reported as failures.
+- ChatGPT aborts its own request right after `message_stream_complete`, so the stream copy usually ends with an `AbortError` instead of `[DONE]`. Interrupted streams are therefore still handed to the parser, which only records a reply if it saw a completion marker; streams errored or unfinished produce no event and are not adapter failures. Only parser exceptions are reported as failures. Since phase 4, streams the page aborts before the completion marker (the user stopped the reply) are recorded as partial (#11).
 - Development builds log each capture step to the page console (`[ecologits] …`, `console.debug`): matched or ignored requests, interruptions, skip reasons, relay to the background.
 - ChatGPT model slugs are canonicalised (`gpt-5-1-thinking` → `gpt-5.1`, `gpt-5-2-instant` → `gpt-5.2-chat-latest`); `auto`, `o3` and other unknown slugs use the `gpt-5` fallback with the `approximatedModel` flag.
 
@@ -192,7 +192,15 @@ Left over from phase 2, done once the phase 3 UI (badge, popup adapter status) m
 - [ ] Firefox specifics: verify main-world injection and `fetch` patching work under MV3 on Firefox.
 - [ ] Validate end to end on chatgpt.com, logged in, in Firefox: one stored event per reply.
 - [ ] Exports in Firefox: `src/ui/download.ts` clicks a detached `<a>` and revokes the object URL right after; attach the link to the document and revoke later if Firefox drops or empties the download.
+- [x] Replies stopped by the user (#11): recorded with the output streamed until the stop, flagged `partial` (badge `…`, popup count, `partial` / `partial_requests` export columns). Storage schema v2 adds the flag to stored events and aggregates.
+- [ ] Validate replies stopped by the user end to end on chatgpt.com (logged in and out) and claude.ai: one stored event flagged `partial`, badge under the stopped reply.
 - [ ] Logged-out mode: record a reply with a tool call or reasoning, if the logged-out app offers them (errors are ignored by design, as logged in).
+
+Implementation notes:
+
+- Stopped replies: the interceptor tells the parser how the stream ended (`StreamEnd`): read to its end (`done`), aborted by the page (`aborted`, a `DOMException` named `AbortError`), or cut by the network (`failed`). A reply without completion marker is recorded as `partial` only when `aborted`, and only without error event. Leaving the page mid-reply aborts the request too: it is counted the same way, since the tokens were generated. ChatGPT also aborts its request right after `message_stream_complete`: the marker was seen, so the reply is complete, not partial. Logged out, a partial reply needs the `assistant-content-started` marker.
+- Latency runs from the request to the stop, consistent with the output counted.
+- Deduplication by `messageId` keeps the first event: a stopped reply that ChatGPT continues under the same id is not counted twice, but the continuation is not counted either. A regenerated reply has its own id and is counted on its own.
 
 **Acceptance:** phase 2 and phase 3 acceptance criteria also met in Firefox.
 
@@ -262,6 +270,7 @@ Implementation notes:
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Providers change internal APIs/stream formats         | Isolated adapters, fixture tests, health status in popup, silent failure in page                      |
 | Hidden reasoning tokens → underestimation             | `lowerBound` flag + methodology note                                                                  |
+| Replies stopped by the user                           | Recorded up to the stop, `partial` flag                                                               |
 | Web model labels don't match EcoLogits IDs            | Mapping table with tests against `models.findModel()`, fallback + `approximatedModel` flag            |
 | Tokenizer mismatch for Claude/Gemini                  | Documented approximation                                                                              |
 | Bundle size (EcoLogits data + tokenizer)              | Loaded only in the background service worker, never in content scripts                                |

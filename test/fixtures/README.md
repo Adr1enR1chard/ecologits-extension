@@ -45,6 +45,10 @@ Response streams of each provider's reply endpoint, replayed by the adapter test
 | `tool-call.sse`    | **Recorded.** Reply with a tool call (`weather_fetch`): `tool_use` input streamed as `input_json_delta`, `tool_result` from the server, then the text. The location is replaced with `REDACTED` and `0.0000` |
 | `aborted.sse`      | **Recorded.** Reply with thinking, stopped by the user: the thinking block only streams a summary (`thinking_summary_delta`), then the text ends mid-block, without `message_stop`                           |
 
+The streams stopped by the user ended with an `AbortError`, which the recording does not keep:
+tests replay them as aborted (`finish("aborted")`) to get a partial reply, and as `done` or
+`failed` to check that a stream cut without abort is skipped.
+
 Fixtures not marked **Recorded** were written from the known stream
 format, not recorded. Replace them
 with anonymised recordings as soon as possible: they are what keeps the adapter honest.
