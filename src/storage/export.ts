@@ -55,6 +55,7 @@ export function aggregatesToCsv(aggregates: DailyAggregates): string {
         "output_tokens",
         "lower_bound_requests",
         "approximated_model_requests",
+        "partial_requests",
         ...IMPACT_COLUMNS,
     ];
     const rows = Object.keys(aggregates)
@@ -69,6 +70,7 @@ export function aggregatesToCsv(aggregates: DailyAggregates): string {
                 a.outputTokens,
                 a.lowerBoundRequests,
                 a.approximatedModelRequests,
+                a.partialRequests,
                 ...impactCells(a.impacts),
             ];
         });
@@ -86,6 +88,7 @@ export function eventsToCsv(events: readonly ImpactResult[]): string {
         "latency_s",
         "lower_bound",
         "approximated_model",
+        "partial",
         "warnings",
         ...IMPACT_COLUMNS,
     ];
@@ -102,6 +105,7 @@ export function eventsToCsv(events: readonly ImpactResult[]): string {
                       e.latencySeconds,
                       e.flags.lowerBound,
                       e.flags.approximatedModel,
+                      e.flags.partial,
                       e.warnings.map((w) => w.code).join(" "),
                       ...impactCells(e.impacts),
                   ],

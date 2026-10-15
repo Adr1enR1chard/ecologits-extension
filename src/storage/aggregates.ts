@@ -19,6 +19,7 @@ export interface DailyAggregate {
     outputTokens: number;
     lowerBoundRequests: number;
     approximatedModelRequests: number;
+    partialRequests: number;
     /** Sum of each bound (min, median, max) over the requests. */
     impacts: Impacts;
 }
@@ -29,6 +30,13 @@ export type DailyAggregates = Record<string, DailyAggregate>;
 export const aggregatesItem = storage.defineItem<DailyAggregates>("local:aggregates", {
     fallback: {},
     version: SCHEMA_VERSION,
+    migrations: {
+        // v2: replies stopped by the user are recorded, flagged as partial.
+        2: (aggregates: DailyAggregates): DailyAggregates =>
+            Object.fromEntries(
+                Object.entries(aggregates).map(([key, a]) => [key, { ...a, partialRequests: 0 }]),
+            ),
+    },
 });
 
 /** Local calendar date of a timestamp, `YYYY-MM-DD`. */
@@ -77,6 +85,7 @@ export function addToAggregates(
     const previous = aggregates[key];
     const lowerBound = result.flags.lowerBound ? 1 : 0;
     const approximated = result.flags.approximatedModel ? 1 : 0;
+    const partial = result.flags.partial ? 1 : 0;
     const next: DailyAggregate = previous
         ? {
               ...previous,
@@ -84,6 +93,7 @@ export function addToAggregates(
               outputTokens: previous.outputTokens + result.outputTokens,
               lowerBoundRequests: previous.lowerBoundRequests + lowerBound,
               approximatedModelRequests: previous.approximatedModelRequests + approximated,
+              partialRequests: previous.partialRequests + partial,
               impacts: addImpacts(previous.impacts, result.impacts),
           }
         : {
@@ -94,6 +104,7 @@ export function addToAggregates(
               outputTokens: result.outputTokens,
               lowerBoundRequests: lowerBound,
               approximatedModelRequests: approximated,
+              partialRequests: partial,
               impacts: result.impacts,
           };
     return { ...aggregates, [key]: next };
