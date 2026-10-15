@@ -1,9 +1,13 @@
-import { isRecord } from "../messaging";
+import { isObject, parseJson, requestedModel, stringOrNull } from "../capture/decoders/json";
+import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
+import type {
+    CapturedRequest,
+    ParseOutcome,
+    ProviderAdapter,
+    StreamParser,
+} from "../capture/types";
 import { isChatGptReasoningSlug } from "../models/chatgpt-slugs";
 import { PROVIDER_HOSTS } from "../providers";
-import { requestedModel, stringOrNull } from "./json";
-import { SseDecoder, type SseEvent } from "./sse";
-import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } from "./types";
 
 /**
  * ChatGPT web app (chatgpt.com).
@@ -56,10 +60,6 @@ interface ChatMessage {
         is_message_fragment?: Json;
         merged_message_id?: Json;
     };
-}
-
-function isObject(value: unknown): value is JsonObject {
-    return isRecord(value) && !Array.isArray(value);
 }
 
 function isDeltaOp(value: unknown): value is DeltaOp {
@@ -155,7 +155,9 @@ function thoughtsOf(message: ChatMessage): string {
     const thoughts = message.content?.thoughts;
     if (!Array.isArray(thoughts)) return "";
     return strings(
-        thoughts.filter(isObject).flatMap((t) => [t.summary ?? null, t.content ?? null]),
+        thoughts
+            .filter((t): t is JsonObject => isObject(t))
+            .flatMap((t) => [t.summary ?? null, t.content ?? null]),
     ).join("\n");
 }
 
@@ -257,14 +259,9 @@ class ChatGptParser implements StreamParser {
             this.done = true;
             return;
         }
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(data);
-        } catch {
-            // Keep-alive pings and other non-JSON lines.
-            return;
-        }
-        if (!isObject(parsed)) return; // e.g. the `delta_encoding` announcement: "v1"
+        // `null` for keep-alive pings and non-object values, e.g. the `delta_encoding` announcement.
+        const parsed = parseJson(data) as JsonObject | null;
+        if (parsed === null) return;
 
         const error = errorOf(parsed.error);
         if (error !== null) {

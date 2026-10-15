@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { describeAdapterContract } from "../capture/adapter-contract";
 import { claudeAdapter } from "./claude";
-import type { CapturedRequest, ParseOutcome } from "./types";
+import type { CapturedRequest, ParseOutcome } from "../capture/types";
 
 const COMPLETION_URL =
     "https://claude.ai/api/organizations/00000000-0000-4000-8000-0000000000aa/chat_conversations/00000000-0000-4000-8000-0000000000bb/completion";
@@ -56,13 +57,20 @@ describe("claudeAdapter.matches", () => {
     });
 });
 
-describe("claude fixtures", () => {
-    /** Events ending a reply, to replay a recorded reply stopped by the user as completed. */
-    const completion =
-        event({ type: "content_block_stop", index: 1 }) +
-        event({ type: "message_delta", delta: { stop_reason: "end_turn" } }) +
-        stop;
+/** Events ending a reply, to replay a recorded reply stopped by the user as completed. */
+const completion =
+    event({ type: "content_block_stop", index: 1 }) +
+    event({ type: "message_delta", delta: { stop_reason: "end_turn" } }) +
+    stop;
 
+describeAdapterContract("claude", claudeAdapter, request(), {
+    "normal-reply": fixture("normal-reply"),
+    "tool-call": fixture("tool-call"),
+    aborted: fixture("aborted"),
+    "aborted, completed": fixture("aborted") + completion,
+});
+
+describe("claude fixtures", () => {
     it("parses a recorded reply, skipping conversation_ready, pings and message_limit", () => {
         expect(parse(fixture("normal-reply"))).toEqual({
             kind: "reply",
@@ -120,16 +128,6 @@ describe("claude fixtures", () => {
         expect(reply.outputText).toMatch(/^# L'art de prendre son temps\n\nIl fut un temps/);
         expect(reply.outputText).toHaveLength(710);
     });
-
-    it.each(["normal-reply", "tool-call", "aborted"])(
-        "%s: gives the same result whatever the chunking",
-        (name) => {
-            const text = fixture(name) + (name === "aborted" ? completion : "");
-            const expected = parse(text);
-            for (const size of [1, 7, 64, 1000])
-                expect(parse(text, size), `chunk ${size}`).toEqual(expected);
-        },
-    );
 });
 
 describe("claude parser edge cases", () => {

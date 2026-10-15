@@ -1,4 +1,4 @@
-import type { CapturedRequest, ProviderAdapter } from "../adapters/types";
+import type { CapturedRequest, ProviderAdapter } from "./types";
 import type { CaptureMessage } from "./channel";
 
 type FetchWindow = Pick<typeof globalThis, "fetch"> & { location: { href: string } };

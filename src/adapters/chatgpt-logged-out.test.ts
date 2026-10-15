@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { describeAdapterContract } from "../capture/adapter-contract";
 import { chatgptLoggedOutAdapter } from "./chatgpt-logged-out";
-import type { CapturedRequest, ParseOutcome } from "./types";
+import type { CapturedRequest, ParseOutcome } from "../capture/types";
 
 const UPDATES = "https://chatgpt.com/unauth-mweb/conversation/updates?operationId=1";
 const read = (name: string) =>
@@ -22,6 +23,11 @@ function parse(text: string, chunkSize = Infinity): ParseOutcome {
 const line = (data: object) => JSON.stringify({ version: 1, ...data }) + "\n";
 const terminal = (terminalKind: string, messageId = "a") =>
     line({ type: "control", detail: { kind: "terminal-received", messageId, terminalKind } });
+
+describeAdapterContract("chatgpt logged out", chatgptLoggedOutAdapter, request(), {
+    "logged-out-reply": fixture,
+    "logged-out-stopped": stopped,
+});
 
 describe("chatgptLoggedOutAdapter.matches", () => {
     it("matches the logged-out updates stream", () => {
@@ -54,12 +60,6 @@ describe("chatgpt logged-out stream", () => {
                 messageId: "00000000-0000-4000-8000-000000000072",
             },
         });
-    });
-
-    it("gives the same result whatever the chunking", () => {
-        const expected = parse(fixture);
-        for (const size of [1, 7, 64, 1000])
-            expect(parse(fixture, size), `chunk ${size}`).toEqual(expected);
     });
 
     it("skips replies stopped by the user: the stream just ends", () => {
