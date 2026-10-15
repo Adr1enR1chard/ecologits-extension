@@ -1,5 +1,6 @@
 import { isRecord } from "../messaging";
 import { PROVIDER_HOSTS } from "../providers";
+import { stringOrNull } from "./json";
 import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } from "./types";
 
 /**
@@ -19,10 +20,6 @@ import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } fro
 const UPDATES_PATH = /^\/unauth-mweb\/(?:f\/)?conversation\/updates\/?$/;
 
 type Line = Record<string, unknown>;
-
-function stringOrNull(value: unknown): string | null {
-    return typeof value === "string" && value !== "" ? value : null;
-}
 
 class LoggedOutParser implements StreamParser {
     private buffer = "";

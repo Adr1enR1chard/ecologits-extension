@@ -1,6 +1,7 @@
 import { isRecord } from "../messaging";
 import { isChatGptReasoningSlug } from "../models/chatgpt-slugs";
 import { PROVIDER_HOSTS } from "../providers";
+import { requestedModel, stringOrNull } from "./json";
 import { SseDecoder, type SseEvent } from "./sse";
 import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } from "./types";
 
@@ -158,10 +159,6 @@ function thoughtsOf(message: ChatMessage): string {
     ).join("\n");
 }
 
-function stringOrNull(value: Json | undefined): string | null {
-    return typeof value === "string" && value !== "" ? value : null;
-}
-
 function idOf(message: ChatMessage | null): string | null {
     return stringOrNull(message?.id);
 }
@@ -174,16 +171,6 @@ function errorOf(value: Json | undefined): string | null {
         return stringOrNull(value.message) ?? stringOrNull(value.code) ?? JSON.stringify(value);
     }
     return String(value);
-}
-
-function requestedModel(body: string | null): string | null {
-    if (body === null) return null;
-    try {
-        const parsed: unknown = JSON.parse(body);
-        return isObject(parsed) && typeof parsed.model === "string" ? parsed.model : null;
-    } catch {
-        return null;
-    }
 }
 
 class ChatGptParser implements StreamParser {
