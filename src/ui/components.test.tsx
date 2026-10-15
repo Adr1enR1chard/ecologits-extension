@@ -79,6 +79,20 @@ describe("ImpactValue", () => {
         expect(screen.getByRole("tooltip").textContent).toMatch(/^rangeLabel 1\sWh – 3\sWh$/);
     });
 
+    it("sets the unit apart when given its classes", () => {
+        render(
+            <ImpactValue
+                criterion="gwp"
+                range={{ min: 0.002, median: 0.002, max: 0.002 }}
+                locale="en"
+                unitClass="text-xs"
+            />,
+        );
+        const unit = screen.getByText("gCO₂eq");
+        expect(unit.className).toBe("text-xs");
+        expect(unit.parentElement!.textContent).toBe("2 gCO₂eq");
+    });
+
     it("has no tooltip for a scalar", () => {
         render(
             <ImpactValue
