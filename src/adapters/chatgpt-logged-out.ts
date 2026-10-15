@@ -1,7 +1,12 @@
-import { isRecord } from "../messaging";
+import { isObject, parseJson, stringOrNull, type JsonObject } from "../capture/decoders/json";
+import { NdjsonDecoder } from "../capture/decoders/ndjson";
+import type {
+    CapturedRequest,
+    ParseOutcome,
+    ProviderAdapter,
+    StreamParser,
+} from "../capture/types";
 import { PROVIDER_HOSTS } from "../providers";
-import { stringOrNull } from "./json";
-import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } from "./types";
 
 /**
  * ChatGPT web app when logged out (chatgpt.com).
@@ -19,10 +24,8 @@ import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } fro
 
 const UPDATES_PATH = /^\/unauth-mweb\/(?:f\/)?conversation\/updates\/?$/;
 
-type Line = Record<string, unknown>;
-
 class LoggedOutParser implements StreamParser {
-    private buffer = "";
+    private readonly decoder = new NdjsonDecoder();
     /** Markdown of each message, by id, in order of appearance. */
     private readonly texts = new Map<string, string>();
     private readonly assistantIds = new Set<string>();
@@ -30,15 +33,11 @@ class LoggedOutParser implements StreamParser {
     private terminalKind: string | null = null;
 
     push(text: string): void {
-        this.buffer += text;
-        const lines = this.buffer.split("\n");
-        this.buffer = lines.pop() ?? "";
-        for (const line of lines) this.handleLine(line);
+        for (const line of this.decoder.push(text)) this.handleLine(line);
     }
 
     finish(): ParseOutcome {
-        this.handleLine(this.buffer);
-        this.buffer = "";
+        for (const line of this.decoder.flush()) this.handleLine(line);
         if (this.terminalKind === null) {
             return { kind: "skip", reason: "stream ended before terminal-received" };
         }
@@ -62,28 +61,21 @@ class LoggedOutParser implements StreamParser {
         };
     }
 
-    private handleLine(raw: string): void {
-        const text = raw.trim();
-        if (text === "") return;
-        let line: unknown;
-        try {
-            line = JSON.parse(text);
-        } catch {
-            return;
-        }
-        if (!isRecord(line)) return;
+    private handleLine(text: string): void {
+        const line = parseJson(text);
+        if (line === null) return;
         if (line.type === "content") this.handleContent(line);
-        else if (line.type === "control" && isRecord(line.detail)) this.handleControl(line.detail);
+        else if (line.type === "control" && isObject(line.detail)) this.handleControl(line.detail);
     }
 
-    private handleContent(line: Line): void {
+    private handleContent(line: JsonObject): void {
         const id = stringOrNull(line.messageId);
         if (id === null || typeof line.markdown !== "string") return;
         const previous = line.mode === "append" ? (this.texts.get(id) ?? "") : "";
         this.texts.set(id, previous + line.markdown);
     }
 
-    private handleControl(detail: Line): void {
+    private handleControl(detail: JsonObject): void {
         const id = stringOrNull(detail.messageId);
         if (detail.kind === "assistant-content-started" && id !== null) {
             this.assistantIds.add(id);

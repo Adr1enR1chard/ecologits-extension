@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { chatgptAdapter } from "../adapters/chatgpt";
 import { claudeAdapter } from "../adapters/claude";
-import type { ProviderAdapter } from "../adapters/types";
+import type { ProviderAdapter } from "./types";
 import type { CaptureMessage } from "./channel";
 import { installFetchInterceptor } from "./interceptor";
 

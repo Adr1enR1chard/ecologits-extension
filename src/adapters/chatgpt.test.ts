@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { describeAdapterContract } from "../capture/adapter-contract";
 import { applyDelta, chatgptAdapter } from "./chatgpt";
-import type { CapturedRequest, ParseOutcome } from "./types";
+import type { CapturedRequest, ParseOutcome } from "../capture/types";
 
 function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
     return {
@@ -24,6 +25,18 @@ function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcom
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
     return parser.finish();
 }
+
+describeAdapterContract(
+    "chatgpt",
+    chatgptAdapter,
+    request(),
+    Object.fromEntries(
+        ["normal-reply", "thinking-reply", "regenerate", "tool-call", "aborted"].map((name) => [
+            name,
+            fixture(name),
+        ]),
+    ),
+);
 
 describe("chatgptAdapter.matches", () => {
     it.each([
@@ -126,16 +139,6 @@ describe("chatgpt fixtures", () => {
             reason: "stream ended before [DONE]",
         });
     });
-
-    it.each(["normal-reply", "thinking-reply", "regenerate", "tool-call", "aborted"])(
-        "%s: gives the same result whatever the chunking",
-        (name) => {
-            const text = fixture(name);
-            const expected = parse(text);
-            for (const size of [1, 7, 64, 1000])
-                expect(parse(text, size), `chunk ${size}`).toEqual(expected);
-        },
-    );
 });
 
 describe("chatgpt parser edge cases", () => {

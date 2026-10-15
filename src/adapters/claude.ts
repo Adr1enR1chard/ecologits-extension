@@ -1,7 +1,18 @@
+import {
+    isObject,
+    parseJson,
+    requestedModel,
+    stringOrNull,
+    type JsonObject,
+} from "../capture/decoders/json";
+import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
+import type {
+    CapturedRequest,
+    ParseOutcome,
+    ProviderAdapter,
+    StreamParser,
+} from "../capture/types";
 import { PROVIDER_HOSTS } from "../providers";
-import { isObject, requestedModel, stringOrNull } from "./json";
-import { SseDecoder, type SseEvent } from "./sse";
-import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } from "./types";
 
 /**
  * Claude web app (claude.ai).
@@ -27,8 +38,6 @@ import type { CapturedRequest, ParseOutcome, ProviderAdapter, StreamParser } fro
 
 const COMPLETION_PATH =
     /^\/api\/organizations\/[^/]+\/chat_conversations\/[^/]+\/(?:retry_)?completion\/?$/;
-
-type JsonObject = Record<string, unknown>;
 
 interface ContentBlock {
     type: string;
@@ -119,13 +128,8 @@ class ClaudeParser implements StreamParser {
     }
 
     private handleEvent({ event, data }: SseEvent): void {
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(data);
-        } catch {
-            return;
-        }
-        if (!isObject(parsed)) return;
+        const parsed = parseJson(data);
+        if (parsed === null) return;
         const type = typeof parsed.type === "string" ? parsed.type : event;
 
         switch (type) {
