@@ -97,6 +97,20 @@
             }
         }
     },
+    "flagPartialTitle": {
+        "message": "Stopped reply"
+    },
+    "flagPartialHelp": {
+        "message": "The reply was stopped before its end: only the part generated until then is counted."
+    },
+    "popupPartialCount": {
+        "message": "Replies stopped before their end: $COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalencesTitle": {
         "message": "GHG emissions equivalent to"
     },

@@ -18,12 +18,13 @@ const HOSTS: { name: string; background: string; text: string; scheme: ColorSche
 
 const BADGE_RESULTS = [
     sampleResult(),
-    sampleResult({ flags: { lowerBound: true, approximatedModel: false } }),
+    sampleResult({ flags: { lowerBound: true, approximatedModel: false, partial: false } }),
+    sampleResult({ flags: { lowerBound: false, approximatedModel: false, partial: true } }),
     sampleResult({
         provider: "claude",
         rawModel: "claude-next",
         model: "claude-sonnet-5-5",
-        flags: { lowerBound: true, approximatedModel: true },
+        flags: { lowerBound: true, approximatedModel: true, partial: false },
     }),
 ];
 

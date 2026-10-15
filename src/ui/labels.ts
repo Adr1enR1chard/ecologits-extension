@@ -57,4 +57,5 @@ export const FLAG_INFO: Readonly<Record<Flag, FlagInfo>> = {
         title: "flagApproximatedTitle",
         help: "flagApproximatedHelp",
     },
+    partial: { symbol: "…", title: "flagPartialTitle", help: "flagPartialHelp" },
 };

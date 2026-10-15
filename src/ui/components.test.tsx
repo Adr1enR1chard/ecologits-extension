@@ -95,7 +95,7 @@ describe("ImpactValue", () => {
 describe("FlagIcons", () => {
     it("labels each raised flag for screen readers and hides its symbol", () => {
         const { container } = render(
-            <FlagIcons flags={{ lowerBound: true, approximatedModel: false }} />,
+            <FlagIcons flags={{ lowerBound: true, approximatedModel: false, partial: false }} />,
         );
         expect(screen.getByText("flagLowerBoundTitle", { selector: ".sr-only" })).toBeTruthy();
         expect(screen.queryByText("flagApproximatedTitle", { selector: ".sr-only" })).toBeNull();
@@ -108,7 +108,7 @@ describe("FlagIcons", () => {
 
     it("renders nothing without raised flags", () => {
         const { container } = render(
-            <FlagIcons flags={{ lowerBound: false, approximatedModel: false }} />,
+            <FlagIcons flags={{ lowerBound: false, approximatedModel: false, partial: false }} />,
         );
         expect(container.innerHTML).toBe("");
     });
