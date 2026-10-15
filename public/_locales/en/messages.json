@@ -33,6 +33,9 @@
     "criterionGwp": {
         "message": "GHG emissions"
     },
+    "criterionGwpShort": {
+        "message": "GHG"
+    },
     "criterionAdpe": {
         "message": "Abiotic resources"
     },
@@ -105,8 +108,24 @@
             }
         }
     },
+    "equivalenceCarKmShort": {
+        "message": "$COUNT$ km",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalenceVideoStreamingHour": {
         "message": "$COUNT$ h of video streaming",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceVideoStreamingHourShort": {
+        "message": "$COUNT$ h",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -121,8 +140,24 @@
             }
         }
     },
+    "equivalenceEmailShort": {
+        "message": "$COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalenceWebSearch": {
         "message": "$COUNT$ web searches",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceWebSearchShort": {
+        "message": "$COUNT$",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -132,11 +167,8 @@
     "equivalencesSource": {
         "message": "Source: ADEME Impact CO2"
     },
-    "byProviderTitle": {
-        "message": "By provider"
-    },
-    "byModelTitle": {
-        "message": "By model"
+    "breakdownTitle": {
+        "message": "Breakdown"
     },
     "detailsTitle": {
         "message": "Details"

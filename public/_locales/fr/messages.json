@@ -33,6 +33,9 @@
     "criterionGwp": {
         "message": "Émissions de GES"
     },
+    "criterionGwpShort": {
+        "message": "GES"
+    },
     "criterionAdpe": {
         "message": "Ressources abiotiques"
     },
@@ -105,8 +108,24 @@
             }
         }
     },
+    "equivalenceCarKmShort": {
+        "message": "$COUNT$ km",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalenceVideoStreamingHour": {
         "message": "$COUNT$ h de streaming vidéo",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceVideoStreamingHourShort": {
+        "message": "$COUNT$ h",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -121,8 +140,24 @@
             }
         }
     },
+    "equivalenceEmailShort": {
+        "message": "$COUNT$",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
     "equivalenceWebSearch": {
         "message": "$COUNT$ recherches web",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "equivalenceWebSearchShort": {
+        "message": "$COUNT$",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -132,11 +167,8 @@
     "equivalencesSource": {
         "message": "Source : ADEME Impact CO2"
     },
-    "byProviderTitle": {
-        "message": "Par fournisseur"
-    },
-    "byModelTitle": {
-        "message": "Par modèle"
+    "breakdownTitle": {
+        "message": "Répartition"
     },
     "detailsTitle": {
         "message": "Détails"
