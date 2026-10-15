@@ -1,10 +1,14 @@
-import type { CapturedRequest, ProviderAdapter } from "./types";
+import type { WebProvider } from "../messaging";
+import { providerForHost } from "../providers";
 import type { CaptureMessage } from "./channel";
+import type { CapturedRequest, ProviderCapture, ReplyEndpoint } from "./types";
 
 type FetchWindow = Pick<typeof globalThis, "fetch"> & { location: { href: string } };
 
+export type Captures = Readonly<Partial<Record<WebProvider, ProviderCapture>>>;
+
 export interface InterceptorOptions {
-    adapters: readonly ProviderAdapter[];
+    captures: Captures;
     emit: (message: CaptureMessage) => void;
     /** Milliseconds, monotonic. */
     now?: () => number;
@@ -56,6 +60,26 @@ function describeRequest(
     return { request: { url, method, body }, bodySource };
 }
 
+/** A provider endpoint a request was matched to. */
+export interface MatchedEndpoint {
+    provider: WebProvider;
+    endpoint: ReplyEndpoint;
+}
+
+/** The endpoint of the provider of the request host matching its method and path, if any. */
+export function findEndpoint(
+    captures: Captures,
+    { url, method }: CapturedRequest,
+): MatchedEndpoint | null {
+    const provider = providerForHost(url.hostname);
+    const endpoint = provider
+        ? captures[provider]?.endpoints.find(
+              (e) => (e.method ?? "POST") === method && e.path.test(url.pathname),
+          )
+        : undefined;
+    return provider && endpoint ? { provider, endpoint } : null;
+}
+
 /** Reads a copy of the request body; must run before `fetch` consumes the request. */
 function readBody({ request, bodySource }: DescribedRequest): Promise<string | null> {
     if (bodySource === null || bodySource.body === null) return Promise.resolve(request.body);
@@ -70,12 +94,12 @@ function readBody({ request, bodySource }: DescribedRequest): Promise<string | n
 }
 
 /**
- * Reads a copy of a reply stream with the adapter's parser and emits the outcome. Never throws:
+ * Reads a copy of a reply stream with the endpoint's parser and emits the outcome. Never throws:
  * parse errors become adapter failures. Interrupted streams are still handed to the parser,
  * which only returns a reply if it saw the reply complete.
  */
 async function capture(
-    adapter: ProviderAdapter,
+    { provider, endpoint }: MatchedEndpoint,
     request: CapturedRequest,
     requestBody: Promise<string | null>,
     body: ReadableStream<Uint8Array>,
@@ -86,11 +110,11 @@ async function capture(
     const decoder = new TextDecoder();
     let parser;
     try {
-        parser = adapter.createParser({ ...request, body: await requestBody });
+        parser = endpoint.createParser({ ...request, body: await requestBody });
     } catch (error) {
         void reader.cancel();
         debug("parser creation failed", error);
-        emit({ type: "adapter-failure", provider: adapter.provider, error: errorMessage(error) });
+        emit({ type: "adapter-failure", provider, error: errorMessage(error) });
         return;
     }
     let parseError: unknown = null;
@@ -124,7 +148,7 @@ async function capture(
             const outcome = parser.finish();
             if (outcome.kind === "reply") {
                 const latencyMs = now() - startedAt;
-                const payload = { ...outcome.reply, provider: adapter.provider, latencyMs };
+                const payload = { ...outcome.reply, provider, latencyMs };
                 debug("reply captured", {
                     ...payload,
                     outputText: `${payload.outputText.length} chars`,
@@ -140,11 +164,11 @@ async function capture(
         }
     }
     debug("parse failed", parseError);
-    emit({ type: "adapter-failure", provider: adapter.provider, error: errorMessage(parseError) });
+    emit({ type: "adapter-failure", provider, error: errorMessage(parseError) });
 }
 
 /**
- * Wraps `win.fetch` so reply streams matched by an adapter are copied and parsed. The page
+ * Wraps `win.fetch` so reply streams matched by a provider endpoint are copied and parsed. The page
  * always gets the original response, untouched, and the patch never throws on its own.
  */
 export function installFetchInterceptor(win: FetchWindow, options: InterceptorOptions): void {
@@ -155,20 +179,20 @@ export function installFetchInterceptor(win: FetchWindow, options: InterceptorOp
     async function fetch(this: unknown, ...args: Parameters<typeof win.fetch>): Promise<Response> {
         const startedAt = now();
         let described: DescribedRequest | null = null;
-        let adapter: ProviderAdapter | undefined;
+        let matched: MatchedEndpoint | null = null;
         let requestBody: Promise<string | null> = Promise.resolve(null);
         try {
             const [input, init] = args;
             described = describeRequest(input, init, win.location.href);
             const { request } = described;
-            adapter = options.adapters.find((a) => a.matches(request));
-            if (adapter) requestBody = readBody(described);
+            matched = findEndpoint(options.captures, request);
+            if (matched) requestBody = readBody(described);
         } catch {
-            adapter = undefined;
+            matched = null;
         }
 
         const pending: Promise<Response> = Reflect.apply(originalFetch, this, args);
-        if (!adapter || described === null) {
+        if (matched === null || described === null) {
             if (described && described.request.method !== "GET") {
                 debug("request ignored", `${described.request.method} ${described.request.url}`);
             }
@@ -188,7 +212,7 @@ export function installFetchInterceptor(win: FetchWindow, options: InterceptorOp
                 if (copy) {
                     const { emit } = options;
                     const context = { emit, now, debug, record: options.record };
-                    void capture(adapter, request, requestBody, copy, startedAt, context);
+                    void capture(matched, request, requestBody, copy, startedAt, context);
                 }
             }
         } catch {

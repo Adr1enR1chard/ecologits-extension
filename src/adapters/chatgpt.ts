@@ -1,13 +1,7 @@
 import { isObject, parseJson, requestedModel, stringOrNull } from "../capture/decoders/json";
 import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
-import type {
-    CapturedRequest,
-    ParseOutcome,
-    ProviderAdapter,
-    StreamParser,
-} from "../capture/types";
+import type { CapturedRequest, ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
 import { isChatGptReasoningSlug } from "../models/chatgpt-slugs";
-import { PROVIDER_HOSTS } from "../providers";
 
 /**
  * ChatGPT web app (chatgpt.com).
@@ -344,11 +338,8 @@ class ChatGptParser implements StreamParser {
     }
 }
 
-export const chatgptAdapter: ProviderAdapter = {
-    provider: "chatgpt",
-    matches: ({ url, method }) =>
-        method === "POST" &&
-        PROVIDER_HOSTS.chatgpt.includes(url.hostname) &&
-        CONVERSATION_PATH.test(url.pathname),
+export const chatgptConversationEndpoint: ReplyEndpoint = {
+    method: "POST",
+    path: CONVERSATION_PATH,
     createParser: (request) => new ChatGptParser(request),
 };

@@ -1,6 +1,6 @@
-import { chatgptAdapter } from "@/src/adapters/chatgpt";
-import { chatgptLoggedOutAdapter } from "@/src/adapters/chatgpt-logged-out";
-import { claudeAdapter } from "@/src/adapters/claude";
+import { chatgptConversationEndpoint } from "@/src/adapters/chatgpt";
+import { chatgptLoggedOutEndpoint } from "@/src/adapters/chatgpt-logged-out";
+import { claudeCompletionEndpoint } from "@/src/adapters/claude";
 import { offerChannel } from "@/src/capture/channel";
 import { installFetchInterceptor, type RecordedStream } from "@/src/capture/interceptor";
 import { SUPPORTED_PROVIDERS, matchPatterns } from "@/src/providers";
@@ -27,7 +27,10 @@ export default defineContentScript({
             : undefined;
         const emit = offerChannel(window, window.location.origin);
         installFetchInterceptor(window, {
-            adapters: [chatgptAdapter, chatgptLoggedOutAdapter, claudeAdapter],
+            captures: {
+                chatgpt: { endpoints: [chatgptConversationEndpoint, chatgptLoggedOutEndpoint] },
+                claude: { endpoints: [claudeCompletionEndpoint] },
+            },
             emit,
             debug,
             record,

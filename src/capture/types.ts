@@ -1,4 +1,4 @@
-import type { CapturedResponse, WebProvider } from "../messaging";
+import type { CapturedResponse } from "../messaging";
 
 /** The parts of an outgoing `fetch` call adapters need to recognise a reply request. */
 export interface CapturedRequest {
@@ -27,9 +27,19 @@ export interface StreamParser {
     finish(): ParseOutcome;
 }
 
-export interface ProviderAdapter {
-    provider: WebProvider;
-    /** Whether the request returns an assistant reply stream this adapter parses. */
-    matches(request: CapturedRequest): boolean;
+/**
+ * A request returning an assistant reply stream. The interceptor checks that the request goes to
+ * one of the provider's hosts, then matches its method and path.
+ */
+export interface ReplyEndpoint {
+    /** `"POST"` when omitted. */
+    method?: "POST" | "GET";
+    /** Matches the URL path. */
+    path: RegExp;
     createParser(request: CapturedRequest): StreamParser;
+}
+
+/** What the interceptor needs to capture a provider's replies. */
+export interface ProviderCapture {
+    endpoints: readonly ReplyEndpoint[];
 }
