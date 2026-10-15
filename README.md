@@ -6,7 +6,7 @@ Cross-browser extension (Chrome, Firefox, Edge, Safari) that estimates the envir
 
 - OpenAI (ChatGPT)
 - Anthropic (Claude)
-- Google (Gemini)
+- Google (Gemini) (TODO)
 
 ## Status
 
