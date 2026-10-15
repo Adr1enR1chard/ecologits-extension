@@ -113,7 +113,7 @@ describe("processCapturedResponse", () => {
         );
         expect(result.flags.approximatedModel).toBe(true);
         expect(await getAggregates()).toHaveProperty(
-            "2026-10-14/claude/claude-sonnet-4-5.approximatedModelRequests",
+            "2026-10-14/claude/claude-sonnet-5-5.approximatedModelRequests",
             1,
         );
     });

@@ -154,3 +154,141 @@ describe("findReplyAnchor", () => {
         expect(resolve(await anchor)).toEqual([last]);
     });
 });
+
+describe("claude.ai replies", () => {
+    /**
+     * A reply as rendered on 2026-10-15: heading, content, then the action bar wrapper once
+     * complete. Returns the wrapper, before which the badge goes.
+     */
+    function addClaudeReply(id: string, streaming = false): HTMLElement {
+        const reply = document.createElement("div");
+        reply.dataset.testid = "assistant-message";
+        reply.dataset.turnKey = id;
+        reply.dataset.isStreaming = String(streaming);
+        const content = document.createElement("div");
+        content.textContent = "Hello!";
+        reply.append(document.createElement("h2"), content);
+        document.body.append(reply);
+        const wrapper = document.createElement("div");
+        if (!streaming) completeClaudeReply(reply, wrapper);
+        return wrapper;
+    }
+
+    function completeClaudeReply(reply: HTMLElement, wrapper: HTMLElement): void {
+        const actions = document.createElement("div");
+        actions.dataset.testid = "message-actions";
+        wrapper.append(actions);
+        reply.append(wrapper);
+        reply.dataset.isStreaming = "false";
+    }
+
+    function addUserMessage(id: string): void {
+        const message = document.createElement("div");
+        message.dataset.cds = "UserMessage";
+        message.dataset.turnKey = id;
+        document.body.append(message);
+    }
+
+    const claude = { provider: "claude" as const };
+
+    it("put the badge before the action bar of the reply with that turn key", () => {
+        addUserMessage("u1");
+        const wrapper = addClaudeReply(ID);
+        addClaudeReply("other");
+        const [anchor] = replyAnchors(ID, "claude");
+        expect(anchor!.position).toBe("before");
+        expect(resolve(anchor!)).toEqual([wrapper]);
+    });
+
+    it("targets the last finished reply, not user messages", () => {
+        addClaudeReply("a1");
+        const last = addClaudeReply("a2");
+        addUserMessage("u3");
+        expect(resolve(lastReplyAnchor(document, "claude"))).toEqual([last]);
+    });
+
+    it("resolves at once when the reply is rendered", async () => {
+        const wrapper = addClaudeReply(ID);
+        expect(resolve(await findReplyAnchor(document.body, ID, claude))).toEqual([wrapper]);
+    });
+
+    it("waits for the action bar of a reply still streaming", async () => {
+        addClaudeReply("a1");
+        const wrapper = addClaudeReply(ID, true);
+        const reply = wrapper.ownerDocument.querySelector<HTMLElement>(`[data-turn-key="${ID}"]`)!;
+        const anchor = findReplyAnchor(document.body, ID, { ...claude, timeoutMs: 1000 });
+        setTimeout(() => completeClaudeReply(reply, wrapper), 10);
+        expect(resolve(await anchor)).toEqual([wrapper]);
+    });
+
+    it("falls back to the last reply once it finished streaming", async () => {
+        const wrapper = addClaudeReply("rendered-id", true);
+        const reply = document.querySelector<HTMLElement>('[data-turn-key="rendered-id"]')!;
+        const anchor = findReplyAnchor(document.body, "streamed-id", {
+            ...claude,
+            timeoutMs: 20,
+            settleMs: 5,
+        });
+        setTimeout(() => completeClaudeReply(reply, wrapper), 60);
+        expect(resolve(await anchor)).toEqual([wrapper]);
+    });
+
+    it("gives up on a reply stuck streaming", async () => {
+        addClaudeReply("a1");
+        addClaudeReply("a2", true);
+        const anchor = findReplyAnchor(document.body, "streamed-id", {
+            ...claude,
+            settleMs: 5,
+            timeoutMs: 10,
+            maxRenderingMs: 40,
+        });
+        expect(await anchor).toBeNull();
+    });
+
+    it("falls back when a chat started from a project gets its id", async () => {
+        const last = addClaudeReply("a1");
+        let path = "/project/00000000-0000-4000-8000-00000000000a";
+        const anchor = findReplyAnchor(document.body, "streamed-id", {
+            ...claude,
+            timeoutMs: 20,
+            conversation: () => path,
+        });
+        path = "/chat/00000000-0000-4000-8000-000000000001";
+        expect(resolve(await anchor)).toEqual([last]);
+    });
+
+    it("does not fall back once a new chat moved to another one", async () => {
+        addClaudeReply("a1");
+        let path = "/new";
+        const anchor = findReplyAnchor(document.body, "streamed-id", {
+            ...claude,
+            timeoutMs: 30,
+            conversation: () => path,
+        });
+        path = "/chat/00000000-0000-4000-8000-000000000001";
+        setTimeout(() => addClaudeReply("a2"), 5);
+        setTimeout(() => {
+            path = "/chat/00000000-0000-4000-8000-000000000002";
+            addClaudeReply("a3");
+        }, 10);
+        expect(await anchor).toBeNull();
+    });
+});
+
+describe("findReplyAnchor from a new ChatGPT conversation", () => {
+    it("does not fall back once it moved to another conversation", async () => {
+        addReply("msg-1");
+        let path = "/";
+        const anchor = findReplyAnchor(document.body, null, {
+            settleMs: 30,
+            conversation: () => path,
+        });
+        path = "/c/new";
+        setTimeout(() => addReply("msg-2"), 5);
+        setTimeout(() => {
+            path = "/c/other";
+            addReply("msg-3");
+        }, 10);
+        expect(await anchor).toBeNull();
+    });
+});

@@ -5,11 +5,11 @@ import { shadowRootBadgeMount } from "@/src/badge/mount";
 import { relay } from "@/src/capture/bridge";
 import { acceptChannel } from "@/src/capture/channel";
 import { uiLocale } from "@/src/i18n";
-import { matchPatterns, providerForHost } from "@/src/providers";
+import { SUPPORTED_PROVIDERS, matchPatterns, providerForHost } from "@/src/providers";
 import { DEFAULT_SETTINGS, getSettings, watchSettings } from "@/src/storage/settings";
 
 export default defineContentScript({
-    matches: matchPatterns("chatgpt"),
+    matches: matchPatterns(...SUPPORTED_PROVIDERS),
     runAt: "document_start",
     cssInjectionMode: "ui",
     async main(ctx) {
@@ -25,7 +25,7 @@ export default defineContentScript({
         };
         // Disabled until the settings are read; replies captured meanwhile are shown then.
         const badges = createBadgeManager({
-            findAnchor: (messageId) => findReplyAnchor(document, messageId),
+            findAnchor: (messageId) => findReplyAnchor(document, messageId, { provider }),
             mount: shadowRootBadgeMount(ctx, uiLocale()),
             enabled: false,
             debug,
