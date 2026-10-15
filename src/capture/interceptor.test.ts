@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { chatgptAdapter } from "../adapters/chatgpt";
-import { claudeAdapter } from "../adapters/claude";
-import type { ProviderAdapter } from "./types";
+import { chatgptConversationEndpoint } from "../adapters/chatgpt";
+import { claudeCompletionEndpoint } from "../adapters/claude";
 import type { CaptureMessage } from "./channel";
-import { installFetchInterceptor } from "./interceptor";
+import { findEndpoint, installFetchInterceptor, type Captures } from "./interceptor";
+import type { ReplyEndpoint } from "./types";
 
 const URL_CONVERSATION = "https://chatgpt.com/backend-api/f/conversation";
 const fixture = (name: string) =>
@@ -31,13 +31,17 @@ function streamResponse(text: string, { status = 200, failAfter = Infinity } = {
     return new Response(body, { status, headers: { "content-type": "text/event-stream" } });
 }
 
-function setup(response: () => Response, adapters: ProviderAdapter[] = [chatgptAdapter]) {
+const chatgpt = (endpoint: ReplyEndpoint = chatgptConversationEndpoint): Captures => ({
+    chatgpt: { endpoints: [endpoint] },
+});
+
+function setup(response: () => Response, captures: Captures = chatgpt()) {
     const original = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => response());
     const win = { fetch: original as typeof fetch, location: { href: "https://chatgpt.com/c/1" } };
     const messages: CaptureMessage[] = [];
     let clock = 1000;
     installFetchInterceptor(win, {
-        adapters,
+        captures,
         emit: (m) => messages.push(m),
         now: () => (clock += 500),
     });
@@ -114,7 +118,7 @@ describe("installFetchInterceptor", () => {
         const original = async () => streamResponse(text);
         const win = { fetch: original as typeof fetch, location: { href: "https://chatgpt.com/" } };
         installFetchInterceptor(win, {
-            adapters: [chatgptAdapter],
+            captures: chatgpt(),
             emit: () => undefined,
             record: (stream) => records.push(stream),
         });
@@ -172,8 +176,8 @@ describe("installFetchInterceptor", () => {
     });
 
     it("reports parser exceptions as adapter failures without affecting the page", async () => {
-        const broken: ProviderAdapter = {
-            ...chatgptAdapter,
+        const broken: ReplyEndpoint = {
+            ...chatgptConversationEndpoint,
             createParser: () => ({
                 push: () => {
                     throw new Error("unexpected format");
@@ -182,7 +186,7 @@ describe("installFetchInterceptor", () => {
             }),
         };
         const text = fixture("normal-reply");
-        const { win, messages, settle } = setup(() => streamResponse(text), [broken]);
+        const { win, messages, settle } = setup(() => streamResponse(text), chatgpt(broken));
         const response = await win.fetch(URL_CONVERSATION, post);
 
         expect(await response.text()).toBe(text);
@@ -192,17 +196,54 @@ describe("installFetchInterceptor", () => {
         ]);
     });
 
-    it("ignores adapters that throw while matching", async () => {
-        const throwing: ProviderAdapter = {
-            ...chatgptAdapter,
-            matches: () => {
-                throw new Error("boom");
-            },
+    it("ignores endpoints that throw while matching", async () => {
+        const throwing: ReplyEndpoint = {
+            ...chatgptConversationEndpoint,
+            path: {
+                test: () => {
+                    throw new Error("boom");
+                },
+            } as unknown as RegExp,
         };
-        const { win, messages, settle } = setup(() => new Response("ok"), [throwing]);
+        const { win, messages, settle } = setup(() => new Response("ok"), chatgpt(throwing));
         expect(await (await win.fetch(URL_CONVERSATION, post)).text()).toBe("ok");
         await settle();
         expect(messages).toEqual([]);
+    });
+});
+
+describe("findEndpoint", () => {
+    const loggedOut: ReplyEndpoint = { ...chatgptConversationEndpoint, path: /^\/unauth$/ };
+    const listing: ReplyEndpoint = { ...loggedOut, method: "GET", path: /^\/list$/ };
+    const captures: Captures = {
+        chatgpt: { endpoints: [chatgptConversationEndpoint, loggedOut, listing] },
+    };
+    const find = (url: string, method = "POST") =>
+        findEndpoint(captures, { url: new URL(url), method, body: null });
+
+    it("matches the endpoints of the provider of the request host", () => {
+        expect(find("https://chatgpt.com/unauth")).toEqual({
+            provider: "chatgpt",
+            endpoint: loggedOut,
+        });
+        expect(find("https://chat.openai.com/unauth")).toEqual({
+            provider: "chatgpt",
+            endpoint: loggedOut,
+        });
+    });
+
+    it("defaults to POST and honours the endpoint method", () => {
+        expect(find("https://chatgpt.com/unauth", "GET")).toBeNull();
+        expect(find("https://chatgpt.com/list", "GET")).toEqual({
+            provider: "chatgpt",
+            endpoint: listing,
+        });
+        expect(find("https://chatgpt.com/list")).toBeNull();
+    });
+
+    it("ignores other hosts and providers without capture", () => {
+        expect(find("https://evil.example/unauth")).toBeNull();
+        expect(find("https://claude.ai/unauth")).toBeNull();
     });
 });
 
@@ -214,10 +255,10 @@ describe("installFetchInterceptor on claude.ai", () => {
 
     it("captures a recorded reply and ignores one stopped by the user", async () => {
         const responses = [claudeFixture("normal-reply"), claudeFixture("aborted")];
-        const { win, messages, settle } = setup(
-            () => streamResponse(responses.shift()!),
-            [chatgptAdapter, claudeAdapter],
-        );
+        const { win, messages, settle } = setup(() => streamResponse(responses.shift()!), {
+            ...chatgpt(),
+            claude: { endpoints: [claudeCompletionEndpoint] },
+        });
         for (let i = 0; i < 2; i++) {
             const response = await win.fetch(COMPLETION, { method: "POST", body: "{}" });
             await response.text();

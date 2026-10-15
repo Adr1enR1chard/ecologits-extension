@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../capture/adapter-contract";
-import { claudeAdapter } from "./claude";
+import { findEndpoint } from "../capture/interceptor";
+import { claudeCompletionEndpoint } from "./claude";
 import type { CapturedRequest, ParseOutcome } from "../capture/types";
+
+const matches = (request: CapturedRequest) =>
+    findEndpoint({ claude: { endpoints: [claudeCompletionEndpoint] } }, request)?.endpoint ===
+    claudeCompletionEndpoint;
 
 const COMPLETION_URL =
     "https://claude.ai/api/organizations/00000000-0000-4000-8000-0000000000aa/chat_conversations/00000000-0000-4000-8000-0000000000bb/completion";
@@ -21,7 +26,7 @@ function fixture(name: string): string {
 }
 
 function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcome {
-    const parser = claudeAdapter.createParser(req);
+    const parser = claudeCompletionEndpoint.createParser(req);
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
     return parser.finish();
 }
@@ -35,11 +40,11 @@ const textBlock = (index: number, text: string) =>
     event({ type: "content_block_delta", index, delta: { type: "text_delta", text } });
 const stop = event({ type: "message_stop" });
 
-describe("claudeAdapter.matches", () => {
+describe("claudeCompletionEndpoint matching", () => {
     it.each([COMPLETION_URL, COMPLETION_URL.replace("/completion", "/retry_completion")])(
         "matches POST %s",
         (url) => {
-            expect(claudeAdapter.matches(request({ url: new URL(url) }))).toBe(true);
+            expect(matches(request({ url: new URL(url) }))).toBe(true);
         },
     );
 
@@ -49,11 +54,11 @@ describe("claudeAdapter.matches", () => {
         "https://claude.ai/api/organizations/x/chat_conversations",
         COMPLETION_URL.replace("claude.ai", "evil.example"),
     ])("ignores %s", (url) => {
-        expect(claudeAdapter.matches(request({ url: new URL(url) }))).toBe(false);
+        expect(matches(request({ url: new URL(url) }))).toBe(false);
     });
 
     it("ignores non-POST requests", () => {
-        expect(claudeAdapter.matches(request({ method: "GET" }))).toBe(false);
+        expect(matches(request({ method: "GET" }))).toBe(false);
     });
 });
 
@@ -63,7 +68,7 @@ const completion =
     event({ type: "message_delta", delta: { stop_reason: "end_turn" } }) +
     stop;
 
-describeAdapterContract("claude", claudeAdapter, request(), {
+describeAdapterContract("claude", claudeCompletionEndpoint, request(), {
     "normal-reply": fixture("normal-reply"),
     "tool-call": fixture("tool-call"),
     aborted: fixture("aborted"),

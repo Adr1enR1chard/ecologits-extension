@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../capture/adapter-contract";
-import { applyDelta, chatgptAdapter } from "./chatgpt";
+import { findEndpoint } from "../capture/interceptor";
+import { applyDelta, chatgptConversationEndpoint } from "./chatgpt";
 import type { CapturedRequest, ParseOutcome } from "../capture/types";
+
+const matches = (request: CapturedRequest) =>
+    findEndpoint({ chatgpt: { endpoints: [chatgptConversationEndpoint] } }, request)?.endpoint ===
+    chatgptConversationEndpoint;
 
 function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
     return {
@@ -21,14 +26,14 @@ function fixture(name: string): string {
 }
 
 function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcome {
-    const parser = chatgptAdapter.createParser(req);
+    const parser = chatgptConversationEndpoint.createParser(req);
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
     return parser.finish();
 }
 
 describeAdapterContract(
     "chatgpt",
-    chatgptAdapter,
+    chatgptConversationEndpoint,
     request(),
     Object.fromEntries(
         ["normal-reply", "thinking-reply", "regenerate", "tool-call", "aborted"].map((name) => [
@@ -38,7 +43,7 @@ describeAdapterContract(
     ),
 );
 
-describe("chatgptAdapter.matches", () => {
+describe("chatgptConversationEndpoint matching", () => {
     it.each([
         "https://chatgpt.com/backend-api/conversation",
         "https://chatgpt.com/backend-api/f/conversation",
@@ -46,7 +51,7 @@ describe("chatgptAdapter.matches", () => {
         "https://chatgpt.com/backend-anon/f/conversation",
         "https://chat.openai.com/backend-api/conversation",
     ])("matches POST %s", (url) => {
-        expect(chatgptAdapter.matches(request({ url: new URL(url) }))).toBe(true);
+        expect(matches(request({ url: new URL(url) }))).toBe(true);
     });
 
     it.each([
@@ -58,11 +63,11 @@ describe("chatgptAdapter.matches", () => {
         "https://chatgpt.com/unauth-mweb/conversation/updates",
         "https://chatgpt.com/backend-api/conversation/updates",
     ])("ignores %s", (url) => {
-        expect(chatgptAdapter.matches(request({ url: new URL(url) }))).toBe(false);
+        expect(matches(request({ url: new URL(url) }))).toBe(false);
     });
 
     it("ignores non-POST requests", () => {
-        expect(chatgptAdapter.matches(request({ method: "GET" }))).toBe(false);
+        expect(matches(request({ method: "GET" }))).toBe(false);
     });
 });
 

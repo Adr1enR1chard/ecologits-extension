@@ -1,12 +1,6 @@
 import { isObject, parseJson, stringOrNull, type JsonObject } from "../capture/decoders/json";
 import { NdjsonDecoder } from "../capture/decoders/ndjson";
-import type {
-    CapturedRequest,
-    ParseOutcome,
-    ProviderAdapter,
-    StreamParser,
-} from "../capture/types";
-import { PROVIDER_HOSTS } from "../providers";
+import type { ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
 
 /**
  * ChatGPT web app when logged out (chatgpt.com).
@@ -89,11 +83,8 @@ class LoggedOutParser implements StreamParser {
     }
 }
 
-export const chatgptLoggedOutAdapter: ProviderAdapter = {
-    provider: "chatgpt",
-    matches: ({ url, method }: CapturedRequest) =>
-        method === "POST" &&
-        PROVIDER_HOSTS.chatgpt.includes(url.hostname) &&
-        UPDATES_PATH.test(url.pathname),
+export const chatgptLoggedOutEndpoint: ReplyEndpoint = {
+    method: "POST",
+    path: UPDATES_PATH,
     createParser: () => new LoggedOutParser(),
 };

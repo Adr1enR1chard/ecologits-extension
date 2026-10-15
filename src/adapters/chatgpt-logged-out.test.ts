@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../capture/adapter-contract";
-import { chatgptLoggedOutAdapter } from "./chatgpt-logged-out";
+import { findEndpoint } from "../capture/interceptor";
+import { chatgptLoggedOutEndpoint } from "./chatgpt-logged-out";
 import type { CapturedRequest, ParseOutcome } from "../capture/types";
+
+const matches = (request: CapturedRequest) =>
+    findEndpoint({ chatgpt: { endpoints: [chatgptLoggedOutEndpoint] } }, request)?.endpoint ===
+    chatgptLoggedOutEndpoint;
 
 const UPDATES = "https://chatgpt.com/unauth-mweb/conversation/updates?operationId=1";
 const read = (name: string) =>
@@ -15,7 +20,7 @@ function request(url = UPDATES, method = "POST"): CapturedRequest {
 }
 
 function parse(text: string, chunkSize = Infinity): ParseOutcome {
-    const parser = chatgptLoggedOutAdapter.createParser(request());
+    const parser = chatgptLoggedOutEndpoint.createParser(request());
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
     return parser.finish();
 }
@@ -24,14 +29,14 @@ const line = (data: object) => JSON.stringify({ version: 1, ...data }) + "\n";
 const terminal = (terminalKind: string, messageId = "a") =>
     line({ type: "control", detail: { kind: "terminal-received", messageId, terminalKind } });
 
-describeAdapterContract("chatgpt logged out", chatgptLoggedOutAdapter, request(), {
+describeAdapterContract("chatgpt logged out", chatgptLoggedOutEndpoint, request(), {
     "logged-out-reply": fixture,
     "logged-out-stopped": stopped,
 });
 
-describe("chatgptLoggedOutAdapter.matches", () => {
+describe("chatgptLoggedOutEndpoint matching", () => {
     it("matches the logged-out updates stream", () => {
-        expect(chatgptLoggedOutAdapter.matches(request())).toBe(true);
+        expect(matches(request())).toBe(true);
     });
 
     it.each([
@@ -40,11 +45,11 @@ describe("chatgptLoggedOutAdapter.matches", () => {
         "https://chatgpt.com/backend-api/f/conversation",
         "https://evil.example/unauth-mweb/conversation/updates",
     ])("ignores %s", (url) => {
-        expect(chatgptLoggedOutAdapter.matches(request(url))).toBe(false);
+        expect(matches(request(url))).toBe(false);
     });
 
     it("ignores non-POST requests", () => {
-        expect(chatgptLoggedOutAdapter.matches(request(UPDATES, "GET"))).toBe(false);
+        expect(matches(request(UPDATES, "GET"))).toBe(false);
     });
 });
 

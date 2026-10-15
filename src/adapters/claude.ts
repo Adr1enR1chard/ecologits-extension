@@ -6,13 +6,7 @@ import {
     type JsonObject,
 } from "../capture/decoders/json";
 import { SseDecoder, type SseEvent } from "../capture/decoders/sse";
-import type {
-    CapturedRequest,
-    ParseOutcome,
-    ProviderAdapter,
-    StreamParser,
-} from "../capture/types";
-import { PROVIDER_HOSTS } from "../providers";
+import type { CapturedRequest, ParseOutcome, ReplyEndpoint, StreamParser } from "../capture/types";
 
 /**
  * Claude web app (claude.ai).
@@ -210,11 +204,8 @@ class ClaudeParser implements StreamParser {
     }
 }
 
-export const claudeAdapter: ProviderAdapter = {
-    provider: "claude",
-    matches: ({ url, method }) =>
-        method === "POST" &&
-        PROVIDER_HOSTS.claude.includes(url.hostname) &&
-        COMPLETION_PATH.test(url.pathname),
+export const claudeCompletionEndpoint: ReplyEndpoint = {
+    method: "POST",
+    path: COMPLETION_PATH,
     createParser: (request) => new ClaudeParser(request),
 };
