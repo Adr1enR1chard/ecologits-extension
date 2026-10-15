@@ -4,7 +4,7 @@ import type { ColorScheme } from "@/src/badge/theme";
 import { uiLocale } from "@/src/i18n";
 import { App as Options } from "../options/App";
 import { Popup } from "../popup/App";
-import { sampleAggregates, sampleResult, sampleStatuses } from "./samples";
+import { healthyStatuses, sampleAggregates, sampleResult, sampleStatuses } from "./samples";
 
 const locale = uiLocale();
 
@@ -25,6 +25,22 @@ const BADGE_RESULTS = [
         model: "claude-sonnet-5-5",
         flags: { lowerBound: true, approximatedModel: true },
     }),
+];
+
+const POPUPS = [
+    {
+        title: "Popup, several providers, a failing capture",
+        surface: "popup",
+        aggregates: sampleAggregates(),
+        statuses: sampleStatuses(),
+    },
+    {
+        title: "Popup, one provider",
+        surface: "popup-one-provider",
+        aggregates: sampleAggregates(Date.now(), ["chatgpt"]),
+        statuses: healthyStatuses(),
+    },
+    { title: "Popup, empty", surface: "popup-empty", aggregates: {}, statuses: {} },
 ];
 
 function Frame({ title, children }: { title: string; children: ComponentChildren }) {
@@ -84,19 +100,16 @@ export function Gallery({ lang, theme }: { lang: string; theme: string | null })
                 </div>
             </Frame>
             <div class="flex flex-wrap items-start gap-8">
-                <Frame title="Popup">
-                    <div data-surface="popup" class="w-fit rounded-lg border border-line bg-canvas">
-                        <Popup aggregates={sampleAggregates()} statuses={sampleStatuses()} />
-                    </div>
-                </Frame>
-                <Frame title="Popup, empty">
-                    <div
-                        data-surface="popup-empty"
-                        class="w-fit rounded-lg border border-line bg-canvas"
-                    >
-                        <Popup aggregates={{}} statuses={{}} />
-                    </div>
-                </Frame>
+                {POPUPS.map(({ title, surface, aggregates, statuses }) => (
+                    <Frame key={surface} title={title}>
+                        <div
+                            data-surface={surface}
+                            class="w-fit rounded-lg border border-line bg-canvas"
+                        >
+                            <Popup aggregates={aggregates} statuses={statuses} />
+                        </div>
+                    </Frame>
+                ))}
             </div>
             <Frame title="Options">
                 <div data-surface="options" class="rounded-lg border border-line bg-canvas">

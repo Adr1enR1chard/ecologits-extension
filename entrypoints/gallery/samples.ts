@@ -60,11 +60,15 @@ const REPLIES: [WebProvider, string, number, Partial<ImpactResult["flags"]>][] =
     ["claude", "claude-opus-5-5", 0.0089, { approximatedModel: true }],
 ];
 
-/** A few days of replies on several providers and models. */
-export function sampleAggregates(now = Date.now()): DailyAggregates {
+/** A few days of replies on several models of the given providers. */
+export function sampleAggregates(
+    now = Date.now(),
+    providers: readonly WebProvider[] = ["chatgpt", "claude"],
+): DailyAggregates {
     let aggregates: DailyAggregates = {};
     for (let day = 0; day < 10; day++) {
         REPLIES.forEach(([provider, model, energy, flags], i) => {
+            if (!providers.includes(provider)) return;
             aggregates = addToAggregates(
                 aggregates,
                 sampleResult({
@@ -80,6 +84,7 @@ export function sampleAggregates(now = Date.now()): DailyAggregates {
     return aggregates;
 }
 
+/** ChatGPT working, the last Claude capture failed. */
 export function sampleStatuses(now = Date.now()): Partial<Record<WebProvider, AdapterStatus>> {
     return {
         chatgpt: {
@@ -95,4 +100,15 @@ export function sampleStatuses(now = Date.now()): Partial<Record<WebProvider, Ad
             lastError: "No model in the completion request",
         },
     };
+}
+
+/** Every supported provider working. */
+export function healthyStatuses(now = Date.now()): Partial<Record<WebProvider, AdapterStatus>> {
+    const ok = (provider: WebProvider): AdapterStatus => ({
+        provider,
+        lastSuccessAt: now - HOUR,
+        lastFailureAt: null,
+        lastError: null,
+    });
+    return { chatgpt: ok("chatgpt"), claude: ok("claude") };
 }
