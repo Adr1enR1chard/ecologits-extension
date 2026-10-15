@@ -50,6 +50,8 @@ export interface ImpactFlags {
     lowerBound: boolean;
     /** The web model could not be mapped and the provider fallback model was used. */
     approximatedModel: boolean;
+    /** The reply was stopped before its end: only the part generated until then is counted. */
+    partial: boolean;
 }
 
 /** An EcoLogits warning or error, serialised. */
@@ -71,6 +73,8 @@ export interface CapturedResponse {
     /** Request start to stream end, in milliseconds. */
     latencyMs: number;
     messageId: string | null;
+    /** The reply was stopped before its end; the fields describe what was streamed until then. */
+    partial: boolean;
 }
 
 /** Computed impacts of one assistant reply. Never contains message content. */

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { chatgptLoggedOutEndpoint } from "./logged-out";
-import type { CapturedRequest, ParseOutcome } from "../../capture/types";
+import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ chatgpt: { endpoints: [chatgptLoggedOutEndpoint] } }, request)?.endpoint ===
@@ -19,10 +19,10 @@ function request(url = UPDATES, method = "POST"): CapturedRequest {
     return { url: new URL(url), method, body: null };
 }
 
-function parse(text: string, chunkSize = Infinity): ParseOutcome {
+function parse(text: string, chunkSize = Infinity, end: StreamEnd = "done"): ParseOutcome {
     const parser = chatgptLoggedOutEndpoint.createParser(request());
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
-    return parser.finish();
+    return parser.finish(end);
 }
 
 const line = (data: object) => JSON.stringify({ version: 1, ...data }) + "\n";
@@ -63,12 +63,34 @@ describe("chatgpt logged-out stream", () => {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: "00000000-0000-4000-8000-000000000072",
+                partial: false,
             },
         });
     });
 
-    it("skips replies stopped by the user: the stream just ends", () => {
-        expect(parse(stopped)).toEqual({
+    it("records replies stopped by the user as partial: the page aborts the stream", () => {
+        expect(parse(stopped, Infinity, "aborted")).toMatchObject({
+            kind: "reply",
+            reply: {
+                outputText: expect.stringMatching(/^Mais bien évidemment.* Pas trois$/),
+                messageId: "00000000-0000-4000-8000-000000000082",
+                partial: true,
+            },
+        });
+    });
+
+    it("skips streams cut before terminal-received by a network error or a closed stream", () => {
+        for (const end of ["done", "failed"] as const) {
+            expect(parse(stopped, Infinity, end)).toEqual({
+                kind: "skip",
+                reason: "stream ended before terminal-received",
+            });
+        }
+    });
+
+    it("skips streams aborted before the assistant message started", () => {
+        const text = line({ type: "content", messageId: "a", mode: "replace", markdown: "Hi" });
+        expect(parse(text, Infinity, "aborted")).toEqual({
             kind: "skip",
             reason: "stream ended before terminal-received",
         });

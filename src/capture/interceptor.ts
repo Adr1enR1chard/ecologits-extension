@@ -4,7 +4,7 @@ import {
     type SupportedProvider,
 } from "../providers/registry";
 import type { CaptureMessage } from "./channel";
-import type { CapturedRequest, ProviderCapture, ReplyEndpoint } from "./types";
+import type { CapturedRequest, ProviderCapture, ReplyEndpoint, StreamEnd } from "./types";
 
 type FetchWindow = Pick<typeof globalThis, "fetch"> & { location: { href: string } };
 
@@ -41,6 +41,16 @@ const noDebug: Debug = () => undefined;
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+/** An aborted fetch rejects its body reads with a `DOMException` named `AbortError`. */
+function isAbort(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        error.name === "AbortError"
+    );
 }
 
 interface DescribedRequest {
@@ -99,8 +109,9 @@ function readBody({ request, bodySource }: DescribedRequest): Promise<string | n
 
 /**
  * Reads a copy of a reply stream with the endpoint's parser and emits the outcome. Never throws:
- * parse errors become adapter failures. Interrupted streams are still handed to the parser,
- * which only returns a reply if it saw the reply complete.
+ * parse errors become adapter failures. Interrupted streams are still handed to the parser, with
+ * how they ended: it returns a reply if it saw the reply complete, or a partial one if the page
+ * aborted it before.
  */
 async function capture(
     { provider, endpoint }: MatchedEndpoint,
@@ -124,6 +135,7 @@ async function capture(
     let parseError: unknown = null;
     const recorded: string[] = [];
     let end = "done";
+    let streamEnd: StreamEnd = "done";
     try {
         for (;;) {
             const { done, value } = await reader.read();
@@ -142,6 +154,7 @@ async function capture(
         // once the reply is complete, so let the parser decide from what it received.
         debug("stream interrupted", error);
         end = String(error);
+        streamEnd = isAbort(error) ? "aborted" : "failed";
     }
     record?.({ url: request.url.href, end, text: recorded.join("") });
     if (parseError !== null) {
@@ -149,7 +162,7 @@ async function capture(
     } else {
         try {
             parser.push(decoder.decode());
-            const outcome = parser.finish();
+            const outcome = parser.finish(streamEnd);
             if (outcome.kind === "reply") {
                 const latencyMs = now() - startedAt;
                 const payload = { ...outcome.reply, provider, latencyMs };

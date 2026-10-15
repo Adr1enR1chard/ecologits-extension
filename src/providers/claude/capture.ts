@@ -11,6 +11,7 @@ import type {
     ParseOutcome,
     ProviderCapture,
     ReplyEndpoint,
+    StreamEnd,
     StreamParser,
 } from "../../capture/types";
 
@@ -30,7 +31,8 @@ import type {
  * claude.ai does not stream the thinking itself, only summaries of it
  * (`thinking_summary_delta`, also listed in the block's `summaries`); `thinking_delta` text, as
  * in the API, is counted if it ever comes.
- * The reply is complete once `message_stop` arrives; a reply stopped by the user just ends.
+ * The reply is complete once `message_stop` arrives; a reply stopped by the user ends with an
+ * `AbortError` before it.
  *
  * Former clients streamed `{ type: "completion", completion, stop_reason, model }` events
  * (`rendering_mode: "raw"`), still accepted as a fallback.
@@ -90,10 +92,12 @@ class ClaudeParser implements StreamParser {
         for (const event of this.decoder.push(text)) this.handleEvent(event);
     }
 
-    finish(): ParseOutcome {
+    finish(end: StreamEnd): ParseOutcome {
         for (const event of this.decoder.flush()) this.handleEvent(event);
+        const partial = !this.done && end === "aborted";
         if (this.error !== null) return { kind: "skip", reason: `error: ${this.error}` };
-        if (!this.done) return { kind: "skip", reason: "stream ended before message_stop" };
+        if (!this.done && !partial)
+            return { kind: "skip", reason: "stream ended before message_stop" };
 
         const blocks = this.blocks.filter((b): b is ContentBlock => b !== undefined);
         const output = [
@@ -123,6 +127,7 @@ class ClaudeParser implements StreamParser {
                 reasoningText: reasoningText === "" ? null : reasoningText,
                 hiddenReasoning,
                 messageId: this.messageId,
+                partial,
             },
         };
     }

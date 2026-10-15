@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { applyDelta, chatgptConversationEndpoint } from "./conversation";
-import type { CapturedRequest, ParseOutcome } from "../../capture/types";
+import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
 
 const matches = (request: CapturedRequest) =>
     findEndpoint({ chatgpt: { endpoints: [chatgptConversationEndpoint] } }, request)?.endpoint ===
@@ -25,10 +25,15 @@ function fixture(name: string): string {
     );
 }
 
-function parse(text: string, chunkSize = Infinity, req = request()): ParseOutcome {
+function parse(
+    text: string,
+    chunkSize = Infinity,
+    req = request(),
+    end: StreamEnd = "done",
+): ParseOutcome {
     const parser = chatgptConversationEndpoint.createParser(req);
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
-    return parser.finish();
+    return parser.finish(end);
 }
 
 describeAdapterContract(
@@ -81,6 +86,7 @@ describe("chatgpt fixtures", () => {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: "00000000-0000-4000-8000-00000000000c",
+                partial: false,
             },
         });
     });
@@ -121,6 +127,7 @@ describe("chatgpt fixtures", () => {
                 reasoningText: null,
                 hiddenReasoning: false,
                 messageId: "00000000-0000-4000-8000-00000000000c",
+                partial: false,
             },
         });
     });
@@ -138,11 +145,29 @@ describe("chatgpt fixtures", () => {
         });
     });
 
-    it("skips a recorded reply stopped by the user", () => {
-        expect(parse(fixture("aborted"))).toEqual({
-            kind: "skip",
-            reason: "stream ended before [DONE]",
+    it("records a recorded reply stopped by the user as partial", () => {
+        // The page aborts the request mid-patch, before `message_stream_complete`.
+        const outcome = parse(fixture("aborted"), Infinity, request(), "aborted");
+        expect(outcome).toMatchObject({
+            kind: "reply",
+            reply: {
+                rawModel: "gpt-6",
+                hiddenReasoning: false,
+                messageId: "00000000-0000-4000-8000-00000000000c",
+                partial: true,
+            },
         });
+        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
+        expect(reply.outputText).toHaveLength(643);
+    });
+
+    it("skips a reply cut before [DONE] by a network error or a closed stream", () => {
+        for (const end of ["done", "failed"] as const) {
+            expect(parse(fixture("aborted"), Infinity, request(), end)).toEqual({
+                kind: "skip",
+                reason: "stream ended before [DONE]",
+            });
+        }
     });
 });
 

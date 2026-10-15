@@ -4,6 +4,7 @@ import type {
     CapturedRequest,
     ParseOutcome,
     ReplyEndpoint,
+    StreamEnd,
     StreamParser,
 } from "../../capture/types";
 import { isChatGptReasoningSlug } from "./slugs";
@@ -19,7 +20,8 @@ import { isChatGptReasoningSlug } from "./slugs";
  * operations: `{ p: path, o: op, v: value, c: messageIndex }`, where a bare `{ v }` repeats the
  * previous path and operation. The reply is complete once `message_stream_complete` or
  * `data: [DONE]` arrives; the web app aborts its own request right after, so the stream copy
- * usually ends with an `AbortError` rather than `[DONE]`.
+ * usually ends with an `AbortError` rather than `[DONE]`. A reply stopped by the user ends with an
+ * `AbortError` before both, mid-patch.
  */
 
 const CONVERSATION_PATH = /^\/backend-(?:api|anon)\/(?:f\/)?conversation\/?$/;
@@ -192,15 +194,16 @@ class ChatGptParser implements StreamParser {
         for (const event of this.decoder.push(text)) this.handleEvent(event);
     }
 
-    finish(): ParseOutcome {
+    finish(end: StreamEnd): ParseOutcome {
         for (const event of this.decoder.flush()) this.handleEvent(event);
+        const partial = !this.done && end === "aborted";
         const error =
             this.error ??
             this.roots
                 .map((r) => (isObject(r.value) ? errorOf(r.value.error) : null))
                 .find(Boolean);
         if (error) return { kind: "skip", reason: `error: ${error}` };
-        if (!this.done) return { kind: "skip", reason: "stream ended before [DONE]" };
+        if (!this.done && !partial) return { kind: "skip", reason: "stream ended before [DONE]" };
 
         const assistant = this.roots
             .map((r) => messageOf(r.value))
@@ -216,7 +219,9 @@ class ChatGptParser implements StreamParser {
         );
         const reply = texts.findLast((m) => (m.recipient ?? "all") === "all") ?? texts.at(-1);
         if (!reply) return { kind: "skip", reason: "no assistant reply" };
-        if (reply.status === "in_progress") return { kind: "skip", reason: "reply not finished" };
+        if (reply.status === "in_progress" && !partial) {
+            return { kind: "skip", reason: "reply not finished" };
+        }
 
         const outputText = texts
             .map(textOf)
@@ -249,6 +254,7 @@ class ChatGptParser implements StreamParser {
                 reasoningText: reasoningText === "" ? null : reasoningText,
                 hiddenReasoning: reasoned,
                 messageId: idOf(reply),
+                partial,
             },
         };
     }

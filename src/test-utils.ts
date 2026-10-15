@@ -9,6 +9,7 @@ export function capturedResponse(overrides: Partial<CapturedResponse> = {}): Cap
         hiddenReasoning: false,
         latencyMs: 4000,
         messageId: "msg-1",
+        partial: false,
         ...overrides,
     };
 }
@@ -48,7 +49,7 @@ export function impactResult(overrides: Partial<ImpactResult> = {}): ImpactResul
         outputTokens: 100,
         latencySeconds: 4,
         impacts: uniformImpacts(1),
-        flags: { lowerBound: false, approximatedModel: false },
+        flags: { lowerBound: false, approximatedModel: false, partial: false },
         warnings: [],
         errors: [],
         ...overrides,
