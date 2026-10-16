@@ -112,7 +112,7 @@ class Anonymiser {
      */
     anonymiseLines(lines: string[], key: string): string[] {
         const root = parseJsonTree(lines.join("\n"));
-        if (root === null) return lines.map((line) => this.mapUuids(line));
+        if (root === null) return lines.map((line) => this.ids.mapUuids(line));
         const replacements: Replacement[] = [];
         this.visit(root, key, false, replacements);
         return applyByLine(lines, replacements);
@@ -149,17 +149,9 @@ class Anonymiser {
     private string(value: string, key: string, account: boolean): string {
         if (value === "") return value;
         if (account || this.rules.tokens.has(key)) return "REDACTED";
-        if (this.rules.ids.has(key)) return this.mapId(value);
-        if (this.rules.structural.has(key)) return this.mapUuids(value);
+        if (this.rules.ids.has(key)) return this.ids.map(value);
+        if (this.rules.structural.has(key)) return this.ids.mapUuids(value);
         if (looksLikeToken(value)) return "REDACTED";
         return maskAround(value, this.ids);
-    }
-
-    private mapUuids(text: string): string {
-        return this.ids.mapUuids(text);
-    }
-
-    private mapId(id: string): string {
-        return this.ids.map(id);
     }
 }
