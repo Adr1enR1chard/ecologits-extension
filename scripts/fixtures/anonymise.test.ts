@@ -147,6 +147,25 @@ describe("anonymiseStream: SSE", () => {
         const text = 'data: {"text":"caf\\u00e9\\n\\"ok\\""}\n\n';
         expect(anonymiseStream("claude", text)).toBe('data: {"text":"xxxx\\n\\"xx\\""}\n\n');
     });
+
+    it("parses an event's data lines as one value, keeping each line in place", () => {
+        const text = [
+            "event: content_block_delta",
+            'data: {"type":"content_block_delta",',
+            'data:  "delta":{"type":"text_delta",',
+            `data:"text":"Hello Bob", "id":"${ID_A}"}}`,
+            "",
+            "",
+        ].join("\r\n");
+        expect(anonymiseStream("claude", text)).toBe(
+            text.replace('"Hello Bob"', '"xxxxx xxx"').replace(ID_A, ZERO_1),
+        );
+    });
+
+    it("masks each line's part of a string left open over several data lines", () => {
+        const text = 'data: {"text":"Hello\ndata: Bob"}\n\n';
+        expect(anonymiseStream("claude", text)).toBe('data: {"text":"xxxxx\ndata: xxx"}\n\n');
+    });
 });
 
 describe("anonymiseStream: NDJSON", () => {
