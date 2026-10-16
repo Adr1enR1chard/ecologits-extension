@@ -108,18 +108,23 @@ fresh, anonymised recording with the committed fixtures of its case, by shape, n
 - **stream**: the event types (SSE event name and JSON `type`; markers like `[DONE]`), added,
   missing or coming in another order (of first occurrence: the number of deltas or blocks varies
   from a reply to another), and every JSON key path with the types of its values (`string`,
-  `number`, `boolean`, `null`, `object`, `array`), added, missing or changed;
+  `number`, `boolean`, `null`, `object`, `array`), added, missing or changed. Keep-alive events
+  (`keepAlive` in `scripts/fixtures/providers/`: Claude's `ping`) are left out, since they come
+  whenever the timing says, and a value `null` in one stream only is no change;
 - **outcome**: what the parser makes of each stream, a reply, a partial one or a skip, and its
-  model;
+  model; a stream it cannot parse, committed or fresh, always drifted;
 - **page**: the fresh snapshot must pass the DOM snapshot checks (a last reply matched, with an
   id, not rendering, one anchor); when the case has a committed snapshot, the markup it matches
-  and the path from the last reply to its anchor, each element as its tag and attribute names,
-  must be the same.
+  and the path from the last reply to its anchor must be the same, each element as its tag and
+  the names of its `data-*` and `role` attributes (classes, ids and text attributes change with
+  the page's state).
 
-A case that fails the recorder's checks can be redone, skipped, or kept: it then drifted by that
-failure, and is compared all the same. The command prints one line per case, `ok`, `skipped` or
-`drift` followed by what changed, and exits with 1 when any case drifted. Then record the cases
-that drifted again with `pnpm fixtures:record` and fix the code against them.
+A case without committed stream is not recorded: it is reported, to record with
+`pnpm fixtures:record`. A case that fails the recorder's checks can be redone, skipped, or kept:
+it then drifted by that failure, and is compared all the same. The command prints one line per
+case, `ok`, `skipped` or `drift` followed by what changed, and exits with 1 when any case
+drifted. Then record the cases that drifted again with `pnpm fixtures:record` and fix the code
+against them.
 
 It needs a signed-in session in `.recorder/<provider>/` and a person doing what each case says,
 so it runs locally only, never in CI. `scripts/fixtures/drift-check.test.ts` checks that every
