@@ -315,8 +315,22 @@
     "methodologyTokenizer": {
         "message": "Les tokens générés sont comptés dans le navigateur avec le tokenizer o200k_base d'OpenAI. Pour Claude et Gemini, dont les tokenizers ne sont pas publics, c'est une approximation."
     },
-    "methodologyGpt6": {
-        "message": "ChatGPT n'indique pas quel GPT-6 il utilise : GPT-6 Luna pour les offres gratuites, GPT-6 Sol pour les offres payantes. Les réponses de GPT-6 sont donc estimées de la borne basse de gpt-6-luna à la borne haute de gpt-6-sol. GPT-6 Thinking mini, inconnu d'EcoLogits, est estimé comme gpt-6-luna, le plus petit GPT-6 qu'il connaisse."
+    "methodologyProxies": {
+        "message": "Certains modèles web sont inconnus d'EcoLogits, ou l'application web n'indique pas lequel de plusieurs modèles a répondu. Ils sont estimés avec les modèles les plus proches qu'EcoLogits connaisse, listés ci-dessous. Quand plusieurs modèles ont pu répondre, l'estimation va de la plus basse à la plus haute borne de l'un ou l'autre modèle."
+    },
+    "methodologyProxy": {
+        "message": "$SLUG$ de $PROVIDER$ est estimé comme $MODEL$.",
+        "placeholders": {
+            "provider": {
+                "content": "$1"
+            },
+            "slug": {
+                "content": "$2"
+            },
+            "model": {
+                "content": "$3"
+            }
+        }
     },
     "methodologyMix": {
         "message": "Le mix électrique est celui retenu par défaut par EcoLogits pour chaque fournisseur."

@@ -2,6 +2,9 @@ import { ECOLOGITS_VERSION } from "@/src/impacts/version";
 import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import { t, uiLocale } from "@/src/i18n";
+import { modelLabel } from "@/src/messaging";
+import { proxyEntries } from "@/src/providers/models";
+import { PROVIDER_META } from "@/src/providers/registry";
 import { getAggregates } from "@/src/storage/aggregates";
 import { MAX_EVENTS, getEvents } from "@/src/storage/events";
 import { aggregatesToCsv, eventsToCsv, toJsonExport } from "@/src/storage/export";
@@ -124,13 +127,35 @@ function DataSettings() {
     );
 }
 
+/** Every proxy, from the model mappings: dropping one removes it here. */
+function Proxies() {
+    const proxies = proxyEntries();
+    if (proxies.length === 0) return null;
+    return (
+        <>
+            <p>{t("methodologyProxies")}</p>
+            <ul class="list-disc space-y-1 pl-5">
+                {proxies.map(({ provider, slug, model }) => (
+                    <li key={`${provider}/${slug}`}>
+                        {t("methodologyProxy", [
+                            PROVIDER_META[provider].name,
+                            slug,
+                            modelLabel(model),
+                        ])}
+                    </li>
+                ))}
+            </ul>
+        </>
+    );
+}
+
 function Methodology() {
     return (
         <Section title={t("optionsMethodology")}>
             <div class="max-w-prose space-y-3 leading-relaxed text-fg-muted">
                 <p>{t("methodologyEcologits", ECOLOGITS_VERSION)}</p>
                 <p>{t("methodologyTokenizer")}</p>
-                <p>{t("methodologyGpt6")}</p>
+                <Proxies />
             </div>
             <dl class="space-y-3 rounded-lg bg-surface p-4">
                 {(Object.keys(FLAG_INFO) as Flag[]).map((flag) => (
