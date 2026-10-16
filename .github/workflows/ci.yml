@@ -83,12 +83,12 @@ jobs:
       - name: Build & zip
         run: pnpm wxt zip -b ${{ matrix.browser }}
 
-      # The fixture recording hooks hand conversations to the page: development builds only.
+      # The fixture recording hook keeps conversations in the page: development builds only.
       - name: Check no development hook ships
         run: |
           unpacked=$(mktemp -d)
           unzip -q .output/*-${{ matrix.browser }}.zip -d "$unpacked"
-          if grep -rlE '__ecologitsOnStream|__ecologitsStreams|stream recorded' "$unpacked"; then
+          if grep -rlE '__ecologitsStreams|stream recorded' "$unpacked"; then
             echo "::error::The production build holds a development hook"
             exit 1
           fi

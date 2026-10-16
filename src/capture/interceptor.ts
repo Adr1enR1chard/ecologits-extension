@@ -23,7 +23,6 @@ export interface InterceptorOptions {
 
 export interface RecordedStream {
     url: string;
-    method: string;
     /** Why the stream ended: `"done"`, or the interruption error. */
     end: string;
     text: string;
@@ -157,7 +156,7 @@ async function capture(
         end = String(error);
         streamEnd = isAbort(error) ? "aborted" : "failed";
     }
-    record?.({ url: request.url.href, method: request.method, end, text: recorded.join("") });
+    record?.({ url: request.url.href, end, text: recorded.join("") });
     if (parseError !== null) {
         void reader.cancel();
     } else {
