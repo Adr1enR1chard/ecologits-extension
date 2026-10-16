@@ -10,9 +10,9 @@ import type { FixtureRules } from "./providers/types";
  * Turns a raw recorded stream into a fixture safe to commit (see `test/fixtures/README.md`):
  * structural values are kept, ids become zeroed UUIDs (the same id always the same one, so
  * references between events still hold), tokens and account details become `REDACTED`, and
- * every other string is masked. Only values are rewritten: event lines, line endings, padding
- * and key order are kept. Pass the `ids` of the case's DOM snapshot (`sanitiseSnapshot`) to map
- * the ids of both alike.
+ * every other string is masked. Only values and the UUIDs of keys are rewritten: event lines,
+ * line endings, padding and key order are kept. Pass the `ids` of the case's DOM snapshot
+ * (`sanitiseSnapshot`) to map the ids of both alike.
  */
 export function anonymiseStream(
     provider: SupportedProvider,
@@ -123,6 +123,12 @@ class Anonymiser {
         switch (node.kind) {
             case "object":
                 for (const entry of node.entries) {
+                    // Keys are structural, but some are ids (`componentResults` by component).
+                    const key = this.ids.mapUuids(entry.key);
+                    if (key !== entry.key) {
+                        const { start, end } = entry.keyNode;
+                        out.push({ start, end, text: JSON.stringify(key) });
+                    }
                     this.visit(entry.value, this.keyOf(node, entry.key), inAccount, out);
                 }
                 break;
