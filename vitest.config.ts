@@ -8,6 +8,7 @@ export default defineConfig({
             "src/**/*.test.{ts,tsx}",
             "entrypoints/**/*.test.{ts,tsx}",
             "scripts/**/*.test.ts",
+            "test/**/*.test.ts",
         ],
         coverage: {
             provider: "v8",
