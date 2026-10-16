@@ -34,6 +34,25 @@ describe("resolveModel", () => {
         });
     });
 
+    it("resolves ChatGPT's GPT-6 slugs to the GPT-6 Luna – Sol range, as approximated", () => {
+        for (const slug of ["gpt-6", "gpt-6-t-mini", "gpt-6-thinking-mini"]) {
+            expect(resolveModel("chatgpt", slug), slug).toEqual({
+                ecologitsProvider: "openai",
+                modelName: "gpt-6-luna",
+                upperModelName: "gpt-6-sol",
+                approximated: true,
+            });
+        }
+    });
+
+    it("keeps aliases exact", () => {
+        expect(resolveModel("chatgpt", "chatgpt-4o-latest")).toEqual({
+            ecologitsProvider: "openai",
+            modelName: "gpt-4o",
+            approximated: false,
+        });
+    });
+
     it("ignores inherited object keys", () => {
         for (const slug of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
             expect(resolveModel("chatgpt", slug, mappings), slug).toEqual({
