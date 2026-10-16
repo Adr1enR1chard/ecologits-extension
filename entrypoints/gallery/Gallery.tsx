@@ -5,6 +5,7 @@ import { uiLocale } from "@/src/i18n";
 import { App as Options } from "../options/App";
 import { Popup } from "../popup/App";
 import { healthyStatuses, sampleAggregates, sampleResult, sampleStatuses } from "./samples";
+import { SURFACES, type PopupSurface } from "./surfaces";
 
 const locale = uiLocale();
 
@@ -42,7 +43,22 @@ const POPUPS = [
         statuses: healthyStatuses(),
     },
     { title: "Popup, empty", surface: "popup-empty", aggregates: {}, statuses: {} },
-];
+] satisfies { title: string; surface: PopupSurface; [key: string]: unknown }[];
+
+/**
+ * A surface of the gallery on its own, as the root of the page, like in the extension:
+ * `gallery.html?surface=popup`. A message listing the surfaces for an unknown one.
+ */
+export function Surface({ name }: { name: string }) {
+    if (name === "options") return <Options />;
+    const popup = POPUPS.find(({ surface }) => surface === name);
+    if (popup) return <Popup aggregates={popup.aggregates} statuses={popup.statuses} />;
+    return (
+        <p role="alert" class="p-8 font-sans text-sm">
+            Unknown surface “{name}”, expected one of: {SURFACES.join(", ")}.
+        </p>
+    );
+}
 
 function Frame({ title, children }: { title: string; children: ComponentChildren }) {
     return (

@@ -1,6 +1,7 @@
 /**
  * Development-only page showing the UI with sample data, in a chosen theme and language:
- * `gallery.html?theme=dark&lang=fr`. Left out of production builds (see `wxt.config.ts`).
+ * `gallery.html?theme=dark&lang=fr`, or one of its surfaces alone, the way the extension shows it:
+ * `gallery.html?surface=popup&lang=fr`. Left out of production builds (see `wxt.config.ts`).
  */
 import { render } from "preact";
 import "@/src/styles/tailwind.css";
@@ -16,6 +17,7 @@ const LOCALES: Record<string, Record<string, Entry>> = { en, fr };
 const params = new URLSearchParams(location.search);
 const lang = params.get("lang") ?? "en";
 const theme = params.get("theme");
+const surface = params.get("surface");
 
 // Messages of the chosen language instead of the browser's, resolved like `browser.i18n`.
 const messages: Record<string, Entry> = LOCALES[lang] ?? en;
@@ -36,5 +38,8 @@ if (theme === "light" || theme === "dark")
 document.documentElement.lang = lang;
 
 // After the messages are replaced: the UI reads its locale when imported.
-const { Gallery } = await import("./Gallery");
-render(<Gallery lang={lang} theme={theme} />, document.getElementById("app")!);
+const { Gallery, Surface } = await import("./Gallery");
+render(
+    surface ? <Surface name={surface} /> : <Gallery lang={lang} theme={theme} />,
+    document.getElementById("app")!,
+);
