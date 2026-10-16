@@ -1,20 +1,4 @@
 // @vitest-environment happy-dom
 import { describePageSnapshots } from "../page-contract";
 
-describePageSnapshots("chatgpt", [
-    // Logged in: the badge goes after the reply block, whatever follows it.
-    {
-        file: "normal-reply.html",
-        markup: 0,
-        replies: 2,
-        lastId: "00000000-0000-4000-8000-00000000000c",
-        anchorDependsOn: "[data-chatgpt-selection-message-id]",
-    },
-    {
-        file: "logged-out-reply.html",
-        markup: 1,
-        replies: 1,
-        lastId: "00000000-0000-4000-8000-000000000072",
-        anchorDependsOn: "[data-assistant-message-actions]",
-    },
-]);
+describePageSnapshots("chatgpt");
