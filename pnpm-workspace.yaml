@@ -1,2 +1,6 @@
 minimumReleaseAgeExclude:
   - "@ecologits/ecologits.js@3.0.0"
+
+# tsx's esbuild ships its binary as an optional dependency: its install script only checks it.
+allowBuilds:
+  esbuild: false
