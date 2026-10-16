@@ -35,6 +35,7 @@ export interface NumberNode {
 /** `true`, `false` or `null`. */
 export interface LiteralNode {
     kind: "literal";
+    value: boolean | null;
 }
 
 /** Thrown at the end of the text or at the first invalid character. */
@@ -154,7 +155,7 @@ class Parser {
         }
         const literal = LITERALS.find((l) => this.text.startsWith(l, this.i));
         if (literal === undefined) throw new Stop();
-        attach({ kind: "literal" });
+        attach({ kind: "literal", value: JSON.parse(literal) as boolean | null });
         this.i += literal.length;
     }
 

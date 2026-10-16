@@ -21,7 +21,8 @@
         "test:e2e": "wxt build --mode development && playwright test",
         "postinstall": "wxt prepare",
         "icons": "node scripts/icons.mjs",
-        "fixtures:record": "wxt build --mode development && tsx scripts/fixtures/record.ts"
+        "fixtures:record": "wxt build --mode development && tsx scripts/fixtures/record.ts",
+        "fixtures:drift": "wxt build --mode development && tsx scripts/fixtures/drift.ts"
     },
     "dependencies": {
         "@ecologits/ecologits.js": "3.0.0",
