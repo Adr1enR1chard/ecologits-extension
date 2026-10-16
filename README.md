@@ -32,6 +32,7 @@ pnpm dev:firefox    # Firefox
 | `pnpm format` / `pnpm format:check` | Prettier                               |
 | `pnpm typecheck`                    | TypeScript (strict)                    |
 | `pnpm test` / `pnpm test:coverage`  | Vitest                                 |
+| `pnpm test:e2e`                     | Playwright, on the development build   |
 
 Stack: [WXT](https://wxt.dev), TypeScript, Preact, Tailwind CSS v4. Translations live in `public/_locales/{en,fr}/messages.json`.
 

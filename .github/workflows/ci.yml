@@ -37,6 +37,28 @@ jobs:
       - name: Test
         run: pnpm test
 
+  e2e:
+    name: Layout (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test
+        run: pnpm test:e2e
+
   build:
     name: Build (${{ matrix.browser }})
     runs-on: ubuntu-latest
