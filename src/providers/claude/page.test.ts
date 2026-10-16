@@ -8,7 +8,7 @@ const NORMAL_REPLY = {
     markup: 0,
     replies: 2,
     lastId: "00000000-0000-4000-8000-000000000002",
-    actionBar: '[data-testid="message-actions"]',
+    anchorDependsOn: '[data-testid="message-actions"]',
 };
 
 describePageSnapshots("claude", [NORMAL_REPLY]);

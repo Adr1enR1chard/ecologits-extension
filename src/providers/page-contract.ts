@@ -20,8 +20,8 @@ export interface PageSnapshot {
     replies: number;
     /** Message id of the last reply, read from `idAttribute`. */
     lastId: string;
-    /** Element the badge anchor depends on: removing it must lose the anchor. */
-    actionBar?: string;
+    /** Element the badge anchor depends on (action bar, reply block…): removing it must lose the anchor. */
+    anchorDependsOn: string;
 }
 
 /** Loads a snapshot into the document body, which holds nothing else. */
@@ -84,9 +84,9 @@ export function describePageSnapshots(
                 );
             });
 
-            it.runIf(snapshot.actionBar)("loses the anchor without its action bar", () => {
+            it(`loses the anchor without ${snapshot.anchorDependsOn}`, () => {
                 const root = loadSnapshot(provider, snapshot.file);
-                root.querySelectorAll(snapshot.actionBar!).forEach((bar) => bar.remove());
+                root.querySelectorAll(snapshot.anchorDependsOn).forEach((e) => e.remove());
                 expect(checkSnapshot(root, markup, snapshot)).toContainEqual(
                     expect.stringMatching(/^0 elements match the anchor/),
                 );
