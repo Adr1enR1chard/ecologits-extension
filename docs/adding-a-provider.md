@@ -42,8 +42,8 @@ in `PROVIDERS` (`src/providers/registry.ts`). The order of `PROVIDERS` is the di
 8. Update the rest by hand:
     - `public/_locales/{en,fr}/messages.json`: `extDescription`, and `methodologyTokenizer` when
       the provider's tokenizer is not public;
-    - `README.md` (supported providers), `test/fixtures/README.md` (fixture table),
-      `docs/PLAN.md` (phase checklist);
+    - `README.md` (supported providers), `test/fixtures/README.md` (fixture table);
+    - tick the provider's phase issue on GitHub;
     - optionally, sample data in `entrypoints/gallery/samples.ts`.
 9. Check end to end in Chrome and Firefox with `pnpm dev`: one stored event per reply, a badge
    under each reply.
