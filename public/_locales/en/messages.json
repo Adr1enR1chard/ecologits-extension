@@ -82,7 +82,7 @@
         "message": "Approximated model"
     },
     "flagApproximatedHelp": {
-        "message": "The model used by the web app is not exposed or unknown to EcoLogits: the impact is computed with a comparable model."
+        "message": "The model used by the web app is not exposed or unknown to EcoLogits: the impact is computed with a comparable model, or as a range between two models."
     },
     "popupLowerBoundCount": {
         "message": "Replies with a lower-bound estimate: $COUNT$",
@@ -314,6 +314,9 @@
     },
     "methodologyTokenizer": {
         "message": "Generated tokens are counted in the browser with OpenAI's o200k_base tokenizer. For Claude and Gemini, whose tokenizers are not public, this is an approximation."
+    },
+    "methodologyModelRanges": {
+        "message": "ChatGPT does not tell which GPT-6 it uses: GPT-6 Luna on free plans, GPT-6 Sol on paid plans. GPT-6 replies are therefore estimated from the low bound of gpt-6-luna to the high bound of gpt-6-sol."
     },
     "methodologyMix": {
         "message": "The electricity mix is the EcoLogits default for each provider."
