@@ -1,4 +1,5 @@
 import { PAGES } from "../providers/page";
+import { findLastReply, isRendering } from "../providers/page-check";
 import type { SupportedProvider } from "../providers/registry";
 import type { ReplyAnchor } from "../providers/types";
 
@@ -26,14 +27,8 @@ function renderedAnchor(
 
 /** Anchor of the last reply on the page, when the captured message id is not rendered. */
 export function lastReplyAnchor(root: ParentNode, provider: SupportedProvider): ReplyAnchor | null {
-    const { markups } = PAGES[provider];
-    if (markups.length === 0) return null;
-    const replies = root.querySelectorAll(markups.map((m) => m.reply).join(", "));
-    const last = replies[replies.length - 1];
-    if (!last) return null;
-    const markup = markups.find((m) => last.matches(m.reply));
-    const id = markup && last.getAttribute(markup.idAttribute);
-    return markup && id ? markup.anchor(CSS.escape(id)) : null;
+    const last = findLastReply(root, PAGES[provider].markups);
+    return last?.id ? last.markup.anchor(CSS.escape(last.id)) : null;
 }
 
 export interface FindReplyOptions {
@@ -80,7 +75,7 @@ export function findReplyAnchor(
         firstMove ??= path;
         return path === firstMove;
     };
-    const rendering = () => markups.some((m) => m.rendering?.(root));
+    const rendering = () => isRendering(root, markups);
     const fallback = () => (sameConversation() ? lastReplyAnchor(root, provider) : null);
     if (messageId !== null) {
         const rendered = renderedAnchor(root, messageId, provider);

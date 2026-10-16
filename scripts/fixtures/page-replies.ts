@@ -1,5 +1,6 @@
 import { Window, type Element } from "happy-dom";
 import { PAGES } from "../../src/providers/page";
+import { findLastReply, isRendering } from "../../src/providers/page-check";
 import type { SupportedProvider } from "../../src/providers/registry";
 
 /** What the badge would see of a page: its last finished reply, and the snapshot holding it. */
@@ -25,10 +26,11 @@ export function findReplies(provider: SupportedProvider, html: string): PageRepl
         template.innerHTML = html;
         const root = template.content;
         const { markups } = PAGES[provider];
-        const last = [...root.querySelectorAll(markups.map((m) => m.reply).join(", "))].at(-1);
-        const markup = last && markups.find((m) => last.matches(m.reply));
-        if (!last || !markup) return null;
-        const lastId = last.getAttribute(markup.idAttribute);
+        // `ParentNode` of the DOM library, which happy-dom implements.
+        const domRoot = root as unknown as ParentNode;
+        const found = findLastReply(domRoot, markups);
+        if (!found) return null;
+        const { markup, id: lastId } = found;
         const anchor = lastId
             ? root.querySelector(markup.anchor(window.CSS.escape(lastId)).selector)
             : null;
@@ -40,8 +42,7 @@ export function findReplies(provider: SupportedProvider, html: string): PageRepl
         }
         return {
             lastId,
-            // `ParentNode` of the DOM library, which happy-dom implements.
-            rendering: markups.some((m) => m.rendering?.(root as unknown as ParentNode)),
+            rendering: isRendering(domRoot, markups),
             snapshot: holder ? holder.outerHTML : template.innerHTML,
         };
     } finally {
