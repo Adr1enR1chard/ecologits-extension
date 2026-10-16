@@ -49,6 +49,13 @@ describe("eventsToCsv", () => {
         expect(rest).toEqual([]);
     });
 
+    it("writes a range of models as low – high", () => {
+        const csv = eventsToCsv([
+            impactResult({ rawModel: "gpt-6", model: { low: "gpt-6-luna", high: "gpt-6-sol" } }),
+        ]);
+        expect(parseCsv(csv)[1]).toContain(",gpt-6,gpt-6-luna – gpt-6-sol,");
+    });
+
     it("neutralises spreadsheet formulas in page-provided strings", () => {
         for (const rawModel of ["=1+1", "+1", "-1", "@SUM(A1)", "\tx"]) {
             const [, row] = parseCsv(eventsToCsv([impactResult({ rawModel })]));
