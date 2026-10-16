@@ -1,5 +1,5 @@
-import { Element, Node, Window } from "happy-dom";
-import { looksLikeToken, maskAround, ZeroedIds } from "./personal-data";
+import { Element, HTMLTemplateElement, Node, Window } from "happy-dom";
+import { looksLikeToken, maskAround, UUID, ZeroedIds } from "./personal-data";
 
 /** Elements whose content is code or styling, never what a reply selector looks at. */
 const DROPPED = new Set(["SCRIPT", "STYLE", "LINK"]);
@@ -7,25 +7,48 @@ const DROPPED = new Set(["SCRIPT", "STYLE", "LINK"]);
 /** Attributes holding text shown or read to the user: masked like text nodes. */
 const TEXT_ATTRIBUTES = new Set(["alt", "title", "aria-label"]);
 
-/** Attributes the reply selectors rely on: kept, with their ids mapped. */
+/** Attributes the reply selectors rely on: kept. */
 function isKept(name: string): boolean {
     return name === "class" || name === "role" || name === "id" || name.startsWith("data-");
+}
+
+const UUID_WORD = new RegExp(`^${UUID.source}$`, "i");
+
+/** A short lower case identifier: `assistant`, `message-actions`, `false`, `:r1:`. */
+const IDENTIFIER = /^[a-z0-9_:.-]{1,40}$/;
+
+/**
+ * An `id` or `data-*` value as committed: kept when it is one identifier or a list of UUIDs
+ * (mapped); otherwise it may be text or hold a token, and is masked, UUIDs mapped.
+ */
+function keptValue(value: string, ids: ZeroedIds): string {
+    if (looksLikeToken(value)) return "REDACTED";
+    const words = value.split(/\s+/).filter(Boolean);
+    const structural =
+        words.every((word) => UUID_WORD.test(word)) ||
+        (words.length === 1 && IDENTIFIER.test(value));
+    return structural ? ids.mapUuids(value) : maskAround(value, ids);
 }
 
 /**
  * Turns the recorded outerHTML of the element holding a conversation's replies into a DOM
  * snapshot safe to commit (see `test/fixtures/README.md`): `<script>`, `<style>` and `<link>`
  * are dropped and `<svg>` emptied, text and `alt` / `title` / `aria-label` values are masked,
- * UUIDs become zeroed ones, `data-*`, `class`, `role` and `id` are kept and every other
- * attribute (inline `style`, `href`, `src`…) is dropped. Pass the `ids` of the case's stream
- * (`anonymiseStream`) to map the ids of both alike.
+ * UUIDs become zeroed ones, `class` and `role` are kept, `data-*` and `id` too unless their value
+ * looks like text or a token (then masked), and every other attribute (inline `style`, `href`,
+ * `src`…) is dropped. Pass the `ids` of the case's stream (`anonymiseStream`) to map the ids of
+ * both alike.
  */
 export function sanitiseSnapshot(html: string, ids = new ZeroedIds()): string {
-    const { document } = new Window();
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    sanitise(template.content, ids);
-    return template.innerHTML;
+    const window = new Window();
+    try {
+        const template = window.document.createElement("template");
+        template.innerHTML = html;
+        sanitise(template.content, ids);
+        return template.innerHTML;
+    } finally {
+        void window.happyDOM.close();
+    }
 }
 
 function sanitise(node: Node, ids: ZeroedIds): void {
@@ -38,6 +61,8 @@ function sanitise(node: Node, ids: ZeroedIds): void {
             sanitiseAttributes(child, ids);
             if (child.localName === "svg") child.replaceChildren();
             else sanitise(child, ids);
+            // A template's content is not among its children.
+            if (child instanceof HTMLTemplateElement) sanitise(child.content, ids);
         }
     }
 }
@@ -47,7 +72,8 @@ function sanitiseAttributes(element: Element, ids: ZeroedIds): void {
         const value = raw ?? "";
         if (TEXT_ATTRIBUTES.has(name)) element.setAttribute(name, maskAround(value, ids));
         else if (!isKept(name)) element.removeAttribute(name);
-        else if (looksLikeToken(value)) element.setAttribute(name, "REDACTED");
-        else element.setAttribute(name, ids.mapUuids(value));
+        else if (name === "id" || name.startsWith("data-")) {
+            element.setAttribute(name, keptValue(value, ids));
+        }
     }
 }
