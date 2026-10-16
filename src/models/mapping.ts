@@ -5,7 +5,10 @@ import type { ProviderModels } from "../providers/types";
 
 export interface ResolvedModel {
     ecologitsProvider: Providers;
+    /** EcoLogits model the impacts are computed with: the low end, with `upperModelName`. */
     modelName: string;
+    /** EcoLogits model of the high end, when the web model spans a range of models. */
+    upperModelName?: string;
     approximated: boolean;
 }
 
@@ -14,7 +17,7 @@ export function normalizeSlug(slug: string): string {
 }
 
 /**
- * Resolves a web model slug: alias table, then EcoLogits as-is, then the same with the
+ * Resolves a web model slug: alias table, then model ranges, then EcoLogits as-is, then the same with the
  * canonical slug, then the provider fallback.
  */
 export function resolveModel(
@@ -22,7 +25,7 @@ export function resolveModel(
     rawModel: string | null,
     mappings: Readonly<Record<SupportedProvider, ProviderModels>> = MODEL_MAPPINGS,
 ): ResolvedModel {
-    const { ecologitsProvider, fallback, aliases, canonicalize } = mappings[provider];
+    const { ecologitsProvider, fallback, aliases, ranges = {}, canonicalize } = mappings[provider];
     if (rawModel !== null) {
         const normalized = normalizeSlug(rawModel);
         const candidates = [normalized];
@@ -31,6 +34,15 @@ export function resolveModel(
             // Own keys only: slugs come from the page and could be "constructor" or "__proto__".
             if (Object.hasOwn(aliases, slug)) {
                 return { ecologitsProvider, modelName: aliases[slug]!, approximated: false };
+            }
+            if (Object.hasOwn(ranges, slug)) {
+                const { low, high } = ranges[slug]!;
+                return {
+                    ecologitsProvider,
+                    modelName: low,
+                    upperModelName: high,
+                    approximated: true,
+                };
             }
             if (slug !== "" && models.findModel(ecologitsProvider, slug) !== undefined) {
                 return { ecologitsProvider, modelName: slug, approximated: false };

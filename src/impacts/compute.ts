@@ -2,13 +2,13 @@ import {
     isRangeValue,
     llmImpacts,
     type BaseImpact,
+    type ImpactsOutput,
     type StatusMessage,
     type ValueOrRange,
 } from "@ecologits/ecologits.js";
 import { countTokens as countO200kTokens } from "gpt-tokenizer/encoding/o200k_base";
 import type {
     CapturedResponse,
-    CriterionImpacts,
     ImpactRange,
     ImpactResult,
     Impacts,
@@ -41,6 +41,62 @@ function toStatusCodes(messages: readonly StatusMessage[] | null): StatusCode[] 
     return (messages ?? []).map(({ code, message }) => ({ code, message }));
 }
 
+function toImpacts({ energy, gwp, adpe, pe, wcf, usage, embodied }: ImpactsOutput): Impacts | null {
+    if (!(energy && gwp && adpe && pe && wcf && usage && embodied)) return null;
+    return {
+        total: {
+            energy: rangeOf(energy),
+            gwp: rangeOf(gwp),
+            adpe: rangeOf(adpe),
+            pe: rangeOf(pe),
+            wcf: rangeOf(wcf),
+        },
+        usage: {
+            energy: rangeOf(usage.energy),
+            gwp: rangeOf(usage.gwp),
+            adpe: rangeOf(usage.adpe),
+            pe: rangeOf(usage.pe),
+            wcf: rangeOf(usage.wcf),
+        },
+        embodied: {
+            gwp: rangeOf(embodied.gwp),
+            adpe: rangeOf(embodied.adpe),
+            pe: rangeOf(embodied.pe),
+        },
+    };
+}
+
+/** From the low bound of `low` to the high bound of `high`, with its midpoint as median. */
+function spanRange(low: ImpactRange, high: ImpactRange): ImpactRange {
+    const min = Math.min(low.min, high.min);
+    const max = Math.max(low.max, high.max);
+    return { min, median: (min + max) / 2, max };
+}
+
+function spanCriteria<K extends string>(
+    low: Record<K, ImpactRange>,
+    high: Record<K, ImpactRange>,
+): Record<K, ImpactRange> {
+    const keys = Object.keys(low) as K[];
+    return Object.fromEntries(keys.map((k) => [k, spanRange(low[k], high[k])])) as Record<
+        K,
+        ImpactRange
+    >;
+}
+
+function spanImpacts(low: Impacts, high: Impacts): Impacts {
+    return {
+        total: spanCriteria(low.total, high.total),
+        usage: spanCriteria(low.usage, high.usage),
+        embodied: spanCriteria(low.embodied, high.embodied),
+    };
+}
+
+function uniqueCodes(a: StatusCode[], b: StatusCode[] = []): StatusCode[] {
+    const codes = new Set(a.map((s) => s.code));
+    return [...a, ...b.filter((s) => !codes.has(s.code))];
+}
+
 /** Seconds, or `null` when the measured latency is unusable. */
 function toLatencySeconds(latencyMs: number): number | null {
     return Number.isFinite(latencyMs) && latencyMs > 0 ? latencyMs / 1000 : null;
@@ -56,46 +112,36 @@ export function computeImpact(
         countTokens(captured.outputText) + countTokens(captured.reasoningText ?? "");
     const latencySeconds = toLatencySeconds(captured.latencyMs);
 
-    const output = llmImpacts({
-        provider: resolved.ecologitsProvider,
-        modelName: resolved.modelName,
-        outputTokenCount: outputTokens,
-        // An unknown latency leaves the generation time unbounded.
-        requestLatency: latencySeconds ?? Infinity,
-    });
-
-    let impacts: Impacts | null = null;
-    const { energy, gwp, adpe, pe, wcf, usage, embodied } = output;
-    if (energy && gwp && adpe && pe && wcf && usage && embodied) {
-        const total: CriterionImpacts = {
-            energy: rangeOf(energy),
-            gwp: rangeOf(gwp),
-            adpe: rangeOf(adpe),
-            pe: rangeOf(pe),
-            wcf: rangeOf(wcf),
+    const compute = (modelName: string) => {
+        const output = llmImpacts({
+            provider: resolved.ecologitsProvider,
+            modelName,
+            outputTokenCount: outputTokens,
+            // An unknown latency leaves the generation time unbounded.
+            requestLatency: latencySeconds ?? Infinity,
+        });
+        return {
+            impacts: toImpacts(output),
+            warnings: toStatusCodes(output.warnings),
+            errors: toStatusCodes(output.errors),
         };
-        impacts = {
-            total,
-            usage: {
-                energy: rangeOf(usage.energy),
-                gwp: rangeOf(usage.gwp),
-                adpe: rangeOf(usage.adpe),
-                pe: rangeOf(usage.pe),
-                wcf: rangeOf(usage.wcf),
-            },
-            embodied: {
-                gwp: rangeOf(embodied.gwp),
-                adpe: rangeOf(embodied.adpe),
-                pe: rangeOf(embodied.pe),
-            },
-        };
-    }
+    };
+    const low = compute(resolved.modelName);
+    const { upperModelName } = resolved;
+    const high = upperModelName === undefined ? null : compute(upperModelName);
+    const impacts =
+        high === null
+            ? low.impacts
+            : low.impacts && high.impacts && spanImpacts(low.impacts, high.impacts);
 
     return {
         messageId: captured.messageId,
         provider: captured.provider,
         rawModel: captured.rawModel,
-        model: resolved.modelName,
+        model:
+            upperModelName === undefined
+                ? resolved.modelName
+                : `${resolved.modelName} – ${upperModelName}`,
         timestamp,
         outputTokens,
         latencySeconds,
@@ -105,7 +151,7 @@ export function computeImpact(
             approximatedModel: resolved.approximated,
             partial: captured.partial,
         },
-        warnings: toStatusCodes(output.warnings),
-        errors: toStatusCodes(output.errors),
+        warnings: uniqueCodes(low.warnings, high?.warnings),
+        errors: uniqueCodes(low.errors, high?.errors),
     };
 }

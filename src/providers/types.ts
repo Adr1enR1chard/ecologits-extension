@@ -23,6 +23,15 @@ export interface ProviderMeta {
     logo: string;
 }
 
+/**
+ * A web model that may be any of several EcoLogits models: its impacts span from the low bound
+ * of `low` to the high bound of `high`.
+ */
+export interface ModelRange {
+    low: string;
+    high: string;
+}
+
 /** How the web models of a provider map to EcoLogits models. */
 export interface ProviderModels {
     ecologitsProvider: Providers;
@@ -30,6 +39,11 @@ export interface ProviderModels {
     fallback: string;
     /** Normalised web slug → EcoLogits model ID, for slugs EcoLogits does not know as-is. */
     aliases: Readonly<Record<string, string>>;
+    /**
+     * Normalised web slug → EcoLogits models bracketing a web model EcoLogits does not know.
+     * Always approximated.
+     */
+    ranges?: Readonly<Record<string, ModelRange>>;
     /** Rewrites a normalised web slug into its EcoLogits form, tried after the aliases. */
     canonicalize?: (slug: string) => string;
 }
