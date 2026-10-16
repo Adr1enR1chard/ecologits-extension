@@ -1,7 +1,5 @@
-import type { ModelRange, ProviderModels } from "../types";
+import type { ProviderModels } from "../types";
 import { canonicalizeChatGptSlug } from "./slugs";
-
-const GPT_6: ModelRange = { low: "gpt-6-luna", high: "gpt-6-sol" };
 
 export const chatgptModels: ProviderModels = {
     ecologitsProvider: "openai",
@@ -11,11 +9,12 @@ export const chatgptModels: ProviderModels = {
         // ChatGPT's former default, absent from EcoLogits as `gpt-4o-chat-latest`.
         "chatgpt-4o-latest": "gpt-4o",
     },
-    ranges: {
+    proxies: {
         // EcoLogits knows no `gpt-6`: ChatGPT serves GPT-6 Luna on free plans and GPT-6 Sol on
         // paid ones, and the plan is unknown.
-        "gpt-6": GPT_6,
-        "gpt-6-mini": GPT_6,
+        "gpt-6": { low: "gpt-6-luna", high: "gpt-6-sol" },
+        // Nor `gpt-6-mini`: Luna is the smallest GPT-6 it knows.
+        "gpt-6-mini": "gpt-6-luna",
     },
     canonicalize: canonicalizeChatGptSlug,
 };
