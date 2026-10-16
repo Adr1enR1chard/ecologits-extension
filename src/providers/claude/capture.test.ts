@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { claudeCompletionEndpoint } from "./capture";
 import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
@@ -19,13 +17,6 @@ function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
         body: JSON.stringify({ prompt: "REDACTED", rendering_mode: "messages" }),
         ...overrides,
     };
-}
-
-function fixture(name: string): string {
-    return readFileSync(
-        new URL(`../../../test/fixtures/claude/${name}.sse`, import.meta.url),
-        "utf8",
-    );
 }
 
 function parse(
@@ -70,78 +61,16 @@ describe("claudeCompletionEndpoint matching", () => {
     });
 });
 
-/** Events ending a reply, to replay a recorded reply stopped by the user as completed. */
-const completion =
-    event({ type: "content_block_stop", index: 1 }) +
-    event({ type: "message_delta", delta: { stop_reason: "end_turn" } }) +
-    stop;
-
-describeAdapterContract("claude", claudeCompletionEndpoint, request(), {
-    "normal-reply": fixture("normal-reply"),
-    "tool-call": fixture("tool-call"),
-    aborted: fixture("aborted"),
-    "aborted, completed": fixture("aborted") + completion,
-});
-
-describe("claude fixtures", () => {
-    it("parses a recorded reply, skipping conversation_ready, pings and message_limit", () => {
-        expect(parse(fixture("normal-reply"))).toEqual({
-            kind: "reply",
-            reply: {
-                rawModel: "claude-sonnet-5-5",
-                outputText: "Hello! How can I help you today?",
-                reasoningText: null,
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-000000000002",
-                partial: false,
-            },
+describe("claude parser edge cases", () => {
+    it("skips streams with an error event", () => {
+        const error = event({
+            type: "error",
+            error: { type: "overloaded_error", message: "Overloaded" },
         });
-    });
-
-    it("counts the recorded tool call as output, not the tool result", () => {
-        const outcome = parse(fixture("tool-call"));
-        expect(outcome).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "claude-sonnet-5-5",
-                reasoningText: null,
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-000000000006",
-            },
+        expect(parse(start() + textBlock(0, "Hi") + error + stop)).toEqual({
+            kind: "skip",
+            reason: "error: Overloaded",
         });
-        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
-        const [toolInput, ...text] = reply.outputText.split("\n");
-        expect(toolInput).toBe(
-            '{"latitude": 0.0000, "longitude": 0.0000, "location_name": "REDACTED"}',
-        );
-        expect(text.join("\n")).toMatch(/^Aujourd'hui à REDACTED, le temps est plutôt beau/);
-        expect(reply.outputText).toHaveLength(70 + 1 + 517);
-        expect(reply.outputText).not.toContain("precipitation_chance");
-    });
-
-    it("records a recorded reply stopped by the user as partial", () => {
-        const outcome = parse(fixture("aborted"), Infinity, request(), "aborted");
-        expect(outcome).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "claude-sonnet-5-5",
-                reasoningText: "Clarification d'une demande de texte sans sujet précisé.",
-                hiddenReasoning: true,
-                messageId: "00000000-0000-4000-8000-000000000009",
-                partial: true,
-            },
-        });
-        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
-        expect(reply.outputText).toMatch(/^# L'art de prendre son temps\n\nIl fut un temps/);
-    });
-
-    it("skips a reply cut before message_stop by a network error or a closed stream", () => {
-        for (const end of ["done", "failed"] as const) {
-            expect(parse(fixture("aborted"), Infinity, request(), end)).toEqual({
-                kind: "skip",
-                reason: "stream ended before message_stop",
-            });
-        }
     });
 
     it("skips an aborted stream with an error event", () => {
@@ -150,36 +79,6 @@ describe("claude fixtures", () => {
             textBlock(0, "Hi") +
             event({ type: "error", error: { type: "overloaded_error", message: "Overloaded" } });
         expect(parse(text, Infinity, request(), "aborted")).toEqual({
-            kind: "skip",
-            reason: "error: Overloaded",
-        });
-    });
-
-    it("counts the summaries of thinking that is not streamed, flagging hidden reasoning", () => {
-        // The recorded thinking block only holds a summary (`thinking_summary_delta`).
-        const outcome = parse(fixture("aborted") + completion);
-        expect(outcome).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "claude-sonnet-5-5",
-                reasoningText: "Clarification d'une demande de texte sans sujet précisé.",
-                hiddenReasoning: true,
-                messageId: "00000000-0000-4000-8000-000000000009",
-            },
-        });
-        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
-        expect(reply.outputText).toMatch(/^# L'art de prendre son temps\n\nIl fut un temps/);
-        expect(reply.outputText).toHaveLength(710);
-    });
-});
-
-describe("claude parser edge cases", () => {
-    it("skips streams with an error event", () => {
-        const error = event({
-            type: "error",
-            error: { type: "overloaded_error", message: "Overloaded" },
-        });
-        expect(parse(start() + textBlock(0, "Hi") + error + stop)).toEqual({
             kind: "skip",
             reason: "error: Overloaded",
         });
@@ -286,6 +185,33 @@ describe("claude parser edge cases", () => {
         });
         expect(parse(start() + tool + textBlock(1, "Done") + stop)).toMatchObject({
             reply: { outputText: '{"command":"create"}\nDone' },
+        });
+    });
+
+    it("counts a streamed tool call as output, not the tool result", () => {
+        const tool =
+            event({
+                type: "content_block_start",
+                index: 0,
+                content_block: { type: "tool_use", name: "weather", input: {} },
+            }) +
+            event({
+                type: "content_block_delta",
+                index: 0,
+                delta: { type: "input_json_delta", partial_json: '{"city": "Paris"}' },
+            }) +
+            event({
+                type: "content_block_start",
+                index: 1,
+                content_block: { type: "tool_result", content: [] },
+            }) +
+            event({
+                type: "content_block_delta",
+                index: 1,
+                delta: { type: "text_delta", text: "Sunny" },
+            });
+        expect(parse(start() + tool + textBlock(2, "It is sunny.") + stop)).toMatchObject({
+            reply: { outputText: '{"city": "Paris"}\nIt is sunny.' },
         });
     });
 

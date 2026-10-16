@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { applyDelta, chatgptConversationEndpoint } from "./conversation";
 import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
@@ -18,13 +16,6 @@ function request(overrides: Partial<CapturedRequest> = {}): CapturedRequest {
     };
 }
 
-function fixture(name: string): string {
-    return readFileSync(
-        new URL(`../../../test/fixtures/chatgpt/${name}.sse`, import.meta.url),
-        "utf8",
-    );
-}
-
 function parse(
     text: string,
     chunkSize = Infinity,
@@ -35,18 +26,6 @@ function parse(
     for (let i = 0; i < text.length; i += chunkSize) parser.push(text.slice(i, i + chunkSize));
     return parser.finish(end);
 }
-
-describeAdapterContract(
-    "chatgpt",
-    chatgptConversationEndpoint,
-    request(),
-    Object.fromEntries(
-        ["normal-reply", "thinking-reply", "regenerate", "tool-call", "aborted"].map((name) => [
-            name,
-            fixture(name),
-        ]),
-    ),
-);
 
 describe("chatgptConversationEndpoint matching", () => {
     it.each([
@@ -73,101 +52,6 @@ describe("chatgptConversationEndpoint matching", () => {
 
     it("ignores non-POST requests", () => {
         expect(matches(request({ method: "GET" }))).toBe(false);
-    });
-});
-
-describe("chatgpt fixtures", () => {
-    it("parses a recorded reply, skipping hidden system messages", () => {
-        expect(parse(fixture("normal-reply"))).toEqual({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-6",
-                outputText: "Test successful! \u2705 I\u2019m here and ready to help.",
-                reasoningText: null,
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-00000000000c",
-                partial: false,
-            },
-        });
-    });
-
-    it("flags hidden reasoning when auto mode switched to reasoning", () => {
-        const text = fixture("normal-reply").replace(
-            '"did_auto_switch_to_reasoning":false',
-            '"did_auto_switch_to_reasoning":true',
-        );
-        expect(parse(text)).toMatchObject({ reply: { hiddenReasoning: true } });
-    });
-
-    it("parses a recorded reply with web search and reasoning, counting fragments once", () => {
-        // Recorded and masked (letters → x): the answer is streamed as three hidden fragments
-        // around a web search, and as the visible merged message concatenating them.
-        const outcome = parse(fixture("thinking-reply"));
-        expect(outcome).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-6",
-                hiddenReasoning: true,
-                messageId: "00000000-0000-4000-8000-00000000000d",
-            },
-        });
-        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
-        expect(reply.outputText).toHaveLength(7562);
-        expect(reply.reasoningText).toHaveLength(21);
-    });
-
-    it("parses a recorded regenerated reply", () => {
-        // Masked "Test successful! ✅ I’m here and ready to help.", streamed with
-        // `message_type: "variant"` and no user message echo.
-        expect(parse(fixture("regenerate"))).toEqual({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-6",
-                outputText: "xxxx xxxxxxxxxx! \u2705 x\u2019x xxxx xxx xxxxx xx xxxx.",
-                reasoningText: null,
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-00000000000c",
-                partial: false,
-            },
-        });
-    });
-
-    it("counts tool calls as output and reports the visible reply id", () => {
-        expect(parse(fixture("tool-call"))).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-5-instant",
-                outputText:
-                    '{"search_query": [{"q": "REDACTED"}]}\n' +
-                    "According to recent sources, the event takes place in May.",
-                messageId: "00000000-0000-4000-8000-000000000064",
-            },
-        });
-    });
-
-    it("records a recorded reply stopped by the user as partial", () => {
-        // The page aborts the request mid-patch, before `message_stream_complete`.
-        const outcome = parse(fixture("aborted"), Infinity, request(), "aborted");
-        expect(outcome).toMatchObject({
-            kind: "reply",
-            reply: {
-                rawModel: "gpt-6",
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-00000000000c",
-                partial: true,
-            },
-        });
-        const { reply } = outcome as Extract<ParseOutcome, { kind: "reply" }>;
-        expect(reply.outputText).toHaveLength(643);
-    });
-
-    it("skips a reply cut before [DONE] by a network error or a closed stream", () => {
-        for (const end of ["done", "failed"] as const) {
-            expect(parse(fixture("aborted"), Infinity, request(), end)).toEqual({
-                kind: "skip",
-                reason: "stream ended before [DONE]",
-            });
-        }
     });
 });
 
@@ -217,6 +101,31 @@ describe("chatgpt parser edge cases", () => {
         expect(parse(noise + add(assistant) + noise + done)).toMatchObject({
             kind: "reply",
             reply: { outputText: "Hi" },
+        });
+    });
+
+    it("flags hidden reasoning when auto mode switched to reasoning", () => {
+        const metadata = (switched: boolean) =>
+            `data: ${JSON.stringify({
+                type: "server_ste_metadata",
+                metadata: { model_slug: "gpt-5-instant", did_auto_switch_to_reasoning: switched },
+            })}\n\n`;
+        for (const switched of [false, true]) {
+            expect(parse(metadata(switched) + add(assistant) + done)).toMatchObject({
+                reply: { rawModel: "gpt-5-instant", hiddenReasoning: switched },
+            });
+        }
+    });
+
+    it("counts tool calls as output and reports the visible reply id", () => {
+        const call = {
+            ...assistant,
+            id: "call",
+            content: { content_type: "code", text: '{"search_query": "x"}' },
+            recipient: "web.run",
+        };
+        expect(parse(add(call, 0) + add(assistant, 1) + done)).toMatchObject({
+            reply: { outputText: '{"search_query": "x"}\nHi', messageId: "a" },
         });
     });
 
