@@ -19,7 +19,7 @@ afterEach(cleanup);
 
 // Hover and focus open tooltips through CSS: only their dismissal is observable here.
 function isShown(tooltip: HTMLElement): boolean {
-    return !tooltip.classList.contains("hidden");
+    return !tooltip.hasAttribute("data-dismissed");
 }
 
 describe("Tooltip", () => {
