@@ -67,7 +67,7 @@ describe("provider registry", () => {
             expect(PAGES[provider].markups.length).toBeGreaterThan(0);
         });
 
-        const { ecologitsProvider, fallback, aliases } = MODEL_MAPPINGS[provider];
+        const { ecologitsProvider, fallback, aliases, proxies } = MODEL_MAPPINGS[provider];
 
         it("has a fallback model EcoLogits knows", () => {
             expect(models.findModel(ecologitsProvider, fallback)).toBeDefined();
@@ -77,6 +77,23 @@ describe("provider registry", () => {
             for (const [slug, target] of Object.entries(aliases)) {
                 expect(slug).toBe(slug.trim().toLowerCase());
                 expect(models.findModel(ecologitsProvider, target), target).toBeDefined();
+            }
+        });
+
+        it("only proxies normalised slugs to models EcoLogits knows", () => {
+            for (const [slug, target] of Object.entries(proxies)) {
+                expect(slug).toBe(slug.trim().toLowerCase());
+                const targets = typeof target === "string" ? [target] : [target.low, target.high];
+                for (const t of targets) {
+                    expect(models.findModel(ecologitsProvider, t), t).toBeDefined();
+                }
+            }
+        });
+
+        // A proxy for a model EcoLogits now knows is never used: drop it.
+        it("only proxies slugs EcoLogits does not know", () => {
+            for (const slug of Object.keys(proxies)) {
+                expect(models.findModel(ecologitsProvider, slug), slug).toBeUndefined();
             }
         });
     });
