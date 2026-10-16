@@ -1,7 +1,7 @@
 import { NdjsonDecoder } from "../../src/capture/decoders/ndjson";
 import { SseDecoder } from "../../src/capture/decoders/sse";
 import { parseJsonTree, type JsonNode, type ObjectNode } from "./json-tree";
-import { looksLikeToken, maskText, UUID, zeroedUuid } from "./personal-data";
+import { looksLikeToken, maskAround, maskText, ZeroedIds } from "./personal-data";
 import type { SupportedProvider } from "../../src/providers/registry";
 import { FIXTURE_RULES } from "./providers";
 import type { FixtureRules } from "./providers/types";
@@ -11,10 +11,15 @@ import type { FixtureRules } from "./providers/types";
  * structural values are kept, ids become zeroed UUIDs (the same id always the same one, so
  * references between events still hold), tokens and account details become `REDACTED`, and
  * every other string is masked. Only values are rewritten: event lines, line endings, padding
- * and key order are kept.
+ * and key order are kept. Pass the `ids` of the case's DOM snapshot (`sanitiseSnapshot`) to map
+ * the ids of both alike.
  */
-export function anonymiseStream(provider: SupportedProvider, text: string): string {
-    const anonymiser = new Anonymiser(FIXTURE_RULES[provider]);
+export function anonymiseStream(
+    provider: SupportedProvider,
+    text: string,
+    ids = new ZeroedIds(),
+): string {
+    const anonymiser = new Anonymiser(FIXTURE_RULES[provider], ids);
     const sse = /^(?:data|event):/m.test(text);
     let output = "";
     let cursor = 0;
@@ -92,10 +97,12 @@ function applyByLine(lines: string[], replacements: Replacement[]): string[] {
 }
 
 class Anonymiser {
-    private readonly ids = new Map<string, string>();
     private readonly keyOf: (object: ObjectNode, key: string) => string;
 
-    constructor(private readonly rules: FixtureRules) {
+    constructor(
+        private readonly rules: FixtureRules,
+        private readonly ids: ZeroedIds,
+    ) {
         this.keyOf = rules.keyResolver?.() ?? ((_, key) => key);
     }
 
@@ -145,27 +152,14 @@ class Anonymiser {
         if (this.rules.ids.has(key)) return this.mapId(value);
         if (this.rules.structural.has(key)) return this.mapUuids(value);
         if (looksLikeToken(value)) return "REDACTED";
-        // Mask around the UUIDs, which are mapped instead.
-        let masked = "";
-        let last = 0;
-        for (const match of value.matchAll(UUID)) {
-            masked += maskText(value.slice(last, match.index)) + this.mapId(match[0]);
-            last = match.index + match[0].length;
-        }
-        return masked + maskText(value.slice(last));
+        return maskAround(value, this.ids);
     }
 
     private mapUuids(text: string): string {
-        return text.replace(UUID, (uuid) => this.mapId(uuid));
+        return this.ids.mapUuids(text);
     }
 
     private mapId(id: string): string {
-        const known = id.toLowerCase();
-        let mapped = this.ids.get(known);
-        if (mapped === undefined) {
-            mapped = zeroedUuid(this.ids.size + 1);
-            this.ids.set(known, mapped);
-        }
-        return mapped;
+        return this.ids.map(id);
     }
 }
