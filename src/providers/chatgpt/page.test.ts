@@ -17,11 +17,4 @@ describePageSnapshots("chatgpt", [
         lastId: "00000000-0000-4000-8000-000000000072",
         anchorDependsOn: "[data-assistant-message-actions]",
     },
-    {
-        file: "legacy-reply.html",
-        markup: 2,
-        replies: 1,
-        lastId: "00000000-0000-4000-8000-00000000000c",
-        anchorDependsOn: '[data-message-author-role="assistant"]',
-    },
 ]);

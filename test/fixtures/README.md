@@ -64,7 +64,6 @@ Snapshots are kept as recorded: Prettier ignores them.
 | `logged-out-stopped.ndjson` | **Recorded.** Logged-out reply stopped by the user: `append` lines, then the stream just ends (no `terminal-received`, no `end`)                                                                                                                           |
 | `normal-reply.html`         | **Synthetic** DOM snapshot, logged-in markup: two turns, each reply block (`data-chatgpt-selection-message-id`) followed by its action bar; last reply id from `normal-reply.sse`                                                                          |
 | `logged-out-reply.html`     | **Synthetic** DOM snapshot, logged-out markup: `<li data-message-role>` per message, the assistant one ending with `[data-assistant-message-actions]`; reply id from `logged-out-reply.ndjson`                                                             |
-| `legacy-reply.html`         | **Synthetic** DOM snapshot, former logged-in markup: `[data-message-author-role][data-message-id]` per message                                                                                                                                             |
 
 ## Claude
 

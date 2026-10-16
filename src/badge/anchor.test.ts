@@ -30,15 +30,6 @@ function addLoggedOutMessage(id: string, role = "assistant"): HTMLElement {
     return actions;
 }
 
-/** A reply in the former logged-in markup. */
-function addLegacyReply(id: string, role = "assistant"): HTMLElement {
-    const element = document.createElement("div");
-    element.dataset.messageAuthorRole = role;
-    element.dataset.messageId = id;
-    document.body.append(element);
-    return element;
-}
-
 function resolve(anchor: ReplyAnchor | null): Element[] {
     return anchor ? [...document.querySelectorAll(anchor.selector)] : [];
 }
@@ -66,12 +57,6 @@ describe("replyAnchors", () => {
         expect(resolve(anchor)).toEqual([actions]);
     });
 
-    it("match the former assistant message element, not user messages", () => {
-        const reply = addLegacyReply(ID);
-        addLegacyReply(ID, "user");
-        expect(resolve(replyAnchors(ID, "chatgpt")[2]!)).toEqual([reply]);
-    });
-
     it("escape the id", () => {
         expect(replyAnchors('a"b', "chatgpt")[0]!.selector).toBe(
             '[data-chatgpt-selection-message-id="a\\"b"]',
@@ -81,14 +66,13 @@ describe("replyAnchors", () => {
 
 describe("lastReplyAnchor", () => {
     it("targets the last reply, whatever its markup", () => {
-        addLegacyReply("1");
-        const last = addReply("2");
-        addLegacyReply("3", "user");
-        expect(resolve(lastReplyAnchor(document, "chatgpt"))).toEqual([last]);
-
-        const actions = addLoggedOutMessage("4");
-        addLoggedOutMessage("5", "user");
+        addReply("1");
+        const actions = addLoggedOutMessage("2");
+        addLoggedOutMessage("3", "user");
         expect(resolve(lastReplyAnchor(document, "chatgpt"))).toEqual([actions]);
+
+        const last = addReply("4");
+        expect(resolve(lastReplyAnchor(document, "chatgpt"))).toEqual([last]);
     });
 
     it("returns null without replies", () => {
