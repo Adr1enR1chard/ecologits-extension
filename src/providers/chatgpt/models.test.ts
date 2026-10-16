@@ -30,6 +30,25 @@ describe("ChatGPT slugs", () => {
         });
     });
 
+    it("estimates GPT-6 between GPT-6 Luna and GPT-6 Sol, as approximated", () => {
+        expect(resolveModel("chatgpt", "gpt-6")).toEqual({
+            ecologitsProvider: "openai",
+            model: { low: "gpt-6-luna", high: "gpt-6-sol" },
+            approximated: true,
+        });
+    });
+
+    it.each(["gpt-6-t-mini", "gpt-6-thinking-mini"])(
+        "%s is estimated as GPT-6 Luna, as approximated",
+        (slug) => {
+            expect(resolveModel("chatgpt", slug)).toEqual({
+                ecologitsProvider: "openai",
+                model: "gpt-6-luna",
+                approximated: true,
+            });
+        },
+    );
+
     it.each(["auto", "o3", "gpt-4-5", "research"])("%s falls back to gpt-5", (slug) => {
         expect(resolveModel("chatgpt", slug)).toEqual({
             ecologitsProvider: "openai",
