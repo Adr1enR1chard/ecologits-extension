@@ -33,21 +33,26 @@ page tests (`src/providers/*/page.test.ts`).
 ## DOM snapshots
 
 `<provider>/<case>.html` is the outerHTML of the element holding a conversation's replies, enough
-for the badge to find the last one. `src/providers/page-contract.ts` loads each snapshot in
-happy-dom and checks, for the markup of `PAGES[<provider>]` it is rendered with, that the `reply`
-selector matches the expected number of finished replies, that `idAttribute` yields the id of the
-last one, that `rendering(root)` is false and that its `anchor(id).selector` resolves to exactly
-one element. Each snapshot also names the element its anchor depends on (the action bar, or the
-reply block when the badge follows it) and checks that the anchor is lost without it. Every markup of every supported provider has at least one snapshot.
+for the badge to find the last one. Snapshots are listed in `src/providers/page-snapshots.ts`
+(`PAGE_SNAPSHOTS`), and `src/providers/page-contract.ts` replays them in happy-dom: for the markup
+of `PAGES[<provider>]` each one is rendered with, the `reply` selector matches the expected number
+of finished replies, `idAttribute` yields the id of the last one, `rendering(root)` is false and
+`anchor(id).selector` resolves to exactly one element. Each snapshot also removes what its anchor
+depends on (the action bar, or the reply id when the badge follows the reply block) and checks
+that the anchor is lost. `src/providers/registry.test.ts` checks that every markup of every
+supported provider has a snapshot, replayed by its `page.test.ts`.
 
-Snapshots go through `sanitiseSnapshot(html, ids)` from `scripts/fixtures/snapshot.ts`:
+Snapshots go through `sanitiseSnapshot(html, ids)` from `scripts/fixtures/snapshot.ts`, and a
+committed snapshot is one it leaves unchanged (`scripts/fixtures/snapshot.test.ts`):
 
 - `<script>`, `<style>` and `<link>` are dropped, `<svg>` emptied, comments dropped;
-- text and `alt` / `title` / `aria-label` values are masked (letters → `x`, digits → `0`);
+- text, including in `<template>`, and `alt` / `title` / `aria-label` values are masked
+  (letters → `x`, digits → `0`);
 - UUIDs become zeroed ones; pass the `ZeroedIds` used by `anonymiseStream` for the stream of the
   same case so their message ids match;
-- `data-*`, `class`, `role` and `id` are kept (selectors rely on them), tokens in them redacted;
-  every other attribute (inline `style`, `href`, `src`…) is dropped.
+- `class` and `role` are kept (selectors rely on them), and so are `data-*` and `id` when their
+  value is one short lower case identifier or a list of UUIDs; any other value may be text or
+  hold a token, and is masked. Every other attribute (inline `style`, `href`, `src`…) is dropped.
 
 Snapshots are kept as recorded: Prettier ignores them.
 
