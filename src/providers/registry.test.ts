@@ -1,9 +1,10 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { models } from "@ecologits/ecologits.js";
 import { describe, expect, it } from "vitest";
 import { CAPTURES } from "./capture";
 import { MODEL_MAPPINGS } from "./models";
 import { PAGES } from "./page";
+import { PAGE_SNAPSHOTS } from "./page-snapshots";
 import {
     PROVIDERS,
     PROVIDER_META,
@@ -65,6 +66,23 @@ describe("provider registry", () => {
 
         it("knows at least one reply markup", () => {
             expect(PAGES[provider].markups.length).toBeGreaterThan(0);
+        });
+
+        it("has a DOM snapshot of every reply markup, replayed by its page test", () => {
+            const snapshots = PAGE_SNAPSHOTS[provider];
+            expect(new Set(snapshots.map((s) => s.markup))).toEqual(
+                new Set(PAGES[provider].markups.map((_, i) => i)),
+            );
+            for (const { file } of snapshots) {
+                expect(
+                    existsSync(new URL(`../../test/fixtures/${provider}/${file}`, import.meta.url)),
+                    file,
+                ).toBe(true);
+            }
+            const pageTest = new URL(`./${provider}/page.test.ts`, import.meta.url);
+            expect(readFileSync(pageTest, "utf8")).toContain(
+                `describePageSnapshots("${provider}")`,
+            );
         });
 
         const { ecologitsProvider, fallback, aliases, proxies } = MODEL_MAPPINGS[provider];

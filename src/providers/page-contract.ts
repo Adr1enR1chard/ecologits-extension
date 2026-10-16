@@ -3,26 +3,14 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { lastReplyAnchor } from "../badge/anchor";
 import { PAGES } from "./page";
+import { PAGE_SNAPSHOTS, type PageSnapshot } from "./page-snapshots";
 import type { SupportedProvider } from "./registry";
 import type { ReplyMarkup } from "./types";
 
 /**
- * Replays a provider's DOM snapshots (`test/fixtures/<provider>/<case>.html`) against its
- * `ProviderPage`. Imported by tests only, which run in happy-dom.
+ * Replays a provider's DOM snapshots (`PAGE_SNAPSHOTS`) against its `ProviderPage`. Imported by
+ * tests only, which run in happy-dom.
  */
-
-export interface PageSnapshot {
-    /** `<case>.html` under `test/fixtures/<provider>/`. */
-    file: string;
-    /** Index in `PAGES[provider].markups` of the markup the snapshot is rendered with. */
-    markup: number;
-    /** Finished replies the `reply` selector matches. */
-    replies: number;
-    /** Message id of the last reply, read from `idAttribute`. */
-    lastId: string;
-    /** Element the badge anchor depends on (action bar, reply block…): removing it must lose the anchor. */
-    anchorDependsOn: string;
-}
 
 /** Loads a snapshot into the document body, which holds nothing else. */
 export function loadSnapshot(provider: SupportedProvider, file: string): HTMLElement {
@@ -52,10 +40,7 @@ export function checkSnapshot(
     return problems;
 }
 
-export function describePageSnapshots(
-    provider: SupportedProvider,
-    snapshots: readonly PageSnapshot[],
-): void {
+export function describePageSnapshots(provider: SupportedProvider): void {
     const { markups } = PAGES[provider];
 
     describe(`${provider} DOM snapshots`, () => {
@@ -63,13 +48,7 @@ export function describePageSnapshots(
             document.body.replaceChildren();
         });
 
-        it("cover every markup", () => {
-            expect(new Set(snapshots.map((s) => s.markup))).toEqual(
-                new Set(markups.map((_, i) => i)),
-            );
-        });
-
-        describe.each(snapshots)("$file", (snapshot) => {
+        describe.each(PAGE_SNAPSHOTS[provider])("$file", (snapshot) => {
             const markup = markups[snapshot.markup]!;
 
             it("is found by its markup: replies, last id, not rendering, one anchor", () => {
@@ -84,9 +63,9 @@ export function describePageSnapshots(
                 );
             });
 
-            it(`loses the anchor without ${snapshot.anchorDependsOn}`, () => {
+            it("loses the anchor without what it depends on", () => {
                 const root = loadSnapshot(provider, snapshot.file);
-                root.querySelectorAll(snapshot.anchorDependsOn).forEach((e) => e.remove());
+                snapshot.breakAnchor(root);
                 expect(checkSnapshot(root, markup, snapshot)).toContainEqual(
                     expect.stringMatching(/^0 elements match the anchor/),
                 );
