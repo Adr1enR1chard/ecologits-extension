@@ -17,7 +17,7 @@ export function normalizeSlug(slug: string): string {
 }
 
 /**
- * Resolves a web model slug: alias table, then model ranges, then EcoLogits as-is, then the same with the
+ * Resolves a web model slug: alias table, then proxies, then EcoLogits as-is, then the same with the
  * canonical slug, then the provider fallback.
  */
 export function resolveModel(
@@ -25,7 +25,7 @@ export function resolveModel(
     rawModel: string | null,
     mappings: Readonly<Record<SupportedProvider, ProviderModels>> = MODEL_MAPPINGS,
 ): ResolvedModel {
-    const { ecologitsProvider, fallback, aliases, ranges = {}, canonicalize } = mappings[provider];
+    const { ecologitsProvider, fallback, aliases, proxies = {}, canonicalize } = mappings[provider];
     if (rawModel !== null) {
         const normalized = normalizeSlug(rawModel);
         const candidates = [normalized];
@@ -35,8 +35,12 @@ export function resolveModel(
             if (Object.hasOwn(aliases, slug)) {
                 return { ecologitsProvider, modelName: aliases[slug]!, approximated: false };
             }
-            if (Object.hasOwn(ranges, slug)) {
-                const { low, high } = ranges[slug]!;
+            if (Object.hasOwn(proxies, slug)) {
+                const proxy = proxies[slug]!;
+                if (typeof proxy === "string") {
+                    return { ecologitsProvider, modelName: proxy, approximated: true };
+                }
+                const { low, high } = proxy;
                 return {
                     ecologitsProvider,
                     modelName: low,

@@ -40,10 +40,10 @@ export interface ProviderModels {
     /** Normalised web slug → EcoLogits model ID, for slugs EcoLogits does not know as-is. */
     aliases: Readonly<Record<string, string>>;
     /**
-     * Normalised web slug → EcoLogits models bracketing a web model EcoLogits does not know.
-     * Always approximated.
+     * Normalised web slug → EcoLogits model, or range of models, standing in for a web model
+     * EcoLogits does not know. Always approximated.
      */
-    ranges?: Readonly<Record<string, ModelRange>>;
+    proxies?: Readonly<Record<string, string | ModelRange>>;
     /** Rewrites a normalised web slug into its EcoLogits form, tried after the aliases. */
     canonicalize?: (slug: string) => string;
 }
