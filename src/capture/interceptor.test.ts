@@ -130,7 +130,7 @@ describe("installFetchInterceptor", () => {
         await (await win.fetch(URL_CONVERSATION, post)).text();
         await new Promise((resolve) => setTimeout(resolve, 20));
 
-        expect(records).toEqual([{ url: URL_CONVERSATION, end: "done", text }]);
+        expect(records).toEqual([{ url: URL_CONVERSATION, method: "POST", end: "done", text }]);
     });
 
     it("leaves unmatched requests alone", async () => {
