@@ -26,4 +26,5 @@ export const claudeRules: FixtureRules = {
         "resetsAt",
         "percent",
     ]),
+    keepAlive: new Set(["ping"]),
 };

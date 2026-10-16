@@ -2,7 +2,7 @@ import { Window, type Element } from "happy-dom";
 import { NdjsonDecoder } from "../../src/capture/decoders/ndjson";
 import { SseDecoder } from "../../src/capture/decoders/sse";
 import { PAGES } from "../../src/providers/page";
-import { checkSnapshot } from "../../src/providers/page-check";
+import { findLastReply, inspectSnapshot, isRendering } from "../../src/providers/page-check";
 import type { SupportedProvider } from "../../src/providers/registry";
 import { parseJsonTree, type JsonNode } from "./json-tree";
 import { UUID } from "./personal-data";
@@ -25,9 +25,9 @@ export interface StreamShape {
  * The shape of an SSE or NDJSON stream. An event's type is its SSE event name followed by its
  * JSON `type` when it has one (`message:resume_conversation_token`, `ping`), or, for data that is
  * not JSON, the data itself when it is a marker like `[DONE]`. Keys that are ids (UUIDs, indexes)
- * are written `<id>`.
+ * are written `<id>`. Events of the `keepAlive` types are left out.
  */
-export function streamShape(text: string): StreamShape {
+export function streamShape(text: string, keepAlive: ReadonlySet<string> = new Set()): StreamShape {
     const shape: StreamShape = { events: [], paths: new Map() };
     for (const { event, data } of payloads(text)) {
         // `[DONE]` would parse as the start of an array.
@@ -37,6 +37,7 @@ export function streamShape(text: string): StreamShape {
         const name = [event, type].filter((part, i, parts) => part && parts.indexOf(part) === i);
         let label = name.join(":") || "line";
         if (root === null) label = `${label}:${marker ? data.trim() : "text"}`;
+        if (keepAlive.has(label)) continue;
         if (shape.events.at(-1) !== label) shape.events.push(label);
         if (root !== null) addPaths(shape.paths, label, root);
     }
@@ -82,8 +83,9 @@ function valueType(node: JsonNode): string {
 /**
  * What changed from the `committed` stream shape to the `fresh` one: event types added or
  * missing, the order of their first occurrences (the number of blocks or deltas varies from a
- * reply to another, their order does not), key paths added or missing, value types changed.
- * Empty when they have the same shape.
+ * reply to another, their order does not), key paths added or missing, value types changed. A
+ * value that is `null` in one stream only is not a change: nullable fields are `null` or not
+ * from a reply to another. Empty when they have the same shape.
  */
 export function compareStreams(committed: StreamShape, fresh: StreamShape): string[] {
     const diff: string[] = [];
@@ -103,7 +105,7 @@ export function compareStreams(committed: StreamShape, fresh: StreamShape): stri
     for (const [path, types] of fresh.paths) {
         const before = committed.paths.get(path);
         if (!before) diff.push(`added key path: ${path} (${typeList(types)})`);
-        else if (typeList(before) !== typeList(types)) {
+        else if (changedTypes(before, types)) {
             diff.push(`changed type: ${path}: ${typeList(before)} → ${typeList(types)}`);
         }
     }
@@ -113,7 +115,14 @@ export function compareStreams(committed: StreamShape, fresh: StreamShape): stri
     return diff;
 }
 
-function typeList(types: Set<string>): string {
+/** Whether the types of the non-null values differ, when both streams have some. */
+function changedTypes(before: Set<string>, now: Set<string>): boolean {
+    const [a, b] = [before, now].map((types) => typeList(types, false));
+    return a !== "" && b !== "" && a !== b;
+}
+
+function typeList(types: Set<string>, withNull = true): string {
+    if (!withNull) types = new Set([...types].filter((type) => type !== "null"));
     return [...types].sort().join(" | ");
 }
 
@@ -125,8 +134,8 @@ export interface PageShape {
     problems: string[];
     /**
      * The elements from the last reply up to the innermost element holding its anchor, then down
-     * to the anchor, each as its tag and attribute names: `div[class,data-testid]`. `null`
-     * without a single anchor.
+     * to the anchor, each as its tag and `data-*` / `role` attribute names: `div[data-testid]`.
+     * `null` without a single anchor.
      */
     anchorPath: string | null;
 }
@@ -138,41 +147,56 @@ export function pageShape(provider: SupportedProvider, html: string): PageShape 
         // A template's content is inert: no script runs, no resource loads.
         const template = window.document.createElement("template");
         template.innerHTML = html;
-        // `ParentNode` of the DOM library, which happy-dom implements.
+        // `ParentNode` and `Element` of the DOM library, which happy-dom implements.
         const root = template.content as unknown as ParentNode;
-        const escape = (id: string) => window.CSS.escape(id);
         const { markups } = PAGES[provider];
-        const last = [
-            ...template.content.querySelectorAll(markups.map((m) => m.reply).join(", ")),
-        ].at(-1);
-        const index = last ? markups.findIndex((m) => last.matches(m.reply)) : -1;
-        const markup = markups[Math.max(index, 0)]!;
-        const problems = checkSnapshot(root, markup, escape);
-        const id = last?.getAttribute(markup.idAttribute);
-        const anchors = id
-            ? [...template.content.querySelectorAll(markup.anchor(escape(id)).selector)]
-            : [];
-        const anchorPath = last && anchors.length === 1 ? pathBetween(last, anchors[0]!) : null;
-        return { markup: index === -1 ? null : index, problems, anchorPath };
+        const last = findLastReply(root, markups);
+        const { anchors, problems } = inspectSnapshot(root, last?.markup ?? markups[0]!, {
+            escape: (id) => window.CSS.escape(id),
+            rendering: (r) => isRendering(r, markups),
+        });
+        const anchorPath =
+            last && anchors.length === 1
+                ? pathBetween(last.element as unknown as Element, anchors[0] as unknown as Element)
+                : null;
+        return { markup: last?.index ?? null, problems, anchorPath };
     } finally {
         void window.happyDOM.close();
     }
 }
 
+/**
+ * From `reply` up to the innermost element holding `anchor` (or the top of the snapshot, when
+ * none does), then down to `anchor`.
+ */
 function pathBetween(reply: Element, anchor: Element): string {
     const up: Element[] = [reply];
-    while (!up.at(-1)!.contains(anchor)) up.push(up.at(-1)!.parentElement!);
+    let holder: Element | null = reply;
+    while (holder && !holder.contains(anchor)) {
+        holder = holder.parentElement;
+        if (holder) up.push(holder);
+    }
     const down: Element[] = [];
-    for (let at = anchor; at !== up.at(-1); at = at.parentElement!) down.unshift(at);
+    for (let at: Element | null = anchor; at && at !== holder; at = at.parentElement) {
+        down.unshift(at);
+    }
     return [
         describe(reply),
         ...up.slice(1).map((element) => `↑ ${describe(element)}`),
+        ...(holder ? [] : ["↑ (top)"]),
         ...down.map((element) => `↓ ${describe(element)}`),
     ].join(" ");
 }
 
+/**
+ * An element as its tag and the names of its `data-*` and `role` attributes, which the page
+ * markups select on. `class`, `id` and the text attributes come and go with the page's state.
+ */
 function describe(element: Element): string {
-    const names = [...element.attributes].map((attribute) => attribute.name).sort();
+    const names = [...element.attributes]
+        .map((attribute) => attribute.name)
+        .filter((name) => name === "role" || name.startsWith("data-"))
+        .sort();
     return `${element.localName}[${names.join(",")}]`;
 }
 

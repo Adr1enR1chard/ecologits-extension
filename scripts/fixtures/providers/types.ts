@@ -15,6 +15,11 @@ export interface FixtureRules {
     /** Keys holding account details: every string below becomes `REDACTED`, every number 0. */
     account: ReadonlySet<string>;
     /**
+     * Event types sent at any time to keep the connection open (`ping`): left out of the drift
+     * check (`pnpm fixtures:drift`), since when and whether they come is a matter of timing.
+     */
+    keepAlive?: ReadonlySet<string>;
+    /**
      * Returns, for each stream, the key a value stands for when its own key does not say what
      * it holds, e.g. the `v` of a JSON-patch operation stands for the last segment of its path.
      */
