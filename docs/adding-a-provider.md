@@ -34,7 +34,10 @@ in `PROVIDERS` (`src/providers/registry.ts`). The order of `PROVIDERS` is the di
 4. Fill in `models.ts`; test the slugs of the web app in `models.test.ts`. A proxy stands in, as
    one EcoLogits model or a `{ low, high }` range, for a web model EcoLogits does not know yet;
    its estimates are flagged as approximated.
-5. Fill in `page.ts` with the markup of finished replies and where the badge goes.
+5. Fill in `page.ts` with the markup of finished replies and where the badge goes. Save a DOM
+   snapshot of a conversation per markup in `test/fixtures/<id>/<case>.html`, sanitised with
+   `sanitiseSnapshot` (`scripts/fixtures/snapshot.ts`), and replay them in `page.test.ts` with
+   `describePageSnapshots` (`src/providers/page-contract.ts`).
 6. Add one line to each registry: `src/providers/capture.ts`, `models.ts` and `page.ts`, and
    `scripts/fixtures/providers/index.ts` for the fixture rules. They are typed
    `Record<SupportedProvider, …>`: the compiler flags a missing one. In
