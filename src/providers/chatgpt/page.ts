@@ -23,16 +23,6 @@ export const chatgptPage: ProviderPage = {
                 position: "before",
             }),
         },
-        // Former logged-in markup.
-        {
-            reply: '[data-message-author-role="assistant"][data-message-id]',
-            idAttribute: "data-message-id",
-            attributes: ["data-message-id"],
-            anchor: (id) => ({
-                selector: `[data-message-author-role="assistant"][data-message-id="${id}"]`,
-                position: "after",
-            }),
-        },
     ],
     // "/" to "/c/<id>" (also from a GPT or project page, whose path the conversation extends).
     isNewConversation: (path) => path === "/",
