@@ -35,6 +35,29 @@ export function zeroedUuid(n: number): string {
 }
 
 /**
+ * Maps each id to a zeroed UUID, the same id always to the same one (case-insensitively). Share
+ * one between the stream and the DOM snapshot of a case so their ids still match.
+ */
+export class ZeroedIds {
+    private readonly ids = new Map<string, string>();
+
+    map(id: string): string {
+        const known = id.toLowerCase();
+        let mapped = this.ids.get(known);
+        if (mapped === undefined) {
+            mapped = zeroedUuid(this.ids.size + 1);
+            this.ids.set(known, mapped);
+        }
+        return mapped;
+    }
+
+    /** `text` with each UUID it holds mapped. */
+    mapUuids(text: string): string {
+        return text.replace(UUID, (uuid) => this.map(uuid));
+    }
+}
+
+/**
  * Masks text: letters become `x` and digits `0`, keeping punctuation, spaces and the length
  * (in UTF-16 code units), so masked fragments still concatenate to their masked whole. The `@`
  * of email addresses becomes `x` too, so they no longer read as addresses.
@@ -44,6 +67,17 @@ export function maskText(text: string): string {
         .replace(/\p{L}/gu, (letter) => "x".repeat(letter.length))
         .replace(/\p{N}/gu, (digit) => "0".repeat(digit.length));
     return masked.replace(EMAIL, (email) => email.replace("@", "x"));
+}
+
+/** `text` masked, except its UUIDs, which are mapped. */
+export function maskAround(text: string, ids: ZeroedIds): string {
+    let masked = "";
+    let last = 0;
+    for (const match of text.matchAll(UUID)) {
+        masked += maskText(text.slice(last, match.index)) + ids.map(match[0]);
+        last = match.index + match[0].length;
+    }
+    return masked + maskText(text.slice(last));
 }
 
 export type PersonalDataKind = "email" | "uuid" | "jwt" | "base64";
