@@ -5,9 +5,9 @@ import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../src/capture
 import { chatgptConversationEndpoint } from "../../src/providers/chatgpt/conversation";
 import { chatgptLoggedOutEndpoint } from "../../src/providers/chatgpt/logged-out";
 import { claudeCompletionEndpoint } from "../../src/providers/claude/capture";
+import type { SupportedProvider } from "../../src/providers/registry";
 import { anonymiseStream } from "./anonymise";
 import { findPersonalData, maskText } from "./personal-data";
-import type { FixtureProvider } from "./providers";
 
 const ID_A = "3f2b8c1e-9d4a-4e7b-8c2d-1a5f6e7d8c9b";
 const ID_B = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
@@ -188,7 +188,7 @@ const CLAUDE_REQUEST: CapturedRequest = {
     body: JSON.stringify({ prompt: "REDACTED", rendering_mode: "messages" }),
 };
 
-function parserFor(provider: FixtureProvider, file: string) {
+function parserFor(provider: SupportedProvider, file: string) {
     if (provider === "claude")
         return { adapter: claudeCompletionEndpoint, request: CLAUDE_REQUEST };
     if (file.endsWith(".ndjson")) {
