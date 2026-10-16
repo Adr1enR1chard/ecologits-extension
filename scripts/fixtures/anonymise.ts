@@ -2,7 +2,8 @@ import { NdjsonDecoder } from "../../src/capture/decoders/ndjson";
 import { SseDecoder } from "../../src/capture/decoders/sse";
 import { parseJsonTree, type JsonNode, type ObjectNode } from "./json-tree";
 import { looksLikeToken, maskText, UUID, zeroedUuid } from "./personal-data";
-import { FIXTURE_RULES, type FixtureProvider } from "./providers";
+import type { SupportedProvider } from "../../src/providers/registry";
+import { FIXTURE_RULES } from "./providers";
 import type { FixtureRules } from "./providers/types";
 
 /**
@@ -12,7 +13,7 @@ import type { FixtureRules } from "./providers/types";
  * every other string is masked. Only values are rewritten: event lines, line endings, padding
  * and key order are kept.
  */
-export function anonymiseStream(provider: FixtureProvider, text: string): string {
+export function anonymiseStream(provider: SupportedProvider, text: string): string {
     const anonymiser = new Anonymiser(FIXTURE_RULES[provider]);
     const sse = /^(?:data|event):/m.test(text);
     let output = "";
