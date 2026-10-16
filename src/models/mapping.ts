@@ -16,8 +16,9 @@ export function normalizeSlug(slug: string): string {
 }
 
 /**
- * Resolves a web model slug: alias table, then proxies, then EcoLogits as-is, then the same with the
- * canonical slug, then the provider fallback.
+ * Resolves a web model slug: alias table, then EcoLogits as-is, then the same with the
+ * canonical slug, then the proxies, then the provider fallback. Proxies come after EcoLogits,
+ * so a model it learns wins over the proxy standing in for it.
  */
 export function resolveModel(
     provider: SupportedProvider,
@@ -34,12 +35,13 @@ export function resolveModel(
             if (Object.hasOwn(aliases, slug)) {
                 return { ecologitsProvider, model: aliases[slug]!, approximated: false };
             }
-            if (Object.hasOwn(proxies, slug)) {
-                return { ecologitsProvider, model: proxies[slug]!, approximated: true };
-            }
             if (slug !== "" && models.findModel(ecologitsProvider, slug) !== undefined) {
                 return { ecologitsProvider, model: slug, approximated: false };
             }
+        }
+        const proxied = candidates.find((slug) => Object.hasOwn(proxies, slug));
+        if (proxied !== undefined) {
+            return { ecologitsProvider, model: proxies[proxied]!, approximated: true };
         }
     }
     return { ecologitsProvider, model: fallback, approximated: true };

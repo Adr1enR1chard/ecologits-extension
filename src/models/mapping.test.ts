@@ -11,7 +11,11 @@ describe("resolveModel", () => {
             ecologitsProvider: "openai",
             fallback: "gpt-5",
             aliases: { auto: "gpt-5.5" },
-            proxies: {},
+            proxies: {
+                next: "gpt-5.5",
+                "next-wide": { low: "gpt-5-mini", high: "gpt-5.5" },
+                "gpt-4o": "gpt-5",
+            },
         },
     };
 
@@ -39,26 +43,21 @@ describe("resolveModel", () => {
         });
     });
 
-    it("resolves ChatGPT's GPT-6 to the GPT-6 Luna – Sol range, as approximated", () => {
-        expect(resolveModel("chatgpt", "gpt-6")).toEqual({
+    it("stands a proxy in for a model EcoLogits does not know, as approximated", () => {
+        expect(resolveModel("chatgpt", "next", mappings)).toEqual({
             ecologitsProvider: "openai",
-            model: { low: "gpt-6-luna", high: "gpt-6-sol" },
+            model: "gpt-5.5",
+            approximated: true,
+        });
+        expect(resolveModel("chatgpt", "next-wide", mappings)).toEqual({
+            ecologitsProvider: "openai",
+            model: { low: "gpt-5-mini", high: "gpt-5.5" },
             approximated: true,
         });
     });
 
-    it("resolves ChatGPT's GPT-6 thinking mini to GPT-6 Luna, as approximated", () => {
-        for (const slug of ["gpt-6-t-mini", "gpt-6-thinking-mini"]) {
-            expect(resolveModel("chatgpt", slug), slug).toEqual({
-                ecologitsProvider: "openai",
-                model: "gpt-6-luna",
-                approximated: true,
-            });
-        }
-    });
-
-    it("keeps aliases exact", () => {
-        expect(resolveModel("chatgpt", "chatgpt-4o-latest")).toEqual({
+    it("prefers a model EcoLogits knows over its proxy", () => {
+        expect(resolveModel("chatgpt", "gpt-4o", mappings)).toEqual({
             ecologitsProvider: "openai",
             model: "gpt-4o",
             approximated: false,

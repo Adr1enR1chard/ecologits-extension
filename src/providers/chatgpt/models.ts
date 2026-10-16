@@ -13,7 +13,8 @@ export const chatgptModels: ProviderModels = {
         // EcoLogits knows no `gpt-6`: ChatGPT serves GPT-6 Luna on free plans and GPT-6 Sol on
         // paid ones, and the plan is unknown.
         "gpt-6": { low: "gpt-6-luna", high: "gpt-6-sol" },
-        // Nor `gpt-6-mini`: Luna is the smallest GPT-6 it knows.
+        // Nor `gpt-6-mini`, the canonical slug of GPT-6 Thinking mini (`gpt-6-t-mini`): Luna is
+        // the smallest GPT-6 it knows.
         "gpt-6-mini": "gpt-6-luna",
     },
     canonicalize: canonicalizeChatGptSlug,
