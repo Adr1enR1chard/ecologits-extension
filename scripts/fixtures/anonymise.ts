@@ -18,32 +18,37 @@ export function anonymiseStream(provider: SupportedProvider, text: string): stri
     const sse = /^(?:data|event):/m.test(text);
     let output = "";
     let cursor = 0;
-    for (const { key, payload } of sse ? ssePayloads(text) : ndjsonPayloads(text)) {
-        const at = sse ? findDataLine(text, payload, cursor) : text.indexOf(payload, cursor);
-        if (payload === "" || at === -1) continue;
-        output += text.slice(cursor, at) + anonymiser.payload(payload, key);
-        cursor = at + payload.length;
+    for (const { key, lines } of sse ? ssePayloads(text) : ndjsonPayloads(text)) {
+        const anonymised = anonymiser.anonymiseLines(lines, key);
+        lines.forEach((line, i) => {
+            const at = sse ? findDataLine(text, line, cursor) : text.indexOf(line, cursor);
+            if (line === "" || at === -1) return;
+            output += text.slice(cursor, at) + anonymised[i];
+            cursor = at + line.length;
+        });
     }
     return output + text.slice(cursor);
 }
 
+/** One SSE event's data, or one NDJSON line: a single JSON value, possibly over several lines. */
 interface Payload {
     /** The key of the root value: the SSE event name, `""` in NDJSON. */
     key: string;
-    payload: string;
+    /** Its `data:` lines in SSE, the line itself in NDJSON. */
+    lines: string[];
 }
 
-/** Each `data:` line of each event; multi-line data is anonymised line by line. */
 function ssePayloads(text: string): Payload[] {
     const decoder = new SseDecoder();
-    return [...decoder.push(text), ...decoder.flush()].flatMap(({ event, data }) =>
-        data.split("\n").map((payload) => ({ key: event, payload })),
-    );
+    return [...decoder.push(text), ...decoder.flush()].map(({ event, data }) => ({
+        key: event,
+        lines: data.split("\n"),
+    }));
 }
 
 function ndjsonPayloads(text: string): Payload[] {
     const decoder = new NdjsonDecoder();
-    return [...decoder.push(text), ...decoder.flush()].map((payload) => ({ key: "", payload }));
+    return [...decoder.push(text), ...decoder.flush()].map((line) => ({ key: "", lines: [line] }));
 }
 
 /** Where `line` starts in `text` from `from` on, as the value of a `data:` field. */
@@ -60,6 +65,32 @@ interface Replacement {
     text: string;
 }
 
+/**
+ * Applies to each line the replacements made in the lines joined with `\n`. A JSON string or
+ * number never holds a raw line break, so a replacement spanning lines only comes from invalid
+ * JSON: each line's part of it is masked instead.
+ */
+function applyByLine(lines: string[], replacements: Replacement[]): string[] {
+    let lineStart = 0;
+    return lines.map((line) => {
+        const lineEnd = lineStart + line.length;
+        const own = replacements
+            .filter((r) => r.start < lineEnd && r.end > lineStart)
+            .map((r) => {
+                const start = Math.max(r.start, lineStart) - lineStart;
+                const end = Math.min(r.end, lineEnd) - lineStart;
+                const contained = r.start >= lineStart && r.end <= lineEnd;
+                return { start, end, text: contained ? r.text : maskText(line.slice(start, end)) };
+            });
+        lineStart = lineEnd + 1;
+        let output = line;
+        for (const { start, end, text } of own.sort((a, b) => b.start - a.start)) {
+            output = output.slice(0, start) + text + output.slice(end);
+        }
+        return output;
+    });
+}
+
 class Anonymiser {
     private readonly ids = new Map<string, string>();
     private readonly keyOf: (object: ObjectNode, key: string) => string;
@@ -68,17 +99,16 @@ class Anonymiser {
         this.keyOf = rules.keyResolver?.() ?? ((_, key) => key);
     }
 
-    /** Anonymises one event or line. Text that is not JSON (`[DONE]`…) only has its ids mapped. */
-    payload(payload: string, key: string): string {
-        const root = parseJsonTree(payload);
-        if (root === null) return this.mapUuids(payload);
+    /**
+     * Anonymises the lines of one payload, parsed as a single value. Text that is not JSON
+     * (`[DONE]`…) only has its ids mapped.
+     */
+    anonymiseLines(lines: string[], key: string): string[] {
+        const root = parseJsonTree(lines.join("\n"));
+        if (root === null) return lines.map((line) => this.mapUuids(line));
         const replacements: Replacement[] = [];
         this.visit(root, key, false, replacements);
-        let output = payload;
-        for (const { start, end, text } of replacements.sort((a, b) => b.start - a.start)) {
-            output = output.slice(0, start) + text + output.slice(end);
-        }
-        return output;
+        return applyByLine(lines, replacements);
     }
 
     private visit(node: JsonNode, key: string, account: boolean, out: Replacement[]): void {
