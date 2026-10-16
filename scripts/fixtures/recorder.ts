@@ -134,7 +134,15 @@ export async function runCase(
         say(fixture.instruction);
         const stream = await next;
         const end = streamEnd(stream.end);
-        const result = await recordStream(provider, fixture, stream, page, replyTimeoutMs, pollMs);
+        const result = await recordStream(
+            provider,
+            fixture,
+            stream,
+            end,
+            page,
+            replyTimeoutMs,
+            pollMs,
+        );
         if (typeof result !== "string")
             return { ...result, end, unchecked: null, wholePage: false };
         say(result);
@@ -176,11 +184,11 @@ async function recordStream(
     provider: SupportedProvider,
     fixture: FixtureCase,
     stream: RecordedStream,
+    end: StreamEnd,
     page: RecorderPage,
     timeoutMs: number,
     pollMs: number,
 ): Promise<Recording | string> {
-    const end = streamEnd(stream.end);
     if (end !== fixture.expect.end) {
         return `the stream ended with ${stream.end}, not ${fixture.expect.end}`;
     }
