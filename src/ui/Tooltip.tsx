@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
-import { useEffect, useId, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { keepInBounds } from "./keepInBounds";
 
 // Padding rather than margin between trigger and bubble, so the pointer can move onto the bubble.
 const SIDES = {
@@ -32,8 +33,12 @@ interface TooltipProps {
 }
 
 /**
- * Shows `content` while `children` are hovered or focused, until Escape is pressed. Tooltips must
- * not be nested: the `group` hover of an outer tooltip would also open the inner ones.
+ * Shows `content` while `children` are hovered or focused, until Escape is pressed, kept inside
+ * its `main`, or the viewport, whatever `align` asks. Tooltips must not be nested: the `group`
+ * hover of an outer tooltip would also open the inner ones.
+ *
+ * A closed tooltip is not displayed rather than invisible: an invisible box still takes room, and
+ * would widen the popup when it overflows.
  */
 export function Tooltip({
     content,
@@ -45,8 +50,25 @@ export function Tooltip({
     class: className,
 }: TooltipProps) {
     const id = useId();
+    const tooltip = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
     const [dismissed, setDismissed] = useState(false);
+    const opens = `group-hover:block ${
+        focusable ? "group-focus-visible:block" : "group-has-focus-visible:block"
+    }`;
+
+    // CSS opens the tooltip, so it is placed whenever its box changes, before it is painted: when
+    // it is displayed, its content changes, or its trigger or its `main` is resized.
+    useEffect(() => {
+        const element = tooltip.current;
+        if (!element) return;
+        const observer = new ResizeObserver(() => keepInBounds(element));
+        observer.observe(element);
+        observer.observe(element.parentElement!);
+        const main = element.closest("main");
+        if (main) observer.observe(main);
+        return () => observer.disconnect();
+    }, []);
 
     // Escape dismisses a hovered tooltip too, wherever the focus is.
     useEffect(() => {
@@ -75,19 +97,17 @@ export function Tooltip({
         >
             {children}
             <span
+                ref={tooltip}
                 role="tooltip"
                 id={id}
-                class={`invisible absolute z-10 w-max max-w-72 opacity-0 transition-opacity ${
-                    dismissed
-                        ? "hidden"
-                        : `group-hover:visible group-hover:opacity-100 ${
-                              focusable
-                                  ? "group-focus-visible:visible group-focus-visible:opacity-100"
-                                  : "group-has-focus-visible:visible group-has-focus-visible:opacity-100"
-                          }`
-                } ${SIDES[side]} ${ALIGNMENTS[align]}`}
+                data-dismissed={dismissed || undefined}
+                // Hidden at once, no fade-out: a fading tooltip would still take room. The bubble
+                // fades in once it is displayed, where `@starting-style` is supported.
+                class={`absolute z-10 hidden w-max max-w-72 ${dismissed ? "" : opens} ${
+                    SIDES[side]
+                } ${ALIGNMENTS[align]}`}
             >
-                <span class="block rounded-md border border-line bg-raised px-2.5 py-2 text-left text-xs leading-snug font-normal whitespace-normal text-fg shadow-lg">
+                <span class="block rounded-md border border-line bg-raised px-2.5 py-2 text-left text-xs leading-snug font-normal whitespace-normal text-fg shadow-lg transition-opacity starting:opacity-0">
                     {content}
                 </span>
             </span>
