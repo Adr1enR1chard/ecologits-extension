@@ -5,29 +5,12 @@
  * snapshot to `test/fixtures/<provider>/`. See `test/fixtures/README.md`.
  */
 import { join } from "node:path";
-import { isSupportedProvider, SUPPORTED_PROVIDERS } from "../../src/providers/registry";
-import { launchRecorder, recorderPage, terminalPrompter } from "./browser";
-import { FIXTURE_CASES } from "./cases";
+import { runFromCommandLine } from "./cli";
 import { recordCases } from "./recorder";
 
-const [provider, only] = process.argv.slice(2);
-if (!isSupportedProvider(provider)) {
-    console.error(`Usage: pnpm fixtures:record <${SUPPORTED_PROVIDERS.join("|")}> [case]`);
-    process.exit(1);
-}
-const cases = FIXTURE_CASES[provider].filter((c) => only === undefined || c.id === only);
-if (cases.length === 0) {
-    const ids = FIXTURE_CASES[provider].map((c) => c.id).join(", ");
-    console.error(`No ${provider} case ${only}: ${ids}`);
-    process.exit(1);
-}
-
-const context = await launchRecorder(provider);
-const prompter = terminalPrompter();
-try {
+await runFromCommandLine("fixtures:record", "write unchecked", async (provider, cases, options) => {
     const reports = await recordCases(provider, cases, {
-        page: await recorderPage(context),
-        prompter,
+        ...options,
         outDir: join(import.meta.dirname, "../../test/fixtures", provider),
     });
     const skipped = reports.filter((r) => r.written.length === 0).map((r) => r.id);
@@ -39,7 +22,4 @@ try {
         "Check the diff, restore the text the tests assert on, and update the fixture tables " +
             "(test/fixtures/README.md) and PAGE_SNAPSHOTS (src/providers/page-snapshots.ts).",
     );
-} finally {
-    prompter.close();
-    await context.close();
-}
+});

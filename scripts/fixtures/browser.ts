@@ -54,14 +54,17 @@ export async function recorderPage(context: BrowserContext): Promise<RecorderPag
 
 const CHOICES: readonly ProblemChoice[] = ["redo", "skip", "write"];
 
-/** Asks in the terminal. */
-export function terminalPrompter(): Prompter & { close(): void } {
+/**
+ * Asks in the terminal; `keep` names the `write` choice: what is done with a case that did not
+ * record as expected, but is kept.
+ */
+export function terminalPrompter(keep: string): Prompter & { close(): void } {
     const terminal = createInterface({ input: process.stdin, output: process.stdout });
     return {
         say: (text) => console.log(text),
         onProblem: async () => {
             for (;;) {
-                const answer = await terminal.question("Redo, skip, or write unchecked? [r/s/w] ");
+                const answer = await terminal.question(`Redo, skip, or ${keep}? [r/s/w] `);
                 const choice = CHOICES.find((c) => [c, c[0]].includes(answer.trim().toLowerCase()));
                 if (choice) return choice;
             }
