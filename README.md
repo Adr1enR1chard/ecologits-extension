@@ -1,18 +1,43 @@
 # EcoLogits Extension
 
-Cross-browser extension (Chrome, Firefox, Edge, Safari) that estimates the environmental impact (energy, GHG emissions, etc.) of your generative AI usage, powered by [EcoLogits](https://ecologits.ai).
+Browser extension that estimates the environmental impact of your generative AI usage, reply by reply, powered by [EcoLogits](https://ecologits.ai).
 
-## Supported providers
+> **Pre-release:** not on the browser stores yet ([#9](https://github.com/Adr1enR1chard/ecologits-extension/issues/9)). Install it from source (see below).
 
-- OpenAI (ChatGPT)
-- Anthropic (Claude)
-- Google (Gemini) (TODO)
+## Features
 
-To add one, see [Adding a provider](docs/adding-a-provider.md).
+- **Badge under each reply** with its estimated energy, GHG emissions and water, and the min–max range on hover. It can be turned off in the settings.
+- **Popup** with totals for today, 7 days, 30 days and all time, broken down by provider and model: energy, GHG emissions (with everyday equivalents from ADEME Impact CO2), water, abiotic resources and primary energy, split into usage and embodied impacts. It also shows whether capture works on each provider.
+- **Flags** when an estimate is less certain: a lower bound (the model's reasoning is hidden), an approximated model (the web app does not expose a model EcoLogits knows), or a reply stopped before its end.
+- **Your data stays local:** only metadata and impacts are stored in the browser, never message content, and nothing is sent anywhere. Export to CSV or JSON, or delete everything, from the settings.
+- English and French.
 
-## Status
+## Supported providers and browsers
 
-🚧 Work in progress
+|                    |                                    Chrome                                     | Firefox | Edge ([#7](https://github.com/Adr1enR1chard/ecologits-extension/issues/7)) | Safari ([#8](https://github.com/Adr1enR1chard/ecologits-extension/issues/8)) |
+| ------------------ | :---------------------------------------------------------------------------: | :-----: | :------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| ChatGPT (OpenAI)   |                                      ✅                                       |   ✅    |                                  planned                                   |                                   planned                                    |
+| Claude (Anthropic) |                                      ✅                                       |   ✅    |                                  planned                                   |                                   planned                                    |
+| Gemini (Google)    | planned ([#6](https://github.com/Adr1enR1chard/ecologits-extension/issues/6)) | planned |                                  planned                                   |                                   planned                                    |
+
+To add a provider, see [Adding a provider](docs/adding-a-provider.md).
+
+## How it works
+
+1. A script in the provider's page wraps `fetch` and reads a copy of the reply stream, leaving the page's own response untouched.
+2. A per-provider adapter extracts the model, the generated text (and the reasoning, when it is streamed) and the generation time.
+3. The background service worker counts the output tokens (`o200k_base` tokenizer), maps the web model to an EcoLogits model, and computes the impacts with [`@ecologits/ecologits.js`](https://www.npmjs.com/package/@ecologits/ecologits.js).
+4. The result is stored as daily totals plus a log of the last 500 replies, and shown in the badge and the popup.
+
+The options page explains the methodology and its approximations.
+
+## Install from source
+
+```sh
+pnpm install
+pnpm build            # Chrome: load .output/chrome-mv3 as an unpacked extension
+pnpm build:firefox    # Firefox: load .output/firefox-mv3/manifest.json as a temporary add-on
+```
 
 ## Development
 
