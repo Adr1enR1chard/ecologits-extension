@@ -2,10 +2,8 @@ import { Window, type Element } from "happy-dom";
 import { PAGES } from "../../src/providers/page";
 import type { SupportedProvider } from "../../src/providers/registry";
 
-/** What the badge would see of a page: its last finished reply, and the snapshot holding it. */
+/** What the badge would see of a page: the element holding its replies, and whether one renders. */
 export interface PageReplies {
-    /** Message id of the last finished reply, read like the badge does. */
-    lastId: string | null;
     /** The latest reply is still being rendered. */
     rendering: boolean;
     /**
@@ -39,7 +37,6 @@ export function findReplies(provider: SupportedProvider, html: string): PageRepl
             holder = holder.parentElement;
         }
         return {
-            lastId,
             // `ParentNode` of the DOM library, which happy-dom implements.
             rendering: markups.some((m) => m.rendering?.(root as unknown as ParentNode)),
             snapshot: holder ? holder.outerHTML : template.innerHTML,

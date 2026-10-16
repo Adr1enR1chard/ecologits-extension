@@ -12,6 +12,3 @@ build/
 coverage/
 test-results/
 playwright-report/
-
-# Browser profiles of the fixture recorder (signed-in sessions).
-.recorder/

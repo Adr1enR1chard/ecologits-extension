@@ -13,19 +13,14 @@ export default defineContentScript({
             ? (step: string, details?: unknown) => console.debug("[ecologits]", step, details ?? "")
             : undefined;
         // Development only: keep the last raw streams to record fixtures from the console, with
-        // `copy(__ecologitsStreams.at(-1).text)`, and hand each one to the fixture recorder
-        // (`scripts/fixtures/record.ts`) when it defined `__ecologitsOnStream`. They contain the
-        // conversation: never ship this (the CI build job checks it).
+        // `copy(__ecologitsStreams.at(-1).text)`. They contain the conversation: never ship this
+        // (the CI build job checks it).
         const record = import.meta.env.DEV
             ? (stream: RecordedStream) => {
-                  const target = window as unknown as {
-                      __ecologitsStreams?: RecordedStream[];
-                      __ecologitsOnStream?: (stream: RecordedStream) => unknown;
-                  };
+                  const target = window as unknown as { __ecologitsStreams?: RecordedStream[] };
                   target.__ecologitsStreams = [...(target.__ecologitsStreams ?? []), stream].slice(
                       -5,
                   );
-                  void target.__ecologitsOnStream?.(stream);
                   debug?.("stream recorded", `${stream.text.length} chars, end: ${stream.end}`);
               }
             : undefined;
