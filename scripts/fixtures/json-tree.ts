@@ -8,7 +8,8 @@ export type JsonNode = ObjectNode | ArrayNode | StringNode | NumberNode | Litera
 
 export interface ObjectNode {
     kind: "object";
-    entries: { key: string; value: JsonNode }[];
+    /** `keyNode` locates the key, for ids used as keys. */
+    entries: { key: string; keyNode: StringNode; value: JsonNode }[];
 }
 
 export interface ArrayNode {
@@ -99,7 +100,7 @@ class Parser {
             const key = this.string();
             if (!key.closed) throw new Stop();
             this.expect(":");
-            this.value((value) => node.entries.push({ key: key.value, value }));
+            this.value((value) => node.entries.push({ key: key.value, keyNode: key, value }));
             this.skipSpace();
             if (this.text[this.i] === "}") {
                 this.i++;
