@@ -12,9 +12,11 @@ const files = readdirSync(FIXTURES, { recursive: true, withFileTypes: true })
     .map((entry) => relative(FIXTURES, join(entry.parentPath, entry.name)));
 
 describe("committed fixtures", () => {
-    it("include the recorded streams", () => {
+    it("include the recorded streams and the DOM snapshots", () => {
         expect(files).toContain("chatgpt/normal-reply.sse");
         expect(files).toContain("claude/normal-reply.sse");
+        expect(files).toContain("chatgpt/normal-reply.html");
+        expect(files).toContain("claude/normal-reply.html");
     });
 
     it.each(files)("%s holds no personal data", (file) => {
