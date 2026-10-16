@@ -57,6 +57,11 @@ describe("streamShape", () => {
         });
     });
 
+    it("leaves out keep-alive events", () => {
+        const pinged = `event: ping\ndata: {"type":"ping"}\n\n${STREAM}`;
+        expect(streamShape(pinged, new Set(["ping"]))).toEqual(streamShape(STREAM));
+    });
+
     it("keeps the paths of an event cut by an abort", () => {
         const cut = 'event: delta\ndata: {"type":"delta","delta":{"text":"Hel';
         expect([...streamShape(cut).paths.keys()]).toContain("delta.delta.text");
@@ -120,6 +125,12 @@ describe("compareStreams", () => {
         ]);
     });
 
+    it("finds no drift in a value that is null in one stream only", () => {
+        const nulled = STREAM.replace('"model":"claude-x"', '"model":null');
+        expect(drift(STREAM, nulled)).toEqual([]);
+        expect(drift(nulled, STREAM)).toEqual([]);
+    });
+
     it("reports a changed value type", () => {
         const changed = STREAM.replaceAll('"index":0', '"index":"0"');
         expect(drift(STREAM, changed)).toEqual([
@@ -138,8 +149,17 @@ describe("pageShape", () => {
         expect(pageShape("claude", REPLY())).toEqual({
             markup: 0,
             problems: [],
-            anchorPath: "div[data-is-streaming,data-testid,data-turn-key] ↓ div[class]",
+            anchorPath: "div[data-is-streaming,data-testid,data-turn-key] ↓ div[]",
         });
+    });
+
+    it("goes through the top of the snapshot when no element holds the reply and its anchor", () => {
+        const html =
+            '<li data-message-role="assistant" id="a"><div data-assistant-message-actions></div></li>' +
+            '<li data-message-role="assistant" id="a"></li>';
+        expect(pageShape("chatgpt", html).anchorPath).toBe(
+            "li[data-message-role] ↑ (top) ↓ li[data-message-role] ↓ div[data-assistant-message-actions]",
+        );
     });
 
     it("tells what the page checks find wrong, without anchor path", () => {
@@ -165,10 +185,15 @@ describe("comparePages", () => {
         expect(comparePages(pageShape("claude", REPLY()), pageShape("claude", text))).toEqual([]);
     });
 
+    it("finds no drift in classes, ids or text attributes, which change with the page's state", () => {
+        const restyled = pageShape("claude", REPLY('class="actions open" id=":r1:" title="x"'));
+        expect(comparePages(pageShape("claude", REPLY()), restyled)).toEqual([]);
+    });
+
     it("reports a renamed attribute on the anchor path", () => {
         const renamed = pageShape("claude", REPLY('data-actions="1"'));
         expect(comparePages(pageShape("claude", REPLY()), renamed)).toEqual([
-            "anchor path changed: div[data-is-streaming,data-testid,data-turn-key] ↓ div[class]",
+            "anchor path changed: div[data-is-streaming,data-testid,data-turn-key] ↓ div[]",
             "                now: div[data-is-streaming,data-testid,data-turn-key] ↓ div[data-actions]",
         ]);
     });

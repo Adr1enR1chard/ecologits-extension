@@ -1,31 +1,39 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { RecordedStream } from "../../src/capture/interceptor";
-import { SUPPORTED_PROVIDERS } from "../../src/providers/registry";
+import { SUPPORTED_PROVIDERS, type SupportedProvider } from "../../src/providers/registry";
 import { FIXTURE_CASES } from "./cases";
+import type { FixtureCase } from "./cases/types";
 import { caseDrift, checkDrift, committedFiles, formatDrift } from "./drift-check";
 import type { Prompter, RecorderPage } from "./recorder";
 
 const FIXTURES = join(import.meta.dirname, "../../test/fixtures");
 
+function committed(provider: SupportedProvider, fixture: FixtureCase) {
+    const files = committedFiles(join(FIXTURES, provider), fixture);
+    if (files === null) throw new Error(`${provider}/${fixture.id}: no committed stream`);
+    return files;
+}
+
+function fixtureCase(provider: SupportedProvider, id: string): FixtureCase {
+    return FIXTURE_CASES[provider].find((c) => c.id === id)!;
+}
+
 describe.each(SUPPORTED_PROVIDERS)("%s committed fixtures", (provider) => {
     it.each(FIXTURE_CASES[provider])("$id does not drift from itself", (fixture) => {
-        const committed = committedFiles(join(FIXTURES, provider), fixture);
+        const files = committed(provider, fixture);
         // A case without committed snapshot is compared with the snapshot of another one.
         const snapshot =
-            committed.snapshot ??
-            committedFiles(
-                join(FIXTURES, provider),
-                FIXTURE_CASES[provider].find((c) => c.id === "normal-reply")!,
-            ).snapshot!;
-        expect(caseDrift(provider, fixture, committed, { ...committed, snapshot })).toEqual([]);
+            files.snapshot ?? committed(provider, fixtureCase(provider, "normal-reply")).snapshot!;
+        expect(caseDrift(provider, fixture, files, { ...files, snapshot })).toEqual([]);
     });
 });
 
-const NORMAL = FIXTURE_CASES.claude.find((c) => c.id === "normal-reply")!;
-const ABORTED = FIXTURE_CASES.claude.find((c) => c.id === "aborted")!;
-const COMMITTED = committedFiles(join(FIXTURES, "claude"), NORMAL);
-const ABORTED_STREAM = committedFiles(join(FIXTURES, "claude"), ABORTED).stream;
+const NORMAL = fixtureCase("claude", "normal-reply");
+const ABORTED = fixtureCase("claude", "aborted");
+const COMMITTED = committed("claude", NORMAL);
+const ABORTED_STREAM = committed("claude", ABORTED).stream;
+const FRESH = { ...COMMITTED, snapshot: COMMITTED.snapshot! };
 
 describe("caseDrift", () => {
     it("reports a changed outcome", () => {
@@ -38,6 +46,21 @@ describe("caseDrift", () => {
         expect(caseDrift("claude", NORMAL, COMMITTED, partial)).toContainEqual(
             expect.stringMatching(/^outcome changed: a reply of claude-sonnet-5-5 → a partial of/),
         );
+    });
+
+    it("reports a stream the parser cannot parse, even when both cannot be", () => {
+        const elsewhere = { ...NORMAL, endpoint: "https://claude.ai/api/elsewhere" };
+        const reason = "no claude reply endpoint for https://claude.ai/api/elsewhere";
+        expect(caseDrift("claude", elsewhere, COMMITTED, FRESH)).toEqual([
+            `committed stream not parsed: ${reason}`,
+            `fresh stream not parsed: ${reason}`,
+        ]);
+    });
+
+    it("leaves out keep-alive events: a reply without ping does not drift", () => {
+        const stream = COMMITTED.stream.replace(/event: ping\ndata: [^\n]*\n\n/g, "");
+        expect(stream).not.toContain("ping");
+        expect(caseDrift("claude", NORMAL, COMMITTED, { ...FRESH, stream })).toEqual([]);
     });
 });
 
@@ -85,6 +108,24 @@ describe("checkDrift", () => {
         expect(formatDrift("claude", reports)).toMatch(
             /^claude\/aborted: drift\n {4}recorder check failed/,
         );
+    });
+
+    it("reports a case without committed stream without recording it", async () => {
+        const unrecorded = { ...NORMAL, id: "unrecorded", file: "unrecorded.sse" };
+        const page = committedPage(COMMITTED.stream);
+        const reports = await checkDrift("claude", [unrecorded], {
+            page: { ...page, goto: async () => expect.fail("the case is not recorded") },
+            prompter: quiet,
+            fixturesDir: join(FIXTURES, "claude"),
+        });
+        expect(reports).toEqual([
+            {
+                id: "unrecorded",
+                drift: [
+                    "no committed stream unrecorded.sse: record the case with pnpm fixtures:record",
+                ],
+            },
+        ]);
     });
 
     it("reports a skipped case as skipped", async () => {
