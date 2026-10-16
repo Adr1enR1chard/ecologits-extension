@@ -53,6 +53,18 @@ describe("addToAggregates", () => {
         expect(first[key]!.impacts).toEqual(uniformImpacts(1));
     });
 
+    it("sums a range of models apart from its ends, keeping it structured", () => {
+        const range = { low: "gpt-6-luna", high: "gpt-6-sol" };
+        let aggregates = addToAggregates({}, impactResult({ model: "gpt-6-luna" }));
+        aggregates = addToAggregates(aggregates, impactResult({ model: range }));
+        aggregates = addToAggregates(aggregates, impactResult({ model: range }));
+        expect(aggregates[aggregateKey("2026-10-14", "chatgpt", range)]).toMatchObject({
+            model: range,
+            requests: 2,
+        });
+        expect(aggregates[aggregateKey("2026-10-14", "chatgpt", "gpt-6-luna")]?.requests).toBe(1);
+    });
+
     it("keeps days and models apart", () => {
         let aggregates = addToAggregates({}, impactResult());
         aggregates = addToAggregates(aggregates, impactResult({ model: "gpt-4o" }));
