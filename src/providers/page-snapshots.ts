@@ -33,6 +33,11 @@ export const PAGE_SNAPSHOTS: Readonly<Record<SupportedProvider, readonly PageSna
             markup: 1,
             breakAnchor: remove("[data-assistant-message-actions]"),
         },
+        {
+            file: "logged-out-stopped.html",
+            markup: 1,
+            breakAnchor: remove("[data-assistant-message-actions]"),
+        },
     ],
     claude: [
         {
