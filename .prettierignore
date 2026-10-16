@@ -2,6 +2,7 @@
 .wxt/
 coverage/
 node_modules/
+.recorder/
 pnpm-lock.yaml
 
 # DOM snapshots are kept as recorded.

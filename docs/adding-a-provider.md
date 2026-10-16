@@ -24,13 +24,18 @@ in `PROVIDERS` (`src/providers/registry.ts`). The order of `PROVIDERS` is the di
    `meta.ts`. The `id` is stored with every result and adapter status: never rename it.
 2. List the provider's stream keys the anonymiser keeps (structural values), maps (ids) or
    redacts (tokens, account details) in `scripts/fixtures/providers/<id>.ts`, copied from
-   `claude.ts`. Record fixtures in `test/fixtures/<id>/` and anonymise them with
-   `anonymiseStream` (procedure in `test/fixtures/README.md`), then write the parser in
-   `capture.ts`. Stream decoders and JSON helpers are in `src/capture/decoders/` (`SseDecoder`,
+   `claude.ts`. Record a first stream from the DevTools console in `test/fixtures/<id>/` and
+   anonymise it with `anonymiseStream` (procedure in `test/fixtures/README.md`), then write the
+   parser in `capture.ts`. Once it parses, list the cases to record in
+   `scripts/fixtures/cases/<id>.ts` and record them with `pnpm fixtures:record <id>`, which checks
+   each stream with the parser. Stream decoders and JSON helpers are in `src/capture/decoders/` (`SseDecoder`,
    `NdjsonDecoder`, `parseJson`, `isObject`). Hosts are checked by the interceptor: endpoints
    only declare a method (`POST` by default) and a path.
-3. In `capture.test.ts`, run `describeAdapterContract` (`src/capture/adapter-contract.ts`) on
-   every fixture, then test the provider's own cases.
+3. In `capture.test.ts`, test the parser's rules on synthetic streams. Each case's `endpoint` is
+   a URL of the reply endpoint it is recorded from: `scripts/fixtures/recorded-cases.test.ts`
+   replays every recorded stream with that endpoint's parser, checks the outcome the case asks for
+   and runs `describeAdapterContract` (`src/capture/adapter-contract.ts`) on them. Assert no
+   recorded value: recording again must not break a test.
 4. Fill in `models.ts`; test the slugs of the web app in `models.test.ts`. A proxy stands in, as
    one EcoLogits model or a `{ low, high }` range, for a web model EcoLogits does not know yet;
    its estimates are flagged as approximated.
@@ -40,8 +45,9 @@ in `PROVIDERS` (`src/providers/registry.ts`). The order of `PROVIDERS` is the di
    `src/providers/page-snapshots.ts` and replay them in `page.test.ts` with
    `describePageSnapshots("<id>")` (`src/providers/page-contract.ts`).
 6. Add one line to each registry: `src/providers/capture.ts`, `models.ts` and `page.ts`, and
-   `scripts/fixtures/providers/index.ts` for the fixture rules. They are typed
-   `Record<SupportedProvider, …>`: the compiler flags a missing one. In
+   `scripts/fixtures/providers/index.ts` for the fixture rules and
+   `scripts/fixtures/cases/index.ts` for the cases. They are typed `Record<SupportedProvider, …>`:
+   the compiler flags a missing one. In
    `scripts/fixtures/anonymise.test.ts`, add the provider to the fixtures it replays and its
    endpoint to `parserFor`.
 7. Run `pnpm test`: `src/providers/registry.test.ts` checks that every supported provider has an

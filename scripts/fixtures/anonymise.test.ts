@@ -80,6 +80,13 @@ describe("anonymiseStream: SSE", () => {
         );
     });
 
+    it("maps the UUIDs of object keys like those of values, keeping other keys", () => {
+        const text = `data: {"results":{"${ID_A}":{"status":"resolved"},"item-${ID_B}":{"id":"${ID_A}"}}}\n\n`;
+        expect(anonymiseStream("chatgpt", text)).toBe(
+            `data: {"results":{"${ZERO_1}":{"status":"resolved"},"item-${ZERO_2}":{"id":"${ZERO_1}"}}}\n\n`,
+        );
+    });
+
     it("maps ids that are not UUIDs under id keys, and restarts the mapping per stream", () => {
         const text =
             'data: {"type":"message_start","message":{"id":"chatcompl_01abc","uuid":"u1"}}\n\n' +

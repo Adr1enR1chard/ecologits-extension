@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { lastReplyAnchor } from "../badge/anchor";
 import { PAGES } from "./page";
-import { PAGE_SNAPSHOTS, type PageSnapshot } from "./page-snapshots";
+import { PAGE_SNAPSHOTS } from "./page-snapshots";
 import type { SupportedProvider } from "./registry";
 import type { ReplyMarkup } from "./types";
 
@@ -20,23 +20,24 @@ export function loadSnapshot(provider: SupportedProvider, file: string): HTMLEle
     return document.body;
 }
 
-/** What the page markup gets wrong on that DOM; empty when it finds the last reply's anchor. */
-export function checkSnapshot(
-    root: ParentNode,
-    markup: ReplyMarkup,
-    expected: Pick<PageSnapshot, "replies" | "lastId">,
-): string[] {
-    const problems: string[] = [];
+/** Message id of the last reply `markup` matches in `root`, `null` without one. */
+export function lastReplyId(root: ParentNode, markup: ReplyMarkup): string | null {
     const replies = root.querySelectorAll(markup.reply);
-    if (replies.length !== expected.replies) {
-        problems.push(`${replies.length} replies match ${markup.reply}, not ${expected.replies}`);
-    }
-    const id = replies[replies.length - 1]?.getAttribute(markup.idAttribute) ?? null;
-    if (id !== expected.lastId) problems.push(`last reply id is ${id}, not ${expected.lastId}`);
+    return replies[replies.length - 1]?.getAttribute(markup.idAttribute) ?? null;
+}
+
+/** What the page markup gets wrong on that DOM; empty when it finds the last reply's anchor. */
+export function checkSnapshot(root: ParentNode, markup: ReplyMarkup): string[] {
+    const problems: string[] = [];
+    const id = lastReplyId(root, markup);
+    if (id === null)
+        problems.push(`no reply with an ${markup.idAttribute} matches ${markup.reply}`);
     if (markup.rendering?.(root)) problems.push("the last reply is still rendering");
-    const { selector } = markup.anchor(CSS.escape(expected.lastId));
-    const anchors = root.querySelectorAll(selector).length;
-    if (anchors !== 1) problems.push(`${anchors} elements match the anchor ${selector}`);
+    if (id !== null) {
+        const { selector } = markup.anchor(CSS.escape(id));
+        const anchors = root.querySelectorAll(selector).length;
+        if (anchors !== 1) problems.push(`${anchors} elements match the anchor ${selector}`);
+    }
     return problems;
 }
 
@@ -51,24 +52,22 @@ export function describePageSnapshots(provider: SupportedProvider): void {
         describe.each(PAGE_SNAPSHOTS[provider])("$file", (snapshot) => {
             const markup = markups[snapshot.markup]!;
 
-            it("is found by its markup: replies, last id, not rendering, one anchor", () => {
+            it("is found by its markup: a last reply with an id, not rendering, one anchor", () => {
                 const root = loadSnapshot(provider, snapshot.file);
-                expect(checkSnapshot(root, markup, snapshot)).toEqual([]);
+                expect(checkSnapshot(root, markup)).toEqual([]);
             });
 
             it("gets the badge of its last reply", () => {
                 const root = loadSnapshot(provider, snapshot.file);
-                expect(lastReplyAnchor(root, provider)).toEqual(
-                    markup.anchor(CSS.escape(snapshot.lastId)),
-                );
+                const id = lastReplyId(root, markup);
+                expect(id).not.toBeNull();
+                expect(lastReplyAnchor(root, provider)).toEqual(markup.anchor(CSS.escape(id!)));
             });
 
             it("loses the anchor without what it depends on", () => {
                 const root = loadSnapshot(provider, snapshot.file);
                 snapshot.breakAnchor(root);
-                expect(checkSnapshot(root, markup, snapshot)).toContainEqual(
-                    expect.stringMatching(/^0 elements match the anchor/),
-                );
+                expect(checkSnapshot(root, markup)).not.toEqual([]);
             });
         });
     });

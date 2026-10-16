@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { describeAdapterContract } from "../../capture/adapter-contract";
 import { findEndpoint } from "../../capture/interceptor";
 import { chatgptLoggedOutEndpoint } from "./logged-out";
 import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../capture/types";
@@ -10,10 +8,6 @@ const matches = (request: CapturedRequest) =>
     chatgptLoggedOutEndpoint;
 
 const UPDATES = "https://chatgpt.com/unauth-mweb/conversation/updates?operationId=1";
-const read = (name: string) =>
-    readFileSync(new URL(`../../../test/fixtures/chatgpt/${name}.ndjson`, import.meta.url), "utf8");
-const fixture = read("logged-out-reply");
-const stopped = read("logged-out-stopped");
 
 function request(url = UPDATES, method = "POST"): CapturedRequest {
     return { url: new URL(url), method, body: null };
@@ -28,11 +22,6 @@ function parse(text: string, chunkSize = Infinity, end: StreamEnd = "done"): Par
 const line = (data: object) => JSON.stringify({ version: 1, ...data }) + "\n";
 const terminal = (terminalKind: string, messageId = "a") =>
     line({ type: "control", detail: { kind: "terminal-received", messageId, terminalKind } });
-
-describeAdapterContract("chatgpt logged out", chatgptLoggedOutEndpoint, request(), {
-    "logged-out-reply": fixture,
-    "logged-out-stopped": stopped,
-});
 
 describe("chatgptLoggedOutEndpoint matching", () => {
     it("matches the logged-out updates stream", () => {
@@ -54,34 +43,20 @@ describe("chatgptLoggedOutEndpoint matching", () => {
 });
 
 describe("chatgpt logged-out stream", () => {
-    it("parses a recorded reply", () => {
-        expect(parse(fixture)).toEqual({
-            kind: "reply",
-            reply: {
-                rawModel: null,
-                outputText: "Test successful! ✅ I'm here and ready to help.",
-                reasoningText: null,
-                hiddenReasoning: false,
-                messageId: "00000000-0000-4000-8000-000000000072",
-                partial: false,
-            },
-        });
-    });
-
     it("records replies stopped by the user as partial: the page aborts the stream", () => {
-        expect(parse(stopped, Infinity, "aborted")).toMatchObject({
+        const text =
+            line({ type: "content", messageId: "a", mode: "replace", markdown: "Hel" }) +
+            line({
+                type: "control",
+                detail: { kind: "assistant-content-started", messageId: "a" },
+            }) +
+            line({ type: "content", messageId: "a", mode: "append", markdown: "lo" });
+        expect(parse(text, Infinity, "aborted")).toMatchObject({
             kind: "reply",
-            reply: {
-                outputText: expect.stringMatching(/^Mais bien évidemment.* Pas trois$/),
-                messageId: "00000000-0000-4000-8000-000000000082",
-                partial: true,
-            },
+            reply: { outputText: "Hello", messageId: "a", partial: true },
         });
-    });
-
-    it("skips streams cut before terminal-received by a network error or a closed stream", () => {
         for (const end of ["done", "failed"] as const) {
-            expect(parse(stopped, Infinity, end)).toEqual({
+            expect(parse(text, Infinity, end)).toEqual({
                 kind: "skip",
                 reason: "stream ended before terminal-received",
             });
@@ -91,28 +66,6 @@ describe("chatgpt logged-out stream", () => {
     it("skips streams aborted before the assistant message started", () => {
         const text = line({ type: "content", messageId: "a", mode: "replace", markdown: "Hi" });
         expect(parse(text, Infinity, "aborted")).toEqual({
-            kind: "skip",
-            reason: "stream ended before terminal-received",
-        });
-    });
-
-    it("concatenates recorded append lines", () => {
-        const completed = stopped + terminal("complete", "00000000-0000-4000-8000-000000000082");
-        expect(parse(completed)).toMatchObject({
-            reply: {
-                outputText:
-                    "Mais bien évidemment, prépare-toi mentalement, installe-toi confortablement, " +
-                    "prends un petit verre d’eau, mets-toi dans les meilleures conditions possibles " +
-                    "et assure-toi d’avoir suffisamment de batterie sur ton téléphone, parce que si " +
-                    "tu veux un gros pavé, alors tu vas avoir un GROS pavé. Pas trois",
-                messageId: "00000000-0000-4000-8000-000000000082",
-            },
-        });
-    });
-
-    it("skips streams cut before terminal-received", () => {
-        const cut = fixture.slice(0, fixture.indexOf('"kind":"terminal-received"'));
-        expect(parse(cut.slice(0, cut.lastIndexOf("\n") + 1))).toEqual({
             kind: "skip",
             reason: "stream ended before terminal-received",
         });

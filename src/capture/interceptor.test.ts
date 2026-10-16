@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { chatgptConversationEndpoint } from "../providers/chatgpt/conversation";
 import { claudeCompletionEndpoint } from "../providers/claude/capture";
+import { parseText } from "./adapter-contract";
 import type { CaptureMessage } from "./channel";
 import { findEndpoint, installFetchInterceptor, type Captures } from "./interceptor";
-import type { ReplyEndpoint } from "./types";
+import type { ParsedReply, ReplyEndpoint, StreamEnd } from "./types";
 
 const URL_CONVERSATION = "https://chatgpt.com/backend-api/f/conversation";
 const fixture = (name: string) =>
@@ -56,6 +57,33 @@ function setup(response: () => Response, captures: Captures = chatgpt()) {
 
 const post = { method: "POST", body: JSON.stringify({ action: "next", model: "auto" }) };
 
+/** The reply `endpoint`'s parser reads from `text`: what the interceptor must pass on. */
+function parsedReply(
+    text: string,
+    end: StreamEnd = "done",
+    endpoint: ReplyEndpoint = chatgptConversationEndpoint,
+    url = URL_CONVERSATION,
+    body: string | null = post.body,
+): ParsedReply {
+    const outcome = parseText(
+        endpoint,
+        { url: new URL(url), method: "POST", body },
+        text,
+        Infinity,
+        end,
+    );
+    if (outcome.kind !== "reply") throw new Error(`not a reply: ${outcome.reason}`);
+    return outcome.reply;
+}
+
+/**
+ * `parsedReply` of a stream the page stopped, but its output: the chunks the interceptor's branch
+ * of the body had not read yet when the stream errored are lost.
+ */
+function stoppedReply(...args: Parameters<typeof parsedReply>): ParsedReply {
+    return { ...parsedReply(...args), outputText: expect.any(String) };
+}
+
 describe("installFetchInterceptor", () => {
     it("emits one captured response per reply, with the latency", async () => {
         const { win, messages, settle } = setup(() => streamResponse(fixture("normal-reply")));
@@ -63,16 +91,16 @@ describe("installFetchInterceptor", () => {
         await response.text();
         await settle();
 
-        expect(messages).toHaveLength(1);
-        expect(messages[0]).toMatchObject({
-            type: "captured-response",
-            payload: {
-                provider: "chatgpt",
-                rawModel: "gpt-6",
-                messageId: "00000000-0000-4000-8000-00000000000c",
-                latencyMs: 500,
+        expect(messages).toEqual([
+            {
+                type: "captured-response",
+                payload: {
+                    provider: "chatgpt",
+                    ...parsedReply(fixture("normal-reply")),
+                    latencyMs: 500,
+                },
             },
-        });
+        ]);
     });
 
     it("returns the original response and body to the page", async () => {
@@ -130,7 +158,7 @@ describe("installFetchInterceptor", () => {
         await (await win.fetch(URL_CONVERSATION, post)).text();
         await new Promise((resolve) => setTimeout(resolve, 20));
 
-        expect(records).toEqual([{ url: URL_CONVERSATION, end: "done", text }]);
+        expect(records).toEqual([{ url: URL_CONVERSATION, method: "POST", end: "done", text }]);
     });
 
     it("leaves unmatched requests alone", async () => {
@@ -154,7 +182,7 @@ describe("installFetchInterceptor", () => {
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "captured-response",
-            payload: { messageId: "00000000-0000-4000-8000-00000000000c" },
+            payload: parsedReply(fixture("normal-reply")),
         });
     });
 
@@ -169,11 +197,7 @@ describe("installFetchInterceptor", () => {
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "captured-response",
-            payload: {
-                messageId: "00000000-0000-4000-8000-00000000000c",
-                partial: true,
-                latencyMs: 500,
-            },
+            payload: { ...stoppedReply(text, "aborted"), partial: true, latencyMs: 500 },
         });
     });
 
@@ -301,25 +325,21 @@ describe("installFetchInterceptor on claude.ai", () => {
         }
         await settle();
 
+        const claude = [claudeCompletionEndpoint, COMPLETION, "{}"] as const;
         expect(messages).toEqual([
             {
                 type: "captured-response",
                 payload: {
                     provider: "claude",
-                    rawModel: "claude-sonnet-5-5",
-                    outputText: "Hello! How can I help you today?",
-                    reasoningText: null,
-                    hiddenReasoning: false,
+                    ...parsedReply(claudeFixture("normal-reply"), "done", ...claude),
                     latencyMs: 500,
-                    messageId: "00000000-0000-4000-8000-000000000002",
-                    partial: false,
                 },
             },
             {
                 type: "captured-response",
                 payload: expect.objectContaining({
                     provider: "claude",
-                    messageId: "00000000-0000-4000-8000-000000000009",
+                    ...stoppedReply(stopped, "aborted", ...claude),
                     partial: true,
                 }),
             },
