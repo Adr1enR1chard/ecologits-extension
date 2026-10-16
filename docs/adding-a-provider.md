@@ -25,42 +25,43 @@ in `PROVIDERS` (`src/providers/registry.ts`). The order of `PROVIDERS` is the di
 2. List the provider's stream keys the anonymiser keeps (structural values), maps (ids) or
    redacts (tokens, account details) in `scripts/fixtures/providers/<id>.ts`, copied from
    `claude.ts`. Record a first stream from the DevTools console in `test/fixtures/<id>/` and
-   anonymise it with `anonymiseStream` (procedure in `test/fixtures/README.md`), then write the
-   parser in `capture.ts`. Once it parses, list the cases to record in
-   `scripts/fixtures/cases/<id>.ts` and record them with `pnpm fixtures:record <id>`, which checks
-   each stream with the parser. Stream decoders and JSON helpers are in `src/capture/decoders/` (`SseDecoder`,
-   `NdjsonDecoder`, `parseJson`, `isObject`). Hosts are checked by the interceptor: endpoints
-   only declare a method (`POST` by default) and a path.
-3. In `capture.test.ts`, test the parser's rules on synthetic streams. Each case's `endpoint` is
-   a URL of the reply endpoint it is recorded from: `scripts/fixtures/recorded-cases.test.ts`
-   replays every recorded stream with that endpoint's parser, checks the outcome the case asks for
-   and runs `describeAdapterContract` (`src/capture/adapter-contract.ts`) on them. Assert no
-   recorded value: recording again must not break a test.
+   anonymise it with `pnpm fixtures:anonymise <id> <stream>` (procedure in
+   `test/fixtures/README.md`), then write the parser in `capture.ts`. Once it parses, record
+   the other cases the same way (a stopped reply, a tool call, thinking…). Stream
+   decoders and JSON helpers are in `src/capture/decoders/` (`SseDecoder`, `NdjsonDecoder`,
+   `parseJson`, `isObject`). Hosts are checked by the interceptor: endpoints only declare a
+   method (`POST` by default) and a path.
+3. In `capture.test.ts`, test the parser's rules on synthetic streams. List each recorded stream
+   in `CASES` (`test/recorded-cases.test.ts`) with a URL of its reply endpoint, how it
+   ended and the outcome it is recorded for: the test replays it with that endpoint's parser,
+   checks the outcome and runs `describeAdapterContract` (`src/capture/adapter-contract.ts`) on
+   the streams of each endpoint. Assert no recorded value: recording again must not break a test.
+   Write how to record each case in `test/fixtures/README.md`.
 4. Fill in `models.ts`; test the slugs of the web app in `models.test.ts`. A proxy stands in, as
    one EcoLogits model or a `{ low, high }` range, for a web model EcoLogits does not know yet;
    its estimates are flagged as approximated.
 5. Fill in `page.ts` with the markup of finished replies and where the badge goes. Save a DOM
    snapshot of a conversation per markup in `test/fixtures/<id>/<case>.html`, sanitised with
-   `sanitiseSnapshot` (`scripts/fixtures/snapshot.ts`). List them in
+   `pnpm fixtures:anonymise` (`sanitiseSnapshot`, `scripts/fixtures/snapshot.ts`). List them in
    `src/providers/page-snapshots.ts` and replay them in `page.test.ts` with
    `describePageSnapshots("<id>")` (`src/providers/page-contract.ts`).
 6. Add one line to each registry: `src/providers/capture.ts`, `models.ts` and `page.ts`, and
-   `scripts/fixtures/providers/index.ts` for the fixture rules and
-   `scripts/fixtures/cases/index.ts` for the cases. They are typed `Record<SupportedProvider, …>`:
-   the compiler flags a missing one. In
-   `scripts/fixtures/anonymise.test.ts`, add the provider to the fixtures it replays and its
-   endpoint to `parserFor`.
+   `scripts/fixtures/providers/index.ts` for the fixture rules and `CASES` in
+   `test/recorded-cases.test.ts` for the recorded streams. They are typed
+   `Record<SupportedProvider, …>`:
+   the compiler flags a missing one. In `scripts/fixtures/anonymise.test.ts`, add the provider to
+   the fixtures it replays and its endpoint to `parserFor`.
 7. Run `pnpm test`: `src/providers/registry.test.ts` checks that every supported provider has an
    endpoint, a markup and a fallback model EcoLogits knows, that aliases and proxies point to
    models EcoLogits knows, that no proxy shadows a model EcoLogits knows, that hosts are unique
    and that every locale's `extDescription` names the provider.
    `scripts/fixtures/anonymise.test.ts` checks that anonymising the fixtures leaves the parser's
-   outcome unchanged, and `scripts/fixtures/no-personal-data.test.ts` that no fixture holds an
-   email address, a UUID not of the zeroed form or a token.
+   outcome unchanged, and `test/committed-fixtures.test.ts` that no fixture holds an email
+   address, a UUID not of the zeroed form or a token, and that every DOM snapshot is sanitised.
 8. Update the rest by hand:
     - `public/_locales/{en,fr}/messages.json`: `extDescription`, and `methodologyTokenizer` when
       the provider's tokenizer is not public;
-    - `README.md` (supported providers), `test/fixtures/README.md` (fixture table);
+    - `README.md` (supported providers), `test/fixtures/README.md` (fixture table and how to record each case);
     - tick the provider's phase issue on GitHub;
     - optionally, sample data in `entrypoints/gallery/samples.ts`.
 9. Check end to end in Chrome and Firefox with `pnpm dev`: one stored event per reply, a badge

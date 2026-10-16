@@ -1,58 +1,49 @@
 # Adapter fixtures
 
 Response streams of each provider's reply endpoint, and DOM snapshots of its conversation page.
-`scripts/fixtures/recorded-cases.test.ts` replays every stream of `scripts/fixtures/cases/` with
-the parser of the case's `endpoint`: the outcome must be the one the case asks to record (a reply,
-a partial one or a skip), with an output and a message id for a reply, and a partial stream cut
-without abort must be skipped. It also runs the adapter contract
-(`src/capture/adapter-contract.ts`: re-split into chunks of various sizes, truncated, noise) on
-the streams of each endpoint. The page tests (`src/providers/*/page.test.ts`) replay the DOM
-snapshots. No test asserts a recorded value (text, id, model, length): recording a case again
-only breaks a test when the code no longer handles it. Each parser's rules are tested on
-synthetic streams, in `src/providers/<id>/*.test.ts`.
+They are tested in `test/`, the tool that anonymises them is in `scripts/fixtures/`:
+
+- `test/recorded-cases.test.ts` lists every recorded stream (`CASES`) with a URL of its reply
+  endpoint and replays it with that endpoint's parser: the outcome must be the one the case is
+  recorded for (a reply, a partial one or a skip), with an output and a message id for a reply,
+  a partial stream cut without abort must be skipped, and a case's `check` tells the stream
+  still is that case (a web search, a tool call…). It also runs the adapter contract
+  (`src/capture/adapter-contract.ts`: re-split into chunks of various sizes, truncated, noise) on
+  the streams of each endpoint.
+- `test/committed-fixtures.test.ts` checks that no fixture holds personal data and that every
+  DOM snapshot is already sanitised.
+- The page tests (`src/providers/*/page.test.ts`) replay the DOM snapshots.
+
+No test asserts a recorded value (text, id, model, length): recording a case again only breaks a
+test when the code no longer handles it. Each parser's rules are tested on synthetic streams, in
+`src/providers/<id>/*.test.ts`.
 
 ## Recording a fixture
 
-Run `pnpm fixtures:record <provider> [case]`. It builds the development extension, opens the
-provider in Chromium with it, and goes through the cases of `scripts/fixtures/cases/<provider>.ts`
-(only `case` when given). The browser profile is kept in `.recorder/<provider>/` (gitignored):
-sign in once, the session stays. The recorder does not drive the chat: for each case, it opens the
-case's URL and prints what to do (send a message, press Stop, turn on thinking…), then:
+Fixtures are recorded by hand. Run `pnpm dev`, open the provider and its DevTools console (top
+frame), and do what the case's **To record** line below says (send a message, press Stop, turn on
+thinking…): the interceptor logs `[ecologits] stream recorded …` and keeps the last 5
+raw streams in `__ecologitsStreams`, exactly as the extension received them, including client-side
+aborts, which DevTools' Network tab often shows as "(canceled)" with no body.
+`copy(__ecologitsStreams.at(-1).text)` copies the last one, and its `end` tells how it ended
+(`done` or the abort error). Paste it in `<provider>/<file>`. For the DOM snapshot, once the reply
+has finished, `copy(document.body.outerHTML)` and paste it in `<provider>/<case>.html`. Then run:
 
-1. captures the next stream through the interceptor's development hook
-   (`window.__ecologitsOnStream`), exactly as the extension received it, including client-side
-   aborts, which DevTools' Network tab often shows as "(canceled)" with no body;
-2. parses it with the provider's parser and checks how it ended (`done` or aborted), what the
-   parser made of it (`reply`, `partial` or `skip`) and the case's own `check`; on a mismatch, it
-   says why and asks to redo the case, skip it, or write it unchecked (see below);
-3. waits until the page shows the streamed reply as its last finished one, nothing rendering, and
-   takes the DOM snapshot (see below);
-4. anonymises the stream (`anonymiseStream`) and the snapshot (`sanitiseSnapshot`) with the same
-   ids, and checks that the anonymised stream still parses to the same kind of outcome and that the
-   snapshot's last reply has the stream's id;
-5. writes `<provider>/<file>` and `<provider>/<case>.html`, and prints their paths.
+```sh
+pnpm fixtures:anonymise <provider> test/fixtures/<provider>/<file> [test/fixtures/<provider>/<case>.html]
+```
 
-When the provider changed its stream or its page, the parser or the page markup no longer
-matches what is recorded, and every case fails its checks: write them unchecked, to fix the code
-against them. The stream and the page as it is are anonymised and written without any check; the
-snapshot is the element holding the replies the markup still finds, or the whole page body,
-to trim by hand, when it finds none. The recorder lists the cases written unchecked at the end.
+It anonymises the stream in place (`anonymiseStream`) and, when given, cuts the page down to the
+element holding the replies and sanitises it (`sanitiseSnapshot`) with the stream's ids, so that
+the snapshot's last reply keeps the stream's message id. It says when the page holds no finished
+reply as `PAGES[<provider>]` finds it: the snapshot is then the whole body, to trim by hand.
 
-Then check the diff, update the tables below, and list a new snapshot in `PAGE_SNAPSHOTS`. The hook, like `__ecologitsStreams`, only exists in development builds: the CI
-`build` job fails if the production zip holds `__ecologitsOnStream`, `__ecologitsStreams` or
-`stream recorded`. If Google sign-in refuses the automated browser, launch Chromium by hand with
-`--remote-debugging-port` and the development build, and connect to it with
-`chromium.connectOverCDP` instead of `launchRecorder` (`scripts/fixtures/browser.ts`); this
-fallback is not built.
-
-Without the recorder, run `pnpm dev`, open the provider and its DevTools console (top frame), and
-send a message: the interceptor logs `[ecologits] stream recorded …` and keeps the last 5 raw
-streams in `__ecologitsStreams`; `copy(__ecologitsStreams.at(-1).text)` copies the last one, and
-its `end` tells how it ended (`done` or the abort error). Anonymise it with
-`anonymiseStream(provider, text)` from `scripts/fixtures/anonymise.ts`.
+Then check the diff, run `pnpm test`, update the tables below, list a new stream in `CASES` and a
+new snapshot in `PAGE_SNAPSHOTS`. `__ecologitsStreams` only exists in development builds: the CI `build` job fails
+if the production zip holds `__ecologitsStreams` or `stream recorded`.
 
 Anonymising applies the rules below; the keys it keeps, maps or redacts are listed per provider in
-`scripts/fixtures/providers/`. `scripts/fixtures/no-personal-data.test.ts` fails if a fixture
+`scripts/fixtures/providers/`. `test/committed-fixtures.test.ts` fails if a fixture
 still holds an email address, a UUID not of the zeroed form, or a token. The rules, for fixtures
 written or edited by hand too:
 
@@ -71,18 +62,18 @@ Structural values (`content_type`, `role`, `status`, `p`, `o`, model slugs…) a
 ## DOM snapshots
 
 `<provider>/<case>.html` is the outerHTML of the element holding a conversation's replies, enough
-for the badge to find the last one: the recorder takes the innermost element holding the replies
-and the last one's anchor (its parent when that is the reply itself). Snapshots are listed in
-`src/providers/page-snapshots.ts` (`PAGE_SNAPSHOTS`), and `src/providers/page-contract.ts` replays them in happy-dom: for the markup
-of `PAGES[<provider>]` each one is rendered with, the `reply` selector finds a last finished reply
-with an `idAttribute`, `rendering(root)` is false and `anchor(id).selector` resolves to exactly one
-element. Each snapshot also removes what its anchor
-depends on (the action bar, or the reply id when the badge follows the reply block) and checks
-that the anchor is lost. `src/providers/registry.test.ts` checks that every markup of every
+for the badge to find the last one: `pnpm fixtures:anonymise` keeps the innermost element holding
+the replies and the last one's anchor (its parent when that is the reply itself). Snapshots are
+listed in `src/providers/page-snapshots.ts` (`PAGE_SNAPSHOTS`), and
+`src/providers/page-contract.ts` replays them in happy-dom: for the markup of `PAGES[<provider>]`
+each one is rendered with, the `reply` selector finds a last finished reply with an
+`idAttribute`, `rendering(root)` is false and `anchor(id).selector` resolves to exactly one
+element. Each snapshot also removes what its anchor depends on (the action bar, or the reply id
+when the badge follows the reply block) and checks that the anchor is lost. `src/providers/registry.test.ts` checks that every markup of every
 supported provider has a snapshot, replayed by its `page.test.ts`.
 
 Snapshots go through `sanitiseSnapshot(html, ids)` from `scripts/fixtures/snapshot.ts`, and a
-committed snapshot is one it leaves unchanged (`scripts/fixtures/snapshot.test.ts`):
+committed snapshot is one it leaves unchanged (`test/committed-fixtures.test.ts`):
 
 - `<script>`, `<style>` and `<link>` are dropped, `<svg>` emptied, comments dropped;
 - text, including in `<template>`, and `alt` / `title` / `aria-label` values are masked
@@ -110,6 +101,19 @@ Snapshots are kept as recorded: Prettier ignores them.
 | `logged-out-reply.html`     | **Recorded** DOM snapshot, logged-out markup: `<li data-message-role>` per message, the assistant one ending with `[data-assistant-message-actions]`                                                                                                       |
 | `logged-out-stopped.html`   | **Recorded** DOM snapshot, logged-out markup, of the reply stopped by the user                                                                                                                                                                             |
 
+To record:
+
+- `logged-out-reply`: log out, send a short message and wait for the whole reply;
+- `logged-out-stopped`: log out, ask a long question and press Stop mid-reply;
+- `normal-reply`: pick an Instant model, send a short message and wait for the whole reply;
+- `thinking-reply`: pick a Thinking model, ask a question that needs a web search and wait for
+  the whole reply;
+- `regenerate`: open a conversation from the sidebar, regenerate its last reply (Try again) and
+  wait for the whole reply;
+- `tool-call`: ask for a chart of a few numbers, so that ChatGPT runs code, and wait for the whole
+  reply;
+- `aborted`: ask a long question and press Stop mid-reply.
+
 ## Claude
 
 | File                | Case                                                                                                                                                                                                         |
@@ -119,10 +123,17 @@ Snapshots are kept as recorded: Prettier ignores them.
 | `aborted.sse`       | **Recorded.** Reply with thinking, stopped by the user: the thinking block only streams a summary (`thinking_summary_delta`), then the text ends mid-block, without `message_stop`                           |
 | `normal-reply.html` | **Synthetic** DOM snapshot: two finished `[data-testid="assistant-message"]` replies, each ending with the wrapper of `[data-testid="message-actions"]`; last reply id from `normal-reply.sse`               |
 
+To record:
+
+- `normal-reply`: extended thinking off, send a short message and wait for the whole reply;
+- `tool-call`: ask for the weather in a city, so that Claude calls a tool, and wait for the whole
+  reply;
+- `aborted`: turn on extended thinking, ask a long question and press Stop mid-reply.
+
 The streams stopped by the user ended with an `AbortError`, which the recording does not keep:
 tests replay them as aborted (`finish("aborted")`) to get a partial reply, and as `done` or
 `failed` to check that a stream cut without abort is skipped.
 
-Fixtures not marked **Recorded** were written from the known stream
-format or, for DOM snapshots, from the comments in each `page.ts`, not recorded. Replace them
-with anonymised recordings as soon as possible: they are what keeps the adapter honest.
+Fixtures not marked **Recorded** were written from the known stream format or, for DOM
+snapshots, from the comments in each `page.ts`, not recorded. Replace them with anonymised
+recordings as soon as possible: they are what keeps the adapter honest.
