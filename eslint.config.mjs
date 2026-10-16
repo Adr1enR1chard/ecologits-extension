@@ -5,7 +5,13 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
     {
-        ignores: ["**/.output/**", "**/.wxt/**", "**/coverage/**", "**/node_modules/**"],
+        ignores: [
+            "**/.output/**",
+            "**/.wxt/**",
+            "**/coverage/**",
+            "**/node_modules/**",
+            "**/.recorder/**",
+        ],
     },
     js.configs.recommended,
     ...tseslint.configs.recommended,
