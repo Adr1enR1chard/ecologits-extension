@@ -62,6 +62,32 @@ describe("computeImpact", () => {
         expect(impacts.total.energy).toEqual(impacts.usage.energy);
     });
 
+    it("spans GPT-6 from the low bound of GPT-6 Luna to the high bound of GPT-6 Sol", () => {
+        const luna = computeImpact(capturedResponse({ rawModel: "gpt-6-luna" }), timestamp);
+        const sol = computeImpact(capturedResponse({ rawModel: "gpt-6-sol" }), timestamp);
+        const result = computeImpact(capturedResponse({ rawModel: "gpt-6" }), timestamp);
+
+        expect(result).toMatchObject({
+            rawModel: "gpt-6",
+            model: "gpt-6-luna – gpt-6-sol",
+            flags: { approximatedModel: true },
+            errors: [],
+        });
+        const spans = (low: ImpactRange, high: ImpactRange) => ({
+            min: low.min,
+            median: (low.min + high.max) / 2,
+            max: high.max,
+        });
+        const [l, s, r] = [luna.impacts!, sol.impacts!, result.impacts!];
+        for (const c of CRITERIA) {
+            expect(r.total[c], c).toEqual(spans(l.total[c], s.total[c]));
+            expect(r.usage[c], c).toEqual(spans(l.usage[c], s.usage[c]));
+        }
+        for (const c of EMBODIED_CRITERIA) {
+            expect(r.embodied[c], c).toEqual(spans(l.embodied[c], s.embodied[c]));
+        }
+    });
+
     it("never stores message content", () => {
         const captured = capturedResponse({ outputText: "secret answer", reasoningText: "hmm" });
         const serialized = JSON.stringify(computeImpact(captured, timestamp));
