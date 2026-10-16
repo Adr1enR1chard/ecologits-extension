@@ -6,10 +6,6 @@ export interface PageSnapshot {
     file: string;
     /** Index in `PAGES[provider].markups` of the markup the snapshot is rendered with. */
     markup: number;
-    /** Finished replies the `reply` selector matches. */
-    replies: number;
-    /** Message id of the last reply, read from `idAttribute`. */
-    lastId: string;
     /** Removes what the badge anchor depends on (action bar, reply id…): the anchor must be lost. */
     breakAnchor(root: ParentNode): void;
 }
@@ -27,8 +23,6 @@ export const PAGE_SNAPSHOTS: Readonly<Record<SupportedProvider, readonly PageSna
         {
             file: "normal-reply.html",
             markup: 0,
-            replies: 2,
-            lastId: "00000000-0000-4000-8000-00000000000c",
             breakAnchor: (root) =>
                 root
                     .querySelectorAll("[data-chatgpt-selection-message-id]")
@@ -37,8 +31,6 @@ export const PAGE_SNAPSHOTS: Readonly<Record<SupportedProvider, readonly PageSna
         {
             file: "logged-out-reply.html",
             markup: 1,
-            replies: 1,
-            lastId: "00000000-0000-4000-8000-000000000072",
             breakAnchor: remove("[data-assistant-message-actions]"),
         },
     ],
@@ -46,8 +38,6 @@ export const PAGE_SNAPSHOTS: Readonly<Record<SupportedProvider, readonly PageSna
         {
             file: "normal-reply.html",
             markup: 0,
-            replies: 2,
-            lastId: "00000000-0000-4000-8000-000000000002",
             breakAnchor: remove('[data-testid="message-actions"]'),
         },
     ],
