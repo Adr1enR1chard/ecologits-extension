@@ -3,6 +3,8 @@ import {
     CRITERIA,
     EMBODIED_CRITERIA,
     type ImpactRange,
+    modelLabel,
+    type EcoLogitsModel,
     type ImpactResult,
     type Impacts,
     type WebProvider,
@@ -14,7 +16,7 @@ export interface DailyAggregate {
     /** Local date, `YYYY-MM-DD`. */
     date: string;
     provider: WebProvider;
-    model: string;
+    model: EcoLogitsModel;
     requests: number;
     outputTokens: number;
     lowerBoundRequests: number;
@@ -47,8 +49,8 @@ export function toLocalDate(timestamp: number): string {
     return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export function aggregateKey(date: string, provider: WebProvider, model: string): string {
-    return `${date}/${provider}/${model}`;
+export function aggregateKey(date: string, provider: WebProvider, model: EcoLogitsModel): string {
+    return `${date}/${provider}/${modelLabel(model)}`;
 }
 
 function addRange(a: ImpactRange, b: ImpactRange): ImpactRange {

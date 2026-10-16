@@ -7,13 +7,18 @@ import { resolveModel } from "./mapping";
 describe("resolveModel", () => {
     const mappings: Record<SupportedProvider, ProviderModels> = {
         ...MODEL_MAPPINGS,
-        chatgpt: { ecologitsProvider: "openai", fallback: "gpt-5", aliases: { auto: "gpt-5.5" } },
+        chatgpt: {
+            ecologitsProvider: "openai",
+            fallback: "gpt-5",
+            aliases: { auto: "gpt-5.5" },
+            proxies: {},
+        },
     };
 
     it("uses the alias table first", () => {
         expect(resolveModel("chatgpt", "Auto", mappings)).toEqual({
             ecologitsProvider: "openai",
-            modelName: "gpt-5.5",
+            model: "gpt-5.5",
             approximated: false,
         });
     });
@@ -21,7 +26,7 @@ describe("resolveModel", () => {
     it("accepts slugs EcoLogits knows as-is, after normalisation", () => {
         expect(resolveModel("chatgpt", " GPT-4o ")).toEqual({
             ecologitsProvider: "openai",
-            modelName: "gpt-4o",
+            model: "gpt-4o",
             approximated: false,
         });
     });
@@ -29,7 +34,7 @@ describe("resolveModel", () => {
     it("falls back to the provider model for unknown slugs", () => {
         expect(resolveModel("claude", "claude-unknown")).toEqual({
             ecologitsProvider: "anthropic",
-            modelName: MODEL_MAPPINGS.claude.fallback,
+            model: MODEL_MAPPINGS.claude.fallback,
             approximated: true,
         });
     });
@@ -37,8 +42,7 @@ describe("resolveModel", () => {
     it("resolves ChatGPT's GPT-6 to the GPT-6 Luna – Sol range, as approximated", () => {
         expect(resolveModel("chatgpt", "gpt-6")).toEqual({
             ecologitsProvider: "openai",
-            modelName: "gpt-6-luna",
-            upperModelName: "gpt-6-sol",
+            model: { low: "gpt-6-luna", high: "gpt-6-sol" },
             approximated: true,
         });
     });
@@ -47,7 +51,7 @@ describe("resolveModel", () => {
         for (const slug of ["gpt-6-t-mini", "gpt-6-thinking-mini"]) {
             expect(resolveModel("chatgpt", slug), slug).toEqual({
                 ecologitsProvider: "openai",
-                modelName: "gpt-6-luna",
+                model: "gpt-6-luna",
                 approximated: true,
             });
         }
@@ -56,7 +60,7 @@ describe("resolveModel", () => {
     it("keeps aliases exact", () => {
         expect(resolveModel("chatgpt", "chatgpt-4o-latest")).toEqual({
             ecologitsProvider: "openai",
-            modelName: "gpt-4o",
+            model: "gpt-4o",
             approximated: false,
         });
     });
@@ -65,7 +69,7 @@ describe("resolveModel", () => {
         for (const slug of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
             expect(resolveModel("chatgpt", slug, mappings), slug).toEqual({
                 ecologitsProvider: "openai",
-                modelName: "gpt-5",
+                model: "gpt-5",
                 approximated: true,
             });
         }
@@ -74,7 +78,7 @@ describe("resolveModel", () => {
     it("falls back when the model is not exposed", () => {
         expect(resolveModel("claude", null)).toEqual({
             ecologitsProvider: "anthropic",
-            modelName: MODEL_MAPPINGS.claude.fallback,
+            model: MODEL_MAPPINGS.claude.fallback,
             approximated: true,
         });
         expect(resolveModel("claude", "  ").approximated).toBe(true);

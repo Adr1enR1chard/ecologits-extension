@@ -77,13 +77,30 @@ export interface CapturedResponse {
     partial: boolean;
 }
 
+/**
+ * A web model that may be any of several EcoLogits models: its impacts span from the lowest
+ * bound of `low` to the highest bound of `high`.
+ */
+export interface ModelRange {
+    low: string;
+    high: string;
+}
+
+/** EcoLogits model ID, or range of IDs, an estimate is computed with. */
+export type EcoLogitsModel = string | ModelRange;
+
+/** How a model reads in the UI and the CSV export: `low – high` for a range. */
+export function modelLabel(model: EcoLogitsModel): string {
+    return typeof model === "string" ? model : `${model.low} – ${model.high}`;
+}
+
 /** Computed impacts of one assistant reply. Never contains message content. */
 export interface ImpactResult {
     messageId: string | null;
     provider: WebProvider;
     rawModel: string | null;
-    /** EcoLogits model ID actually used for the computation. */
-    model: string;
+    /** EcoLogits model actually used for the computation. */
+    model: EcoLogitsModel;
     /** Epoch milliseconds. */
     timestamp: number;
     outputTokens: number;

@@ -18,7 +18,7 @@ describe("Claude model names", () => {
     ])("%s → %s", (slug, model) => {
         expect(resolveModel("claude", slug)).toEqual({
             ecologitsProvider: "anthropic",
-            modelName: model,
+            model: model,
             approximated: false,
         });
     });
@@ -27,7 +27,7 @@ describe("Claude model names", () => {
         "%s falls back",
         (slug) => {
             expect(resolveModel("claude", slug)).toMatchObject({
-                modelName: claudeModels.fallback,
+                model: claudeModels.fallback,
                 approximated: true,
             });
         },
