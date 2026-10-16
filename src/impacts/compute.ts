@@ -66,7 +66,7 @@ function toImpacts({ energy, gwp, adpe, pe, wcf, usage, embodied }: ImpactsOutpu
     };
 }
 
-/** From the low bound of `low` to the high bound of `high`, with its midpoint as median. */
+/** From the lowest to the highest bound of either range, with its midpoint as median. */
 function spanRange(low: ImpactRange, high: ImpactRange): ImpactRange {
     const min = Math.min(low.min, high.min);
     const max = Math.max(low.max, high.max);
@@ -92,9 +92,24 @@ function spanImpacts(low: Impacts, high: Impacts): Impacts {
     };
 }
 
-function uniqueCodes(a: StatusCode[], b: StatusCode[] = []): StatusCode[] {
+function uniqueCodes(a: StatusCode[], b: StatusCode[]): StatusCode[] {
     const codes = new Set(a.map((s) => s.code));
     return [...a, ...b.filter((s) => !codes.has(s.code))];
+}
+
+/** What EcoLogits returned for one model, or for a range of models. */
+interface Estimate {
+    impacts: Impacts | null;
+    warnings: StatusCode[];
+    errors: StatusCode[];
+}
+
+function spanEstimates(low: Estimate, high: Estimate): Estimate {
+    return {
+        impacts: low.impacts && high.impacts && spanImpacts(low.impacts, high.impacts),
+        warnings: uniqueCodes(low.warnings, high.warnings),
+        errors: uniqueCodes(low.errors, high.errors),
+    };
 }
 
 /** Seconds, or `null` when the measured latency is unusable. */
@@ -112,7 +127,7 @@ export function computeImpact(
         countTokens(captured.outputText) + countTokens(captured.reasoningText ?? "");
     const latencySeconds = toLatencySeconds(captured.latencyMs);
 
-    const compute = (modelName: string) => {
+    const compute = (modelName: string): Estimate => {
         const output = llmImpacts({
             provider: resolved.ecologitsProvider,
             modelName,
@@ -126,32 +141,27 @@ export function computeImpact(
             errors: toStatusCodes(output.errors),
         };
     };
-    const low = compute(resolved.modelName);
-    const { upperModelName } = resolved;
-    const high = upperModelName === undefined ? null : compute(upperModelName);
-    const impacts =
-        high === null
-            ? low.impacts
-            : low.impacts && high.impacts && spanImpacts(low.impacts, high.impacts);
+    const { model } = resolved;
+    const estimate =
+        typeof model === "string"
+            ? compute(model)
+            : spanEstimates(compute(model.low), compute(model.high));
 
     return {
         messageId: captured.messageId,
         provider: captured.provider,
         rawModel: captured.rawModel,
-        model:
-            upperModelName === undefined
-                ? resolved.modelName
-                : `${resolved.modelName} – ${upperModelName}`,
+        model,
         timestamp,
         outputTokens,
         latencySeconds,
-        impacts,
+        impacts: estimate.impacts,
         flags: {
             lowerBound: captured.hiddenReasoning,
             approximatedModel: resolved.approximated,
             partial: captured.partial,
         },
-        warnings: uniqueCodes(low.warnings, high?.warnings),
-        errors: uniqueCodes(low.errors, high?.errors),
+        warnings: estimate.warnings,
+        errors: estimate.errors,
     };
 }

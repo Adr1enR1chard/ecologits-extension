@@ -25,7 +25,7 @@ describe("ChatGPT slugs", () => {
     ])("%s → %s", (slug, model) => {
         expect(resolveModel("chatgpt", slug)).toEqual({
             ecologitsProvider: "openai",
-            modelName: model,
+            model: model,
             approximated: false,
         });
     });
@@ -33,7 +33,7 @@ describe("ChatGPT slugs", () => {
     it.each(["auto", "o3", "gpt-4-5", "research"])("%s falls back to gpt-5", (slug) => {
         expect(resolveModel("chatgpt", slug)).toEqual({
             ecologitsProvider: "openai",
-            modelName: "gpt-5",
+            model: "gpt-5",
             approximated: true,
         });
     });

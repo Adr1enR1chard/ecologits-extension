@@ -2,6 +2,8 @@ import {
     CRITERIA,
     EMBODIED_CRITERIA,
     type CriterionImpacts,
+    modelLabel,
+    type EcoLogitsModel,
     type ImpactRange,
     type Impacts,
     type WebProvider,
@@ -32,7 +34,7 @@ export interface ProviderTotals extends Totals {
 
 export interface ModelTotals extends Totals {
     provider: WebProvider;
-    model: string;
+    model: EcoLogitsModel;
 }
 
 export interface UsageSummary {
@@ -107,7 +109,7 @@ export function summarize(
             provider,
             addTotals(providers.get(provider) ?? { ...emptyTotals(), provider }, aggregate),
         );
-        const key = `${provider}/${model}`;
+        const key = `${provider}/${modelLabel(model)}`;
         models.set(
             key,
             addTotals(models.get(key) ?? { ...emptyTotals(), provider, model }, aggregate),

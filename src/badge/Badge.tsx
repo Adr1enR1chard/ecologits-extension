@@ -1,6 +1,6 @@
 import { Fragment } from "preact";
 import { t } from "../i18n";
-import type { Criterion, ImpactResult, Impacts } from "../messaging";
+import { modelLabel, type Criterion, type ImpactResult, type Impacts } from "../messaging";
 import { FlagIcons } from "../ui/FlagIcons";
 import { LeafIcon } from "../ui/Leaf";
 import { formatCount, formatImpact, formatRange } from "../ui/format";
@@ -12,10 +12,11 @@ import type { ColorScheme } from "./theme";
 const BADGE_CRITERIA = ["energy", "gwp", "wcf"] as const satisfies readonly Criterion[];
 
 function Details({ result, impacts, locale }: BadgeProps & { impacts: Impacts }) {
+    const label = modelLabel(result.model);
     const model =
-        result.rawModel !== null && result.rawModel !== result.model
-            ? t("badgeModelMapped", [result.rawModel, result.model])
-            : t("badgeModel", result.model);
+        result.rawModel !== null && result.rawModel !== label
+            ? t("badgeModelMapped", [result.rawModel, label])
+            : t("badgeModel", label);
     return (
         <>
             <span class="block font-semibold">{t("badgeLabel")}</span>

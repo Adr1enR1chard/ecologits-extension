@@ -21,5 +21,6 @@ export const claudeModels: ProviderModels = {
     // claude.ai only sends the model when it is not the default one.
     fallback: "claude-sonnet-5-5",
     aliases: {},
+    proxies: {},
     canonicalize: canonicalizeClaudeSlug,
 };

@@ -1,4 +1,5 @@
 import type { Providers } from "@ecologits/ecologits.js";
+import type { EcoLogitsModel } from "../messaging";
 
 /**
  * Contracts each provider folder fills in, one file per execution context: `meta.ts` everywhere,
@@ -23,15 +24,6 @@ export interface ProviderMeta {
     logo: string;
 }
 
-/**
- * A web model that may be any of several EcoLogits models: its impacts span from the low bound
- * of `low` to the high bound of `high`.
- */
-export interface ModelRange {
-    low: string;
-    high: string;
-}
-
 /** How the web models of a provider map to EcoLogits models. */
 export interface ProviderModels {
     ecologitsProvider: Providers;
@@ -41,9 +33,10 @@ export interface ProviderModels {
     aliases: Readonly<Record<string, string>>;
     /**
      * Normalised web slug → EcoLogits model, or range of models, standing in for a web model
-     * EcoLogits does not know. Always approximated.
+     * EcoLogits does not know. Tried last, before the fallback, and always approximated: drop
+     * an entry once EcoLogits knows the model.
      */
-    proxies?: Readonly<Record<string, string | ModelRange>>;
+    proxies: Readonly<Record<string, EcoLogitsModel>>;
     /** Rewrites a normalised web slug into its EcoLogits form, tried after the aliases. */
     canonicalize?: (slug: string) => string;
 }

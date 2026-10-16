@@ -5,6 +5,7 @@ import { t, uiLocale } from "@/src/i18n";
 import { computeEquivalences } from "@/src/impacts/equivalences";
 import {
     EMBODIED_CRITERIA,
+    modelLabel,
     type AdapterStatus,
     type Criterion,
     type WebProvider,
@@ -314,13 +315,13 @@ function ProviderBreakdown({
             {open && (
                 <ul class="pb-1.5 text-fg-muted">
                     {models.map((model) => (
-                        <li key={model.model} class={`${BREAKDOWN_GRID} py-1 pl-5`}>
+                        <li key={modelLabel(model.model)} class={`${BREAKDOWN_GRID} py-1 pl-5`}>
                             <span class="min-w-0 break-words">
                                 <Tooltip
                                     align="start"
                                     content={t("repliesCount", formatCount(model.requests, locale))}
                                 >
-                                    {model.model}
+                                    {modelLabel(model.model)}
                                 </Tooltip>
                             </span>
                             <BreakdownValues totals={model} />
