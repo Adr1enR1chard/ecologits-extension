@@ -2,7 +2,8 @@
 
 Response streams of each provider's reply endpoint, replayed by the adapter tests
 (`src/providers/*/*.test.ts`), which also re-split them into chunks of various sizes
-(`src/capture/adapter-contract.ts`).
+(`src/capture/adapter-contract.ts`), and DOM snapshots of its conversation page, replayed by the
+page tests (`src/providers/*/page.test.ts`).
 
 ## Recording a fixture
 
@@ -29,6 +30,27 @@ Response streams of each provider's reply endpoint, replayed by the adapter test
    their merged message. Structural values (`content_type`, `role`, `status`, `p`, `o`, model
    slugs…) are kept. Tests on masked fixtures assert lengths, ids and flags rather than text.
 
+## DOM snapshots
+
+`<provider>/<case>.html` is the outerHTML of the element holding a conversation's replies, enough
+for the badge to find the last one. `src/providers/page-contract.ts` loads each snapshot in
+happy-dom and checks, for the markup of `PAGES[<provider>]` it is rendered with, that the `reply`
+selector matches the expected number of finished replies, that `idAttribute` yields the id of the
+last one, that `rendering(root)` is false and that its `anchor(id).selector` resolves to exactly
+one element. A snapshot whose anchor depends on the action bar also checks that the anchor is lost
+without it. Every markup of every supported provider has at least one snapshot.
+
+Snapshots go through `sanitiseSnapshot(html, ids)` from `scripts/fixtures/snapshot.ts`:
+
+- `<script>`, `<style>` and `<link>` are dropped, `<svg>` emptied, comments dropped;
+- text and `alt` / `title` / `aria-label` values are masked (letters → `x`, digits → `0`);
+- UUIDs become zeroed ones; pass the `ZeroedIds` used by `anonymiseStream` for the stream of the
+  same case so their message ids match;
+- `data-*`, `class`, `role` and `id` are kept (selectors rely on them), tokens in them redacted;
+  every other attribute (inline `style`, `href`, `src`…) is dropped.
+
+Snapshots are kept as recorded: Prettier ignores them.
+
 ## ChatGPT
 
 | File                        | Case                                                                                                                                                                                                                                                       |
@@ -40,19 +62,23 @@ Response streams of each provider's reply endpoint, replayed by the adapter test
 | `aborted.sse`               | **Recorded, masked.** Logged-in reply stopped by the user: the stream ends mid-patch, without `message_stream_complete` nor `[DONE]`                                                                                                                       |
 | `logged-out-reply.ndjson`   | **Recorded.** Logged-out reply from `/unauth-mweb/conversation/updates` (NDJSON); the safety HTML partial of the last `shared` line was trimmed                                                                                                            |
 | `logged-out-stopped.ndjson` | **Recorded.** Logged-out reply stopped by the user: `append` lines, then the stream just ends (no `terminal-received`, no `end`)                                                                                                                           |
+| `normal-reply.html`         | **Synthetic** DOM snapshot, logged-in markup: two turns, each reply block (`data-chatgpt-selection-message-id`) followed by its action bar; last reply id from `normal-reply.sse`                                                                          |
+| `logged-out-reply.html`     | **Synthetic** DOM snapshot, logged-out markup: `<li data-message-role>` per message, the assistant one ending with `[data-assistant-message-actions]`; reply id from `logged-out-reply.ndjson`                                                             |
+| `legacy-reply.html`         | **Synthetic** DOM snapshot, former logged-in markup: `[data-message-author-role][data-message-id]` per message                                                                                                                                             |
 
 ## Claude
 
-| File               | Case                                                                                                                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `normal-reply.sse` | **Recorded.** Reply (`claude-sonnet-5-5`): `ping` and `conversation_ready` keep-alives, one text block, `message_limit` (account usage neutralised), `message_stop`                                          |
-| `tool-call.sse`    | **Recorded.** Reply with a tool call (`weather_fetch`): `tool_use` input streamed as `input_json_delta`, `tool_result` from the server, then the text. The location is replaced with `REDACTED` and `0.0000` |
-| `aborted.sse`      | **Recorded.** Reply with thinking, stopped by the user: the thinking block only streams a summary (`thinking_summary_delta`), then the text ends mid-block, without `message_stop`                           |
+| File                | Case                                                                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `normal-reply.sse`  | **Recorded.** Reply (`claude-sonnet-5-5`): `ping` and `conversation_ready` keep-alives, one text block, `message_limit` (account usage neutralised), `message_stop`                                          |
+| `tool-call.sse`     | **Recorded.** Reply with a tool call (`weather_fetch`): `tool_use` input streamed as `input_json_delta`, `tool_result` from the server, then the text. The location is replaced with `REDACTED` and `0.0000` |
+| `aborted.sse`       | **Recorded.** Reply with thinking, stopped by the user: the thinking block only streams a summary (`thinking_summary_delta`), then the text ends mid-block, without `message_stop`                           |
+| `normal-reply.html` | **Synthetic** DOM snapshot: two finished `[data-testid="assistant-message"]` replies, each ending with the wrapper of `[data-testid="message-actions"]`; last reply id from `normal-reply.sse`               |
 
 The streams stopped by the user ended with an `AbortError`, which the recording does not keep:
 tests replay them as aborted (`finish("aborted")`) to get a partial reply, and as `done` or
 `failed` to check that a stream cut without abort is skipped.
 
 Fixtures not marked **Recorded** were written from the known stream
-format, not recorded. Replace them
+format or, for DOM snapshots, from the comments in each `page.ts`, not recorded. Replace them
 with anonymised recordings as soon as possible: they are what keeps the adapter honest.
