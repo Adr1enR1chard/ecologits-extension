@@ -130,7 +130,7 @@ function Methodology() {
             <div class="max-w-prose space-y-3 leading-relaxed text-fg-muted">
                 <p>{t("methodologyEcologits", ECOLOGITS_VERSION)}</p>
                 <p>{t("methodologyTokenizer")}</p>
-                <p>{t("methodologyModelRanges")}</p>
+                <p>{t("methodologyGpt6")}</p>
             </div>
             <dl class="space-y-3 rounded-lg bg-surface p-4">
                 {(Object.keys(FLAG_INFO) as Flag[]).map((flag) => (

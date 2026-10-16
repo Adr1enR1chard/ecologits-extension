@@ -315,8 +315,8 @@
     "methodologyTokenizer": {
         "message": "Les tokens générés sont comptés dans le navigateur avec le tokenizer o200k_base d'OpenAI. Pour Claude et Gemini, dont les tokenizers ne sont pas publics, c'est une approximation."
     },
-    "methodologyModelRanges": {
-        "message": "ChatGPT n'indique pas quel GPT-6 il utilise : GPT-6 Luna pour les offres gratuites, GPT-6 Sol pour les offres payantes. Les réponses de GPT-6 sont donc estimées de la borne basse de gpt-6-luna à la borne haute de gpt-6-sol."
+    "methodologyGpt6": {
+        "message": "ChatGPT n'indique pas quel GPT-6 il utilise : GPT-6 Luna pour les offres gratuites, GPT-6 Sol pour les offres payantes. Les réponses de GPT-6 sont donc estimées de la borne basse de gpt-6-luna à la borne haute de gpt-6-sol. GPT-6 Thinking mini, inconnu d'EcoLogits, est estimé comme gpt-6-luna, le plus petit GPT-6 qu'il connaisse."
     },
     "methodologyMix": {
         "message": "Le mix électrique est celui retenu par défaut par EcoLogits pour chaque fournisseur."
