@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { describePageSnapshots, lastReplyId, loadSnapshot } from "../page-contract";
+import { lastReplyId } from "../page-check";
+import { describePageSnapshots, loadSnapshot } from "../page-contract";
 import { PAGE_SNAPSHOTS } from "../page-snapshots";
 import { claudePage } from "./page";
 
