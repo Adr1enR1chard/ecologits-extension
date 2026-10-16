@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { anonymiseStream } from "./anonymise";
 import { findPersonalData, ZeroedIds } from "./personal-data";
@@ -45,6 +48,22 @@ describe("sanitiseSnapshot", () => {
         );
     });
 
+    it("masks data-* and id values that may be text or hold a token", () => {
+        const html =
+            `<div data-title="Jane Doe's lawyer" data-topic="divorce lawyer" id="Jane"` +
+            ` data-href="/api?session=AbCdEfGhIjKlMnOpQr0123" data-ref="see ${ID_A}"></div>`;
+        expect(sanitiseSnapshot(html)).toBe(
+            `<div data-title="xxxx xxx'x xxxxxx" data-topic="xxxxxxx xxxxxx" id="xxxx"` +
+                ` data-href="/xxx?xxxxxxx=xxxxxxxxxxxxxxxxxx0000" data-ref="xxx ${ZERO_1}"></div>`,
+        );
+    });
+
+    it("masks the content of nested templates", () => {
+        expect(sanitiseSnapshot('<div><template><p title="Bob">Hi Bob</p></template></div>')).toBe(
+            '<div><template><p title="xxx">xx xxx</p></template></div>',
+        );
+    });
+
     it("maps each id to the same zeroed UUID, in attributes and text", () => {
         const html =
             `<div data-turn-key="${ID_A}"><li id="${ID_B}">see ${ID_A}</li>` +
@@ -78,5 +97,20 @@ describe("sanitiseSnapshot", () => {
             `<li id="${ID_A}" title="jane.doe@example.com">Mail jane.doe@example.com` +
             `<img alt="${JWT}" src="https://example.com/${ID_B}.png"></li>`;
         expect(findPersonalData(sanitiseSnapshot(html))).toEqual([]);
+    });
+});
+
+const FIXTURES = fileURLToPath(new URL("../../test/fixtures/", import.meta.url));
+
+/** Every committed DOM snapshot. */
+const snapshots = readdirSync(FIXTURES, { recursive: true, encoding: "utf8" }).filter((file) =>
+    file.endsWith(".html"),
+);
+
+describe("committed DOM snapshots", () => {
+    // Up to the numbering of its ids, which sanitising again restarts from 1.
+    it.each(snapshots)("%s is already sanitised", (file) => {
+        const html = readFileSync(join(FIXTURES, file), "utf8");
+        expect(sanitiseSnapshot(html)).toBe(new ZeroedIds().mapUuids(html));
     });
 });
