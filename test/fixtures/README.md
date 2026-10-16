@@ -12,7 +12,11 @@ Response streams of each provider's reply endpoint, replayed by the adapter test
    often shows as "(canceled)" with no body).
 2. Run `copy(__ecologitsStreams.at(-1).text)` and paste into `<provider>/<case>.sse`.
    `__ecologitsStreams.at(-1).end` tells how the stream ended (`done` or the abort error).
-3. Anonymise before committing:
+3. Anonymise before committing, with `anonymiseStream(provider, text)` from
+   `scripts/fixtures/anonymise.ts`, which applies the rules below; the keys it keeps, maps or
+   redacts are listed per provider in `scripts/fixtures/providers/`. The text the test asserts on
+   can then be restored by hand. `scripts/fixtures/no-personal-data.test.ts` fails if a fixture
+   still holds an email address, a UUID not of the zeroed form, or a token. The rules:
     - replace prompts, replies, titles and search results with neutral text or `REDACTED`
       (keep the text of the reply the test asserts on);
     - replace message, conversation and parent ids with `00000000-0000-4000-8000-…` values;
