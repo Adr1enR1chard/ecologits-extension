@@ -8,18 +8,20 @@ describePageSnapshots("chatgpt", [
         markup: 0,
         replies: 2,
         lastId: "00000000-0000-4000-8000-00000000000c",
+        anchorDependsOn: "[data-chatgpt-selection-message-id]",
     },
     {
         file: "logged-out-reply.html",
         markup: 1,
         replies: 1,
         lastId: "00000000-0000-4000-8000-000000000072",
-        actionBar: "[data-assistant-message-actions]",
+        anchorDependsOn: "[data-assistant-message-actions]",
     },
     {
         file: "legacy-reply.html",
         markup: 2,
         replies: 1,
         lastId: "00000000-0000-4000-8000-00000000000c",
+        anchorDependsOn: '[data-message-author-role="assistant"]',
     },
 ]);

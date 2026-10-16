@@ -37,8 +37,8 @@ for the badge to find the last one. `src/providers/page-contract.ts` loads each 
 happy-dom and checks, for the markup of `PAGES[<provider>]` it is rendered with, that the `reply`
 selector matches the expected number of finished replies, that `idAttribute` yields the id of the
 last one, that `rendering(root)` is false and that its `anchor(id).selector` resolves to exactly
-one element. A snapshot whose anchor depends on the action bar also checks that the anchor is lost
-without it. Every markup of every supported provider has at least one snapshot.
+one element. Each snapshot also names the element its anchor depends on (the action bar, or the
+reply block when the badge follows it) and checks that the anchor is lost without it. Every markup of every supported provider has at least one snapshot.
 
 Snapshots go through `sanitiseSnapshot(html, ids)` from `scripts/fixtures/snapshot.ts`:
 
