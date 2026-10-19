@@ -1,6 +1,5 @@
 import { Window, type Element } from "happy-dom";
-import { PAGES } from "../../src/providers/page";
-import type { SupportedProvider } from "../../src/providers/registry";
+import type { ProviderPage } from "../../src/providers/types";
 
 /** What the badge would see of a page: the element holding its replies, and whether one renders. */
 export interface PageReplies {
@@ -14,15 +13,14 @@ export interface PageReplies {
     snapshot: string;
 }
 
-/** The replies `PAGES[provider]` finds in a page's body HTML, `null` when it finds none. */
-export function findReplies(provider: SupportedProvider, html: string): PageReplies | null {
+/** The replies a provider's `page` finds in a page's body HTML, `null` when it finds none. */
+export function findReplies({ markups }: ProviderPage, html: string): PageReplies | null {
     const window = new Window();
     try {
         // A template's content is inert: no script runs, no resource loads.
         const template = window.document.createElement("template");
         template.innerHTML = html;
         const root = template.content;
-        const { markups } = PAGES[provider];
         const last = [...root.querySelectorAll(markups.map((m) => m.reply).join(", "))].at(-1);
         const markup = last && markups.find((m) => last.matches(m.reply));
         if (!last || !markup) return null;

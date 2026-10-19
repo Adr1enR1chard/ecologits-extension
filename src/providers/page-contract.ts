@@ -1,19 +1,19 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { FIXTURES } from "../../test/fixtures";
 import { lastReplyAnchor } from "../badge/anchor";
 import { PAGES } from "./page";
-import { PAGE_SNAPSHOTS } from "./page-snapshots";
-import type { SupportedProvider } from "./registry";
+import type { CapturedProvider } from "./registry";
 import type { ReplyMarkup } from "./types";
 
 /**
- * Replays a provider's DOM snapshots (`PAGE_SNAPSHOTS`) against its `ProviderPage`. Imported by
- * tests only, which run in happy-dom.
+ * Replays a provider's DOM snapshots (`test/fixtures/<provider>/fixtures.ts`) against its
+ * `ProviderPage`. Imported by tests only, which run in happy-dom.
  */
 
 /** Loads a snapshot into the document body, which holds nothing else. */
-export function loadSnapshot(provider: SupportedProvider, file: string): HTMLElement {
+export function loadSnapshot(provider: CapturedProvider, file: string): HTMLElement {
     // Not `import.meta.url`, which is not a file URL in happy-dom.
     const path = join(import.meta.dirname, "../../test/fixtures", provider, file);
     document.body.innerHTML = readFileSync(path, "utf8");
@@ -41,15 +41,18 @@ export function checkSnapshot(root: ParentNode, markup: ReplyMarkup): string[] {
     return problems;
 }
 
-export function describePageSnapshots(provider: SupportedProvider): void {
-    const { markups } = PAGES[provider];
+/** Replays the snapshots of a provider, once it has a `page.ts` and snapshots. */
+export function describePageSnapshots(provider: CapturedProvider): void {
+    const markups = PAGES[provider]?.markups ?? [];
+    const snapshots = FIXTURES[provider]?.snapshots ?? [];
+    if (markups.length === 0 || snapshots.length === 0) return;
 
     describe(`${provider} DOM snapshots`, () => {
         afterEach(() => {
             document.body.replaceChildren();
         });
 
-        describe.each(PAGE_SNAPSHOTS[provider])("$file", (snapshot) => {
+        describe.each(snapshots)("$file", (snapshot) => {
             const markup = markups[snapshot.markup]!;
 
             it("is found by its markup: a last reply with an id, not rendering, one anchor", () => {

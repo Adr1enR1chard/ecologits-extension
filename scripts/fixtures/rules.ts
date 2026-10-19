@@ -1,4 +1,4 @@
-import type { ObjectNode } from "../json-tree";
+import type { ObjectNode } from "./json-tree";
 
 /**
  * How to anonymise one provider's streams. A value is classified by its key: the nearest object

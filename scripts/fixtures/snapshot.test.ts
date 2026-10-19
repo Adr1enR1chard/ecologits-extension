@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import claudeFixtures from "../../test/fixtures/claude/fixtures";
 import { anonymiseStream } from "./anonymise";
 import { findPersonalData, ZeroedIds } from "./personal-data";
 import { sanitiseSnapshot } from "./snapshot";
@@ -74,7 +75,7 @@ describe("sanitiseSnapshot", () => {
     it("maps the ids alike in the stream and the snapshot of a case", () => {
         const ids = new ZeroedIds();
         const stream = anonymiseStream(
-            "claude",
+            claudeFixtures.rules,
             `event: message_start\ndata: {"type":"message_start","message":{"uuid":"${ID_B}"}}\n\n`,
             ids,
         );

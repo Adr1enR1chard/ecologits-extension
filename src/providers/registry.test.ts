@@ -1,19 +1,20 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { models } from "@ecologits/ecologits.js";
 import { describe, expect, it } from "vitest";
+import { FIXTURES } from "../../test/fixtures";
 import { CAPTURES } from "./capture";
 import { MODEL_MAPPINGS } from "./models";
 import { PAGES } from "./page";
-import { PAGE_SNAPSHOTS } from "./page-snapshots";
 import {
+    CAPTURED_PROVIDERS,
     PROVIDERS,
-    PROVIDER_META,
     SUPPORTED_PROVIDERS,
     WEB_PROVIDERS,
-    isSupportedProvider,
+    isCapturedProvider,
     matchPatterns,
     providerForHost,
 } from "./registry";
+import type { ProviderMeta } from "./types";
 
 const LOCALES = new URL("../../public/_locales/", import.meta.url);
 const messages = readdirSync(LOCALES).map((locale) => ({
@@ -30,21 +31,36 @@ describe("provider registry", () => {
         expect(new Set(hosts).size).toBe(hosts.length);
     });
 
-    it("derives the supported providers from their status", () => {
-        expect(SUPPORTED_PROVIDERS).toEqual(
-            PROVIDERS.filter((p) => p.status === "supported").map((p) => p.id),
-        );
+    it("derives the supported and captured providers from their status", () => {
+        const withStatus = (...statuses: ProviderMeta["status"][]) =>
+            PROVIDERS.filter((p) => statuses.includes(p.status)).map((p) => p.id);
+        expect(SUPPORTED_PROVIDERS).toEqual(withStatus("supported"));
+        // Tests run as a development build: beta providers are captured.
+        expect(CAPTURED_PROVIDERS).toEqual(withStatus("supported", "beta"));
         for (const provider of WEB_PROVIDERS) {
-            expect(isSupportedProvider(provider), provider).toBe(
-                PROVIDER_META[provider].status === "supported",
+            expect(isCapturedProvider(provider), provider).toBe(
+                CAPTURED_PROVIDERS.includes(provider as never),
             );
         }
-        expect(isSupportedProvider("example")).toBe(false);
+        expect(isCapturedProvider("example")).toBe(false);
     });
 
-    it("only registers supported providers in the per-context registries", () => {
-        for (const registry of [CAPTURES, MODEL_MAPPINGS, PAGES]) {
-            expect(Object.keys(registry).sort()).toEqual([...SUPPORTED_PROVIDERS].sort());
+    // A folder named otherwise would be silently left out of the registries.
+    it.each([
+        ["src/providers/", "./"],
+        ["test/fixtures/", "../../test/fixtures/"],
+    ])("names each folder of %s after a provider", (_, path) => {
+        const folders = readdirSync(new URL(path, import.meta.url), { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name);
+        for (const folder of folders) expect(WEB_PROVIDERS, folder).toContain(folder);
+    });
+
+    it("only registers captured providers in the per-context registries", () => {
+        for (const registry of [CAPTURES, MODEL_MAPPINGS, PAGES, FIXTURES]) {
+            for (const provider of Object.keys(registry)) {
+                expect(CAPTURED_PROVIDERS).toContain(provider);
+            }
         }
     });
 
@@ -59,34 +75,48 @@ describe("provider registry", () => {
         });
     });
 
-    describe.each(SUPPORTED_PROVIDERS)("%s", (provider) => {
+    // What the compiler cannot check of a provider found from its folders.
+    describe.each(SUPPORTED_PROVIDERS)("%s is complete", (provider) => {
         it("captures at least one endpoint", () => {
-            expect(CAPTURES[provider].endpoints.length).toBeGreaterThan(0);
+            expect(CAPTURES[provider]?.endpoints.length).toBeGreaterThan(0);
+        });
+
+        it("maps its models", () => {
+            expect(MODEL_MAPPINGS[provider]).toBeDefined();
         });
 
         it("knows at least one reply markup", () => {
-            expect(PAGES[provider].markups.length).toBeGreaterThan(0);
+            expect(PAGES[provider]?.markups.length).toBeGreaterThan(0);
         });
 
-        it("has a DOM snapshot of every reply markup, replayed by its page test", () => {
-            const snapshots = PAGE_SNAPSHOTS[provider];
+        it("has at least one recorded case", () => {
+            expect(FIXTURES[provider]?.cases.length).toBeGreaterThan(0);
+        });
+
+        it("has a DOM snapshot of every reply markup", () => {
+            const snapshots = FIXTURES[provider]?.snapshots ?? [];
             expect(new Set(snapshots.map((s) => s.markup))).toEqual(
-                new Set(PAGES[provider].markups.map((_, i) => i)),
-            );
-            for (const { file } of snapshots) {
-                expect(
-                    existsSync(new URL(`../../test/fixtures/${provider}/${file}`, import.meta.url)),
-                    file,
-                ).toBe(true);
-            }
-            const pageTest = new URL(`./${provider}/page.test.ts`, import.meta.url);
-            expect(readFileSync(pageTest, "utf8")).toContain(
-                `describePageSnapshots("${provider}")`,
+                new Set(PAGES[provider]?.markups.map((_, i) => i)),
             );
         });
+    });
 
-        const { ecologitsProvider, fallback, aliases, proxies } = MODEL_MAPPINGS[provider];
+    describe.each(CAPTURED_PROVIDERS)("%s fixtures", (provider) => {
+        const { cases = [], snapshots = [] } = FIXTURES[provider] ?? {};
 
+        it.each([...cases, ...snapshots].map((f) => f.file))("%s exists", (file) => {
+            expect(
+                existsSync(new URL(`../../test/fixtures/${provider}/${file}`, import.meta.url)),
+            ).toBe(true);
+        });
+    });
+
+    describe.each(
+        CAPTURED_PROVIDERS.flatMap((provider) => {
+            const mapping = MODEL_MAPPINGS[provider];
+            return mapping ? [{ provider, ...mapping }] : [];
+        }),
+    )("$provider models", ({ ecologitsProvider, fallback, aliases, proxies }) => {
         it("has a fallback model EcoLogits knows", () => {
             expect(models.findModel(ecologitsProvider, fallback)).toBeDefined();
         });
