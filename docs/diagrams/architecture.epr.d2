@@ -1,0 +1,56 @@
+# EcoLogits extension: how a streamed reply becomes a badge and a stored impact.
+
+webapp:      "<b>Chatbot web app</b><br><small>ChatGPT · Claude · Gemini</small>"
+interceptor: "<b>Interceptor</b><br><small>content script, MAIN world</small>"
+bridge:      "<b>Bridge</b><br><small>content script, isolated world</small>"
+badge:       "<b>Badge manager</b><br><small>shadow-root badges</small>"
+
+adapters: "<b>Adapters</b><br><small>providers/*/capture.ts</small>"
+pages:    "<b>Reply markup</b><br><small>providers/*/page.ts</small>"
+models:   "<b>Model mappings</b><br><small>aliases · proxies · fallback</small>"
+
+background: "<b>Background</b><br><small>service worker · handler</small>"
+compute:    "<b>Impact compute</b><br><small>EcoLogits.js</small>"
+storage:    "<b>browser.storage.local</b><br><small>aggregates · events · settings · adapterStatus</small>" { shape: cylinder }
+
+popup:   "<b>Popup</b><br><small>totals · equivalences · health</small>"
+options: "<b>Options</b><br><small>settings · CSV/JSON export</small>"
+
+webapp -> interceptor: "fetch / XHR reply streams"
+interceptor -> adapters: "parse with"
+interceptor -> bridge: "MessageChannel"
+bridge -> background: "runtime.sendMessage"
+background -> compute: "computeImpact"
+compute -> models: "resolve model"
+background -> storage: "record impact & health"
+bridge -> badge: "ImpactResult"
+badge -> pages: "find anchor"
+badge -> webapp: "mount badge"
+storage -> bridge: "settings"
+popup -> storage: "read"
+options -> storage: "read / write"
+popup -> background: "status · clear data"
+
+Page: "Chatbot tab" {
+  webapp
+  interceptor
+  bridge
+  badge
+}
+
+Providers: "Providers (discovered by glob)" {
+  adapters
+  pages
+  models
+}
+
+Extension: "Extension core" {
+  background
+  compute
+  storage
+}
+
+UI: "Extension UI" {
+  popup
+  options
+}
