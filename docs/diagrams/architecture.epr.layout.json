@@ -1,0 +1,30 @@
+{
+  "gridSize": 40,
+  "nodes": {
+    "adapters": { "cx": 12, "cy": 17, "w": 5, "h": 2, "borderColor": "orange" },
+    "background": { "cx": 30, "cy": 4, "w": 5, "h": 2, "borderColor": "purple" },
+    "badge": { "cx": 21, "cy": 10, "w": 5, "h": 2, "borderColor": "blue" },
+    "bridge": { "cx": 21, "cy": 4, "w": 5, "h": 2, "borderColor": "blue" },
+    "compute": { "cx": 37, "cy": 4, "w": 5, "h": 2, "borderColor": "purple" },
+    "interceptor": { "cx": 12, "cy": 4, "w": 5, "h": 2, "borderColor": "blue" },
+    "models": { "cx": 37, "cy": 17, "w": 5, "h": 2, "borderColor": "orange" },
+    "options": { "cx": 46, "cy": 10, "w": 5, "h": 2, "borderColor": "green" },
+    "pages": { "cx": 21, "cy": 17, "w": 5, "h": 2, "borderColor": "orange" },
+    "popup": { "cx": 46, "cy": 4, "w": 5, "h": 2, "borderColor": "green" },
+    "storage": { "cx": 30, "cy": 10, "w": 6, "h": 3, "borderColor": "teal" },
+    "webapp": { "cx": 3, "cy": 4, "w": 5, "h": 2, "borderColor": "gray" }
+  },
+  "edges": {
+    "badge->pages": { "lineStyle": "dashed" },
+    "badge->webapp": { "sourceSide": "W", "targetSide": "S", "color": "blue", "labelDx": -4 },
+    "compute->models": { "lineStyle": "dashed", "labelDy": 3 },
+    "interceptor->adapters": { "sourceSide": "S", "targetSide": "N", "lineStyle": "dashed", "labelDy": 3 },
+    "storage->bridge": { "color": "teal", "lineStyle": "dotted" }
+  },
+  "areas": {
+    "Extension": { "borderColor": "purple", "fillColor": "purple" },
+    "Page": { "borderColor": "blue", "fillColor": "blue" },
+    "Providers": { "borderColor": "orange", "fillColor": "orange" },
+    "UI": { "borderColor": "green", "fillColor": "green" }
+  }
+}
