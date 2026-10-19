@@ -22,7 +22,8 @@ const IDENTIFIER = /^[a-z0-9_:.-]{1,40}$/;
  * (mapped); otherwise it may be text or hold a token, and is masked, UUIDs mapped.
  */
 function keptValue(value: string, ids: ZeroedIds): string {
-    if (looksLikeToken(value)) return "REDACTED";
+    // A redacted token stays so, for a snapshot to be sanitised again unchanged.
+    if (value === "REDACTED" || looksLikeToken(value)) return "REDACTED";
     const words = value.split(/\s+/).filter(Boolean);
     const structural =
         words.every((word) => UUID_WORD.test(word)) ||
