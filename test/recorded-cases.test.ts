@@ -2,11 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { describeAdapterContract, parseText } from "../src/capture/adapter-contract";
-import { findEndpoint } from "../src/capture/interceptor";
 import type { CapturedRequest, ParseOutcome, ReplyEndpoint } from "../src/capture/types";
-import { CAPTURES } from "../src/providers/capture";
 import { CAPTURED_PROVIDERS } from "../src/providers/registry";
-import { FIXTURES } from "./fixtures";
+import { FIXTURES, fixtureRequest } from "./fixtures";
 import type { RecordedCase } from "./fixtures/provider-fixtures";
 
 /**
@@ -31,8 +29,7 @@ describe.each(PROVIDERS)("%s recorded cases", (provider) => {
     const { endpoints, cases } = FIXTURES[provider]!;
     const recorded: Recorded[] = cases.map((fixture) => {
         const url = endpoints[fixture.endpoint]!;
-        const request = { url: new URL(url), method: "POST", body: null };
-        const matched = findEndpoint(CAPTURES, request);
+        const { request, matched } = fixtureRequest(url);
         if (matched?.provider !== provider) {
             throw new Error(`${fixture.file}: no ${provider} endpoint for ${url}`);
         }
