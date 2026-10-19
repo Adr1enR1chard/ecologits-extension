@@ -90,6 +90,11 @@ describe("sanitiseSnapshot", () => {
         );
     });
 
+    it("leaves a redacted token as it is when sanitising again", () => {
+        const snapshot = sanitiseSnapshot(`<div data-token="${JWT}"></div>`);
+        expect(sanitiseSnapshot(snapshot)).toBe(snapshot);
+    });
+
     it("leaves no personal data", () => {
         const html =
             `<li id="${ID_A}" title="jane.doe@example.com">Mail jane.doe@example.com` +
