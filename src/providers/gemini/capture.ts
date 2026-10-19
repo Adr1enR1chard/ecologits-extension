@@ -23,7 +23,8 @@ import type {
  * schema is not public; the fields read here were found in recorded streams. Each message is an
  * update `{ 2: { 1: sequence, 7: { 1: event } } }`, whose event `{ 1: final, 4: { 4: turn } }`
  * carries the state of the turn so far:
- * - `2: { 1: conversation id (c_…), 2: response id (r_…) }`;
+ * - `2: { 1: conversation id (c_…), 2: response id (r_…) }`; the page keys the turn by the
+ *   response id without its `r_` prefix, which the message id drops too;
  * - `5: candidate { 1: id (rc_…), 2: { 1: whole text so far } }`;
  * - `43`: the model's label, as in the model picker (`3.5 Flash-Lite`);
  * - other updates: settings, the conversation title (`11`), tokens.
@@ -70,7 +71,7 @@ class GeminiParser implements StreamParser {
         const text = turn.message(5, 2)?.string(1);
         if (text) this.text = text;
         this.model = turn.string(43) ?? this.model;
-        this.messageId = turn.message(2)?.string(2) ?? this.messageId;
+        this.messageId = turn.message(2)?.string(2)?.replace(/^r_/, "") ?? this.messageId;
         if (event.varint(1) === 1 && this.text !== "") this.done = true;
     }
 }

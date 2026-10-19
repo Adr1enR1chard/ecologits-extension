@@ -90,7 +90,7 @@ describe("geminiSessionEndpoint matching", () => {
 });
 
 describe("gemini parser", () => {
-    it("reads the whole text, model and response id of the final update", () => {
+    it("reads the whole text, model and response id (without `r_`) of the final update", () => {
         expect(parse(reply)).toEqual({
             kind: "reply",
             reply: {
@@ -98,7 +98,7 @@ describe("gemini parser", () => {
                 outputText: "Hello!",
                 reasoningText: null,
                 hiddenReasoning: false,
-                messageId: "r_1",
+                messageId: "1",
                 partial: false,
             },
         });
@@ -111,14 +111,14 @@ describe("gemini parser", () => {
     it("ignores the updates after the final one", () => {
         const title = update(0, ids("r_2"), text("Greetings"), model("3.5 Flash"));
         expect(parse(reply + channel(title))).toMatchObject({
-            reply: { outputText: "Hello!", rawModel: "3.5 Flash-Lite", messageId: "r_1" },
+            reply: { outputText: "Hello!", rawModel: "3.5 Flash-Lite", messageId: "1" },
         });
     });
 
     it("keeps the model and id when later updates omit them", () => {
         const stream = channel(update(0, ids(), text("Hi"), model()), update(1, text("Hi!")));
         expect(parse(stream)).toMatchObject({
-            reply: { outputText: "Hi!", rawModel: "3.5 Flash-Lite", messageId: "r_1" },
+            reply: { outputText: "Hi!", rawModel: "3.5 Flash-Lite", messageId: "1" },
         });
     });
 
