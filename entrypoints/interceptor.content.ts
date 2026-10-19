@@ -1,5 +1,9 @@
 import { offerChannel } from "@/src/capture/channel";
-import { installFetchInterceptor, type RecordedStream } from "@/src/capture/interceptor";
+import {
+    installFetchInterceptor,
+    installXhrInterceptor,
+    type RecordedStream,
+} from "@/src/capture/interceptor";
 import { CAPTURES } from "@/src/providers/capture";
 import { CAPTURED_PROVIDERS, matchPatterns } from "@/src/providers/registry";
 
@@ -25,12 +29,9 @@ export default defineContentScript({
               }
             : undefined;
         const emit = offerChannel(window, window.location.origin);
-        installFetchInterceptor(window, {
-            captures: CAPTURES,
-            emit,
-            debug,
-            record,
-        });
+        const options = { captures: CAPTURES, emit, debug, record };
+        installFetchInterceptor(window, options);
+        installXhrInterceptor(window, options);
         debug?.("interceptor installed");
     },
 });

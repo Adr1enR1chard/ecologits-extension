@@ -4,7 +4,13 @@ import { chatgptConversationEndpoint } from "../providers/chatgpt/conversation";
 import { claudeCompletionEndpoint } from "../providers/claude/capture";
 import { parseText } from "./adapter-contract";
 import type { CaptureMessage } from "./channel";
-import { findEndpoint, installFetchInterceptor, type Captures } from "./interceptor";
+import {
+    findEndpoint,
+    installFetchInterceptor,
+    installXhrInterceptor,
+    type Captures,
+    type RecordedStream,
+} from "./interceptor";
 import type { ParsedReply, ReplyEndpoint, StreamEnd } from "./types";
 
 const URL_CONVERSATION = "https://chatgpt.com/backend-api/f/conversation";
@@ -353,6 +359,161 @@ describe("installFetchInterceptor on claude.ai", () => {
                     partial: true,
                 }),
             },
+        ]);
+    });
+});
+
+/**
+ * An `XMLHttpRequest` the test drives: `respond` sets the headers, `load` streams the body in small
+ * chunks, firing the events a browser fires. A new class per test, since the interceptor patches
+ * its prototype.
+ */
+function fakeXhrClass() {
+    return class FakeXhr extends EventTarget {
+        static sent: FakeXhr[] = [];
+        readyState = 0;
+        status = 0;
+        responseType: XMLHttpRequestResponseType = "";
+        responseText = "";
+        opened: unknown[] = [];
+        body: unknown = undefined;
+
+        open(...args: unknown[]) {
+            this.opened = args;
+            this.readyState = 1;
+        }
+        send(body?: unknown) {
+            this.body = body;
+            FakeXhr.sent.push(this);
+        }
+        getResponseHeader() {
+            return "application/json";
+        }
+        private set(state: number) {
+            this.readyState = state;
+            this.dispatchEvent(new Event("readystatechange"));
+        }
+        respond(status = 200) {
+            this.status = status;
+            this.set(2);
+        }
+        load(text: string, { end = "load" as "load" | "abort" | "error" } = {}) {
+            for (let i = 0; i < text.length; i += 50) {
+                this.responseText += text.slice(i, i + 50);
+                this.set(3);
+                this.dispatchEvent(new Event("progress"));
+            }
+            if (end === "abort") this.responseText = "";
+            this.set(4);
+            this.dispatchEvent(new Event(end));
+        }
+    };
+}
+
+describe("installXhrInterceptor", () => {
+    function setupXhr(captures: Captures = chatgpt()) {
+        const FakeXhr = fakeXhrClass();
+        const win = {
+            XMLHttpRequest: FakeXhr as unknown as typeof XMLHttpRequest,
+            location: { href: "https://chatgpt.com/c/1" },
+        };
+        const messages: CaptureMessage[] = [];
+        const records: RecordedStream[] = [];
+        let clock = 1000;
+        installXhrInterceptor(win, {
+            captures,
+            emit: (m) => messages.push(m),
+            now: () => (clock += 500),
+            record: (stream) => records.push(stream),
+        });
+        const request = (url = "/backend-api/f/conversation", body: unknown = post.body) => {
+            const xhr = new FakeXhr();
+            xhr.open("post", url, true);
+            xhr.send(body);
+            return xhr;
+        };
+        return { FakeXhr, messages, records, request };
+    }
+
+    it("emits one captured response per reply, with the latency", () => {
+        const text = fixture("normal-reply");
+        const { messages, records, request } = setupXhr();
+        const xhr = request();
+        xhr.respond();
+        xhr.load(text);
+
+        expect(messages).toEqual([
+            {
+                type: "captured-response",
+                payload: { provider: "chatgpt", ...parsedReply(text), latencyMs: 500 },
+            },
+        ]);
+        expect(records).toEqual([{ url: URL_CONVERSATION, end: "done", text }]);
+    });
+
+    it("passes the page's calls through unchanged", () => {
+        const { FakeXhr, request } = setupXhr();
+        const xhr = request();
+        expect(xhr.opened).toEqual(["post", "/backend-api/f/conversation", true]);
+        expect(xhr.body).toBe(post.body);
+        expect(FakeXhr.sent).toEqual([xhr]);
+    });
+
+    it("captures replies stopped by the user as partial, with what loaded before", () => {
+        const text = fixture("aborted");
+        const { messages, request } = setupXhr();
+        const xhr = request();
+        xhr.respond();
+        xhr.load(text, { end: "abort" });
+
+        expect(messages).toEqual([
+            {
+                type: "captured-response",
+                payload: expect.objectContaining({
+                    ...parsedReply(text, "aborted"),
+                    partial: true,
+                }),
+            },
+        ]);
+    });
+
+    it("emits nothing for unmatched, failed or non-text responses", () => {
+        const { messages, records, request } = setupXhr();
+        const unmatched = request("/backend-api/me");
+        unmatched.respond();
+        unmatched.load("{}");
+        const failed = request();
+        failed.respond(429);
+        failed.load("Too many requests");
+        const cut = request();
+        cut.respond();
+        cut.load(fixture("aborted"), { end: "error" });
+        const blob = request();
+        blob.responseType = "blob";
+        blob.respond();
+        blob.load(fixture("normal-reply"));
+
+        expect(messages).toEqual([]);
+        expect(records).toHaveLength(1);
+    });
+
+    it("reports parser exceptions as adapter failures", () => {
+        const broken: ReplyEndpoint = {
+            ...chatgptConversationEndpoint,
+            createParser: () => ({
+                push: () => {
+                    throw new Error("unexpected format");
+                },
+                finish: () => ({ kind: "skip", reason: "" }),
+            }),
+        };
+        const { messages, request } = setupXhr(chatgpt(broken));
+        const xhr = request();
+        xhr.respond();
+        xhr.load(fixture("normal-reply"));
+
+        expect(messages).toEqual([
+            { type: "adapter-failure", provider: "chatgpt", error: "unexpected format" },
         ]);
     });
 });
