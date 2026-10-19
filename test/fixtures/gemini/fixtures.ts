@@ -1,4 +1,4 @@
-import { defineFixtures } from "../provider-fixtures";
+import { defineFixtures, removeAll } from "../provider-fixtures";
 
 /** The event of an update, and the turn it carries. */
 const EVENT = "2.7.1";
@@ -43,7 +43,16 @@ export default defineFixtures({
             howToRecord: "ask a long question and press Stop mid-reply",
         },
     ],
-    snapshots: [],
+    snapshots: [
+        // Signed out: one finished `.conversation-container`, its `<message-actions>` in the
+        // response footer. Its id, the real response id, was replaced by hand with the message id
+        // of `normal-reply.sse` before sanitising, which leaves non-UUID ids as they are.
+        {
+            file: "normal-reply.html",
+            markup: 0,
+            breakAnchor: removeAll("message-actions"),
+        },
+    ],
     rules: {
         // The model's label; the final flag and other numbers are kept anyway.
         structural: new Set([`${TURN}.43`]),
