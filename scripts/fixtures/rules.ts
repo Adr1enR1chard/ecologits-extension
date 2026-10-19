@@ -3,7 +3,9 @@ import type { ObjectNode } from "./json-tree";
 /**
  * How to anonymise one provider's streams. A value is classified by its key: the nearest object
  * key above it (array indices are skipped), or the SSE event name for the event's root value.
- * Values under no listed key are masked.
+ * In a WebChannel stream of base64 protobuf messages, a field's key is its path of field numbers
+ * from the message root, e.g. `2.7.1.4.4.2.1`, the same for each item of a repeated field.
+ * Values under no listed key are masked; protobuf numbers are kept.
  */
 export interface FixtureRules {
     /** Keys whose values drive the parser, not the conversation: kept. */

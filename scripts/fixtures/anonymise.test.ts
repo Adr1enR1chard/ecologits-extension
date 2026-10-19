@@ -1,15 +1,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseText } from "../../src/capture/adapter-contract";
-import type { CapturedRequest, ParseOutcome, StreamEnd } from "../../src/capture/types";
-import { findEndpoint } from "../../src/capture/interceptor";
-import { CAPTURES } from "../../src/providers/capture";
+import { ProtoMessage } from "../../src/capture/decoders/protobuf";
+import { WebChannelDecoder } from "../../src/capture/decoders/webchannel";
+import type { ParseOutcome, StreamEnd } from "../../src/capture/types";
 import { CAPTURED_PROVIDERS } from "../../src/providers/registry";
-import { FIXTURES } from "../../test/fixtures";
+import { FIXTURES, fixtureRequest } from "../../test/fixtures";
 import chatgptFixtures from "../../test/fixtures/chatgpt/fixtures";
 import claudeFixtures from "../../test/fixtures/claude/fixtures";
+import geminiFixtures from "../../test/fixtures/gemini/fixtures";
 import { anonymiseStream } from "./anonymise";
 import { findPersonalData, maskText } from "./personal-data";
+import { encodeVarint, toBase64 } from "./protobuf-tree";
 
 const ID_A = "3f2b8c1e-9d4a-4e7b-8c2d-1a5f6e7d8c9b";
 const ID_B = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
@@ -204,6 +206,74 @@ describe("anonymiseStream: NDJSON", () => {
     });
 });
 
+/** A protobuf message of varint, string and sub-message fields, in order. */
+function proto(...fields: [number, number | string | Uint8Array][]): Uint8Array {
+    const parts = fields.flatMap(([number, value]) => {
+        if (typeof value === "number") return [encodeVarint(number * 8), encodeVarint(value)];
+        const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+        return [encodeVarint(number * 8 + 2), encodeVarint(bytes.length), bytes];
+    });
+    return Uint8Array.from(parts.flatMap((part) => [...part]));
+}
+
+/** A WebChannel back channel of `payloads`, one batch each. */
+function webChannel(...payloads: unknown[]): string {
+    return payloads
+        .map((payload, i) => JSON.stringify([[i + 1, payload]]))
+        .map((batch) => `${batch.length}\n${batch}`)
+        .join("");
+}
+
+describe("anonymiseStream: WebChannel", () => {
+    /** A Gemini update whose turn holds `turn`'s fields. */
+    const update = (final: number, ...turn: [number, number | string | Uint8Array][]) =>
+        toBase64(
+            proto([
+                2,
+                proto([1, 1], [7, proto([1, proto([1, final], [4, proto([4, proto(...turn)])])])]),
+            ]),
+        );
+
+    it("anonymises each protobuf message by field path and recomputes the length prefixes", () => {
+        const text = webChannel(
+            ["noop"],
+            [
+                update(
+                    1,
+                    [2, proto([1, "c_ba90b6562ce3d3fd"], [2, "r_27657c0c6cfb758a"])],
+                    [5, proto([1, "rc_9bb7980f5c5c0770"], [2, proto([1, "Été à Paris, 23 °C"])])],
+                    [6, proto([1, "Paris, France"], [3, 7])],
+                    [21, proto([1, "NFm937KK0pzxl3mvIhPA6hQKwz3dd4dlsBn2bmS99Ls"])],
+                    [43, "3.5 Flash-Lite"],
+                ),
+            ],
+        );
+        const anonymised = anonymiseStream(geminiFixtures.rules, text);
+
+        const payloads = new WebChannelDecoder().push(anonymised) as string[][];
+        expect(payloads[0]).toEqual(["noop"]);
+        const event = ProtoMessage.fromBase64(payloads[1]![0]!)!.message(2, 7, 1)!;
+        const turn = event.message(4, 4)!;
+        expect(event.varint(1)).toBe(1);
+        expect(turn.message(2)!.string(1)).toBe(ZERO_1);
+        expect(turn.message(2)!.string(2)).toBe(ZERO_2);
+        expect(turn.message(5)!.string(1)).toBe("00000000-0000-4000-8000-000000000003");
+        expect(turn.message(5, 2)!.string(1)).toBe("xxx x xxxxx, 00 °x");
+        expect(turn.message(6)!.string(1)).toBe("REDACTED");
+        expect(turn.message(6)!.varint(3)).toBe(0);
+        expect(turn.message(21)!.string(1)).toBe("REDACTED");
+        expect(turn.string(43)).toBe("3.5 Flash-Lite");
+        expect(findPersonalData(anonymised)).toEqual([]);
+    });
+
+    it("finds personal data in the protobuf messages of a stream", () => {
+        const text = webChannel([update(0, [2, proto([1, ID_A])])]);
+        // Once per message holding it, read as a string.
+        const found = new Set(findPersonalData(text).map(({ kind, match }) => `${kind} ${match}`));
+        expect(found).toEqual(new Set([`uuid ${ID_A}`]));
+    });
+});
+
 const FIXTURE_DIR = new URL("../../test/fixtures/", import.meta.url);
 
 /** What anonymising must not change: the kind of outcome, the model, the flags and lengths. */
@@ -226,9 +296,8 @@ const recorded = CAPTURED_PROVIDERS.flatMap((provider) => {
     const fixtures = FIXTURES[provider];
     if (fixtures === undefined) return [];
     return fixtures.cases.map(({ file, endpoint }) => {
-        const url = new URL(fixtures.endpoints[endpoint]!);
-        const request: CapturedRequest = { url, method: "POST", body: null };
-        const parser = findEndpoint(CAPTURES, request)!.endpoint;
+        const { request, matched } = fixtureRequest(fixtures.endpoints[endpoint]!);
+        const parser = matched!.endpoint;
         return { provider, file, rules: fixtures.rules, parser, request };
     });
 });

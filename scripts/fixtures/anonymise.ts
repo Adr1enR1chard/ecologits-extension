@@ -2,17 +2,28 @@ import { NdjsonDecoder } from "../../src/capture/decoders/ndjson";
 import { SseDecoder } from "../../src/capture/decoders/sse";
 import { parseJsonTree, type JsonNode, type ObjectNode } from "./json-tree";
 import { looksLikeToken, maskAround, maskText, ZeroedIds } from "./personal-data";
+import {
+    asMessage,
+    asString,
+    decodeMessage,
+    encodeMessage,
+    fromBase64,
+    toBase64,
+} from "./protobuf-tree";
 import type { FixtureRules } from "./rules";
+import { isWebChannel, rewriteWebChannel } from "./webchannel";
 
 /**
  * Turns a raw recorded stream into a fixture safe to commit (see `test/fixtures/README.md`):
  * structural values are kept, ids become zeroed UUIDs (the same id always the same one, so
  * references between events still hold), tokens and account details become `REDACTED`, and
  * every other string is masked. Only values and the UUIDs of keys are rewritten: event lines,
- * line endings, padding and key order are kept. Pass the `ids` of the case's DOM snapshot
- * (`sanitiseSnapshot`) to map the ids of both alike.
+ * line endings, padding and key order are kept. A WebChannel stream (Gemini) has its base64
+ * protobuf messages anonymised field by field instead (`anonymiseWebChannel`). Pass the `ids` of
+ * the case's DOM snapshot (`sanitiseSnapshot`) to map the ids of both alike.
  */
 export function anonymiseStream(rules: FixtureRules, text: string, ids = new ZeroedIds()): string {
+    if (isWebChannel(text)) return anonymiseWebChannel(rules, text, ids);
     const anonymiser = new Anonymiser(rules, ids);
     const sse = /^(?:data|event):/m.test(text);
     let output = "";
@@ -133,7 +144,7 @@ class Anonymiser {
                 if (inAccount) out.push({ start: node.start, end: node.end, text: "0" });
                 break;
             case "string": {
-                const value = this.string(node.value, key, inAccount);
+                const value = anonymiseString(this.rules, this.ids, node.value, key, inAccount);
                 if (value === node.value) break;
                 const json = JSON.stringify(value);
                 out.push({
@@ -145,13 +156,76 @@ class Anonymiser {
             }
         }
     }
+}
 
-    private string(value: string, key: string, account: boolean): string {
-        if (value === "") return value;
-        if (account || this.rules.tokens.has(key)) return "REDACTED";
-        if (this.rules.ids.has(key)) return this.ids.map(value);
-        if (this.rules.structural.has(key)) return this.ids.mapUuids(value);
+/** A string under `key` anonymised: kept, mapped, redacted or masked. */
+function anonymiseString(
+    rules: FixtureRules,
+    ids: ZeroedIds,
+    value: string,
+    key: string,
+    account: boolean,
+): string {
+    if (value === "") return value;
+    if (account || rules.tokens.has(key)) return "REDACTED";
+    if (rules.ids.has(key)) return ids.map(value);
+    if (rules.structural.has(key)) return ids.mapUuids(value);
+    if (looksLikeToken(value)) return "REDACTED";
+    return maskAround(value, ids);
+}
+
+/**
+ * Anonymises each base64 protobuf message of a WebChannel stream, recomputing the batches' length
+ * prefixes. Its fields are classified like JSON values, their key being their path of field
+ * numbers from the message root (`2.7.1.4.4.2.1`). Other strings are the channel's own (`noop`):
+ * kept, unless they look like a token or are cut by the end of the stream.
+ */
+function anonymiseWebChannel(rules: FixtureRules, text: string, ids: ZeroedIds): string {
+    return rewriteWebChannel(text, (value, closed) => {
+        const bytes = fromBase64(value);
+        if (bytes !== null) return toBase64(anonymiseMessage(rules, ids, bytes, "", false));
         if (looksLikeToken(value)) return "REDACTED";
-        return maskAround(value, this.ids);
-    }
+        return closed ? value : maskText(value);
+    });
+}
+
+const utf8 = new TextEncoder();
+
+function anonymiseMessage(
+    rules: FixtureRules,
+    ids: ZeroedIds,
+    message: Uint8Array,
+    path: string,
+    account: boolean,
+): Uint8Array {
+    const fields = (decodeMessage(message) ?? []).map((field) => {
+        const fieldPath = path === "" ? `${field.number}` : `${path}.${field.number}`;
+        const inAccount = account || rules.account.has(fieldPath);
+        const { wire, value } = field;
+        if (wire !== 2) {
+            // Numbers are kept (flags, sequence numbers, scores), but for account details.
+            return inAccount
+                ? { ...field, value: new Uint8Array(wire === 0 ? 1 : value.length) }
+                : field;
+        }
+        if (rules.structural.has(fieldPath) && !inAccount) return field;
+        const named = rules.ids.has(fieldPath) || rules.tokens.has(fieldPath);
+        if (!named && asMessage(value) !== null) {
+            return { ...field, value: anonymiseMessage(rules, ids, value, fieldPath, inAccount) };
+        }
+        const string = asString(value);
+        if (string === null) {
+            // Bytes: zeroed, keeping their length.
+            const redacted = inAccount || rules.tokens.has(fieldPath);
+            return {
+                ...field,
+                value: redacted ? utf8.encode("REDACTED") : new Uint8Array(value.length),
+            };
+        }
+        return {
+            ...field,
+            value: utf8.encode(anonymiseString(rules, ids, string, fieldPath, inAccount)),
+        };
+    });
+    return encodeMessage(fields);
 }
