@@ -2,9 +2,7 @@ import { NdjsonDecoder } from "../../src/capture/decoders/ndjson";
 import { SseDecoder } from "../../src/capture/decoders/sse";
 import { parseJsonTree, type JsonNode, type ObjectNode } from "./json-tree";
 import { looksLikeToken, maskAround, maskText, ZeroedIds } from "./personal-data";
-import type { SupportedProvider } from "../../src/providers/registry";
-import { FIXTURE_RULES } from "./providers";
-import type { FixtureRules } from "./providers/types";
+import type { FixtureRules } from "./rules";
 
 /**
  * Turns a raw recorded stream into a fixture safe to commit (see `test/fixtures/README.md`):
@@ -14,12 +12,8 @@ import type { FixtureRules } from "./providers/types";
  * line endings, padding and key order are kept. Pass the `ids` of the case's DOM snapshot
  * (`sanitiseSnapshot`) to map the ids of both alike.
  */
-export function anonymiseStream(
-    provider: SupportedProvider,
-    text: string,
-    ids = new ZeroedIds(),
-): string {
-    const anonymiser = new Anonymiser(FIXTURE_RULES[provider], ids);
+export function anonymiseStream(rules: FixtureRules, text: string, ids = new ZeroedIds()): string {
+    const anonymiser = new Anonymiser(rules, ids);
     const sse = /^(?:data|event):/m.test(text);
     let output = "";
     let cursor = 0;

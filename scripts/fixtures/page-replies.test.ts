@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import chatgptPage from "../../src/providers/chatgpt/page";
+import claudePage from "../../src/providers/claude/page";
 import { findReplies } from "./page-replies";
 
 /** A Claude conversation whose last reply has that id. */
@@ -15,12 +17,12 @@ function conversation(lastId: string, streaming = false): string {
 
 describe("findReplies", () => {
     it("finds none on a page without finished reply", () => {
-        expect(findReplies("claude", "<main><p>Hi</p></main>")).toBeNull();
+        expect(findReplies(claudePage, "<main><p>Hi</p></main>")).toBeNull();
     });
 
     it("keeps the element holding the replies, without the rest of the page", () => {
         const id = "00000000-0000-4000-8000-000000000002";
-        const replies = findReplies("claude", conversation(id));
+        const replies = findReplies(claudePage, conversation(id));
         expect(replies).toMatchObject({ rendering: false });
         expect(replies!.snapshot).toMatch(/^<div class="thread">/);
         expect(replies!.snapshot).not.toContain("Bob's chats");
@@ -30,7 +32,7 @@ describe("findReplies", () => {
         const html =
             '<main><section><div data-chatgpt-selection-message-id="a"></div>' +
             '<div class="actions"></div></section></main>';
-        expect(findReplies("chatgpt", html)).toEqual({
+        expect(findReplies(chatgptPage, html)).toEqual({
             rendering: false,
             snapshot:
                 '<section><div data-chatgpt-selection-message-id="a"></div><div class="actions"></div></section>',
@@ -39,7 +41,7 @@ describe("findReplies", () => {
 
     it("tells a reply is rendering", () => {
         expect(
-            findReplies("claude", conversation("00000000-0000-4000-8000-000000000002", true)),
+            findReplies(claudePage, conversation("00000000-0000-4000-8000-000000000002", true)),
         ).toMatchObject({ rendering: true });
     });
 });
