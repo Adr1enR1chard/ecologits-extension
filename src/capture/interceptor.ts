@@ -75,19 +75,26 @@ export interface MatchedEndpoint {
     endpoint: ReplyEndpoint;
 }
 
-/** The endpoint of the provider of the request host matching its method and path, if any. */
+/**
+ * The endpoint matching the request method and path, among those of the provider of the request
+ * host and those declaring the request host as their API host.
+ */
 export function findEndpoint(
     captures: Captures,
     { url, method }: CapturedRequest,
 ): MatchedEndpoint | null {
-    const host = providerForHost(url.hostname);
-    const provider = isCapturedProvider(host) ? host : null;
-    const endpoint = provider
-        ? captures[provider]?.endpoints.find(
-              (e) => (e.method ?? "POST") === method && e.path.test(url.pathname),
-          )
-        : undefined;
-    return provider && endpoint ? { provider, endpoint } : null;
+    const hostProvider = providerForHost(url.hostname);
+    for (const [provider, capture] of Object.entries(captures)) {
+        if (!isCapturedProvider(provider)) continue;
+        const endpoint = capture?.endpoints.find(
+            (e) =>
+                (e.host === undefined ? provider === hostProvider : e.host === url.hostname) &&
+                (e.method ?? "POST") === method &&
+                e.path.test(url.pathname),
+        );
+        if (endpoint) return { provider, endpoint };
+    }
+    return null;
 }
 
 /** Reads a copy of the request body; must run before `fetch` consumes the request. */

@@ -300,6 +300,16 @@ describe("findEndpoint", () => {
         expect(find("https://evil.example/unauth")).toBeNull();
         expect(find("https://claude.ai/unauth")).toBeNull();
     });
+
+    it("matches endpoints declaring their API host on that host only", () => {
+        const api: ReplyEndpoint = { ...loggedOut, host: "api.example", path: /^\/stream$/ };
+        const withApi: Captures = { chatgpt: { endpoints: [api] } };
+        const at = (url: string) =>
+            findEndpoint(withApi, { url: new URL(url), method: "POST", body: null });
+
+        expect(at("https://api.example/stream")).toEqual({ provider: "chatgpt", endpoint: api });
+        expect(at("https://chatgpt.com/stream")).toBeNull();
+    });
 });
 
 describe("installFetchInterceptor on claude.ai", () => {
