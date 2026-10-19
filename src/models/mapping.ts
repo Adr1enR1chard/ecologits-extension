@@ -1,8 +1,7 @@
 import { models, type Providers } from "@ecologits/ecologits.js";
 import type { EcoLogitsModel } from "../messaging";
-import { MODEL_MAPPINGS } from "../providers/models";
-import type { SupportedProvider } from "../providers/registry";
-import type { ProviderModels } from "../providers/types";
+import { MODEL_MAPPINGS, type ModelMappings } from "../providers/models";
+import type { CapturedProvider } from "../providers/registry";
 
 export interface ResolvedModel {
     ecologitsProvider: Providers;
@@ -21,11 +20,14 @@ export function normalizeSlug(slug: string): string {
  * so a model it learns wins over the proxy standing in for it.
  */
 export function resolveModel(
-    provider: SupportedProvider,
+    provider: CapturedProvider,
     rawModel: string | null,
-    mappings: Readonly<Record<SupportedProvider, ProviderModels>> = MODEL_MAPPINGS,
+    mappings: ModelMappings = MODEL_MAPPINGS,
 ): ResolvedModel {
-    const { ecologitsProvider, fallback, aliases, proxies, canonicalize } = mappings[provider];
+    const providerModels = mappings[provider];
+    // A beta provider may not have its `models.ts` yet.
+    if (providerModels === undefined) throw new Error(`no models for ${provider}`);
+    const { ecologitsProvider, fallback, aliases, proxies, canonicalize } = providerModels;
     if (rawModel !== null) {
         const normalized = normalizeSlug(rawModel);
         const candidates = [normalized];

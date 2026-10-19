@@ -25,3 +25,5 @@ export const claudePage: ProviderPage = {
     // "/new", a project page or any other entry point to "/chat/<id>".
     isNewConversation: (path) => !path.startsWith("/chat/"),
 };
+
+export default claudePage;

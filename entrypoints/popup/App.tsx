@@ -10,7 +10,7 @@ import {
     type Criterion,
     type WebProvider,
 } from "@/src/messaging";
-import { PROVIDER_META, WEB_PROVIDERS, isSupportedProvider } from "@/src/providers/registry";
+import { PROVIDER_META, WEB_PROVIDERS, isCapturedProvider } from "@/src/providers/registry";
 import {
     PERIODS,
     summarize,
@@ -424,7 +424,7 @@ function AdapterStatuses({ statuses }: { statuses: AdapterStatuses }) {
                 const status = statuses[provider] ?? emptyStatus(provider);
                 let dot = "border border-line-strong";
                 let text = t("adapterUnsupported");
-                if (isSupportedProvider(provider)) {
+                if (isCapturedProvider(provider)) {
                     const health = adapterHealth(status);
                     if (health === "ok") {
                         dot = "bg-brand";

@@ -1,6 +1,7 @@
 import { RangeValue, logger } from "@ecologits/ecologits.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import { CRITERIA, EMBODIED_CRITERIA, type ImpactRange } from "../messaging";
+import chatgptModels from "../providers/chatgpt/models";
 import { MODEL_MAPPINGS } from "../providers/models";
 import { capturedResponse } from "../test-utils";
 import { computeImpact, countTokens, toRange } from "./compute";
@@ -127,7 +128,7 @@ describe("computeImpact", () => {
 
     it("falls back for unknown models and flags it", () => {
         const result = computeImpact(capturedResponse({ rawModel: "gpt-unknown" }), timestamp);
-        expect(result.model).toBe(MODEL_MAPPINGS.chatgpt.fallback);
+        expect(result.model).toBe(chatgptModels.fallback);
         expect(result.flags.approximatedModel).toBe(true);
         expect(result.impacts).not.toBeNull();
     });
@@ -141,7 +142,7 @@ describe("computeImpact", () => {
     it("returns EcoLogits errors without impacts", () => {
         const mappings = {
             ...MODEL_MAPPINGS,
-            chatgpt: { ...MODEL_MAPPINGS.chatgpt, fallback: "not-a-model" },
+            chatgpt: { ...chatgptModels, fallback: "not-a-model" },
         };
         const result = computeImpact(capturedResponse({ rawModel: null }), timestamp, mappings);
         expect(result.impacts).toBeNull();

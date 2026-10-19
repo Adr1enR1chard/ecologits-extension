@@ -222,3 +222,5 @@ export const claudeCompletionEndpoint: ReplyEndpoint = {
 };
 
 export const claudeCapture: ProviderCapture = { endpoints: [claudeCompletionEndpoint] };
+
+export default claudeCapture;

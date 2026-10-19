@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MODEL_MAPPINGS } from "../providers/models";
-import type { SupportedProvider } from "../providers/registry";
-import type { ProviderModels } from "../providers/types";
+import claudeModels from "../providers/claude/models";
+import { MODEL_MAPPINGS, type ModelMappings } from "../providers/models";
 import { resolveModel } from "./mapping";
 
 describe("resolveModel", () => {
-    const mappings: Record<SupportedProvider, ProviderModels> = {
+    const mappings: ModelMappings = {
         ...MODEL_MAPPINGS,
         chatgpt: {
             ecologitsProvider: "openai",
@@ -38,7 +37,7 @@ describe("resolveModel", () => {
     it("falls back to the provider model for unknown slugs", () => {
         expect(resolveModel("claude", "claude-unknown")).toEqual({
             ecologitsProvider: "anthropic",
-            model: MODEL_MAPPINGS.claude.fallback,
+            model: claudeModels.fallback,
             approximated: true,
         });
     });
@@ -77,7 +76,7 @@ describe("resolveModel", () => {
     it("falls back when the model is not exposed", () => {
         expect(resolveModel("claude", null)).toEqual({
             ecologitsProvider: "anthropic",
-            model: MODEL_MAPPINGS.claude.fallback,
+            model: claudeModels.fallback,
             approximated: true,
         });
         expect(resolveModel("claude", "  ").approximated).toBe(true);

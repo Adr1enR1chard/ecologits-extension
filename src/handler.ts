@@ -6,6 +6,7 @@ import type {
     CapturedResponse,
     ImpactResult,
 } from "./messaging";
+import { MODEL_MAPPINGS } from "./providers/models";
 import { clearUsageData, recordImpact } from "./storage";
 import { getAdapterStatuses, recordAdapterFailure, recordAdapterSuccess } from "./storage/health";
 
@@ -15,12 +16,16 @@ function errorMessage(error: unknown): string {
 
 /**
  * Computes, persists and returns the impacts of a captured reply. Replies EcoLogits cannot
- * compute are reported as adapter failures, so the popup never shows a silent success.
+ * compute are reported as adapter failures, so the popup never shows a silent success. A beta
+ * provider without models yet has nothing to compute: its replies are refused, without failure.
  */
 export async function processCapturedResponse(
     captured: CapturedResponse,
     now: number = Date.now(),
 ): Promise<ImpactResult> {
+    if (MODEL_MAPPINGS[captured.provider] === undefined) {
+        throw new Error(`no models for ${captured.provider} yet`);
+    }
     let result: ImpactResult;
     try {
         result = computeImpact(captured, now);

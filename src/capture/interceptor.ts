@@ -1,14 +1,10 @@
-import {
-    isSupportedProvider,
-    providerForHost,
-    type SupportedProvider,
-} from "../providers/registry";
+import { isCapturedProvider, providerForHost, type CapturedProvider } from "../providers/registry";
 import type { CaptureMessage } from "./channel";
 import type { CapturedRequest, ProviderCapture, ReplyEndpoint, StreamEnd } from "./types";
 
 type FetchWindow = Pick<typeof globalThis, "fetch"> & { location: { href: string } };
 
-export type Captures = Readonly<Partial<Record<SupportedProvider, ProviderCapture>>>;
+export type Captures = Readonly<Partial<Record<CapturedProvider, ProviderCapture>>>;
 
 export interface InterceptorOptions {
     captures: Captures;
@@ -75,7 +71,7 @@ function describeRequest(
 
 /** A provider endpoint a request was matched to. */
 export interface MatchedEndpoint {
-    provider: SupportedProvider;
+    provider: CapturedProvider;
     endpoint: ReplyEndpoint;
 }
 
@@ -85,7 +81,7 @@ export function findEndpoint(
     { url, method }: CapturedRequest,
 ): MatchedEndpoint | null {
     const host = providerForHost(url.hostname);
-    const provider = isSupportedProvider(host) ? host : null;
+    const provider = isCapturedProvider(host) ? host : null;
     const endpoint = provider
         ? captures[provider]?.endpoints.find(
               (e) => (e.method ?? "POST") === method && e.path.test(url.pathname),

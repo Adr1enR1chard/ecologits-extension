@@ -1,8 +1,15 @@
 import { PAGES } from "../providers/page";
-import type { SupportedProvider } from "../providers/registry";
-import type { ReplyAnchor } from "../providers/types";
+import type { CapturedProvider } from "../providers/registry";
+import type { ProviderPage, ReplyAnchor } from "../providers/types";
 
 export type { ReplyAnchor };
+
+/** What a beta provider without `page.ts` yet renders: no reply the badge can find. */
+const NO_PAGE: ProviderPage = { markups: [], isNewConversation: () => false };
+
+function pageOf(provider: CapturedProvider): ProviderPage {
+    return PAGES[provider] ?? NO_PAGE;
+}
 
 /** Matches the element of any reply, whatever the provider. */
 export const ANY_REPLY = Object.values(PAGES)
@@ -10,23 +17,23 @@ export const ANY_REPLY = Object.values(PAGES)
     .join(", ");
 
 /** Anchors of the reply with that id, one per markup; selectors stay valid across re-renders. */
-export function replyAnchors(messageId: string, provider: SupportedProvider): ReplyAnchor[] {
+export function replyAnchors(messageId: string, provider: CapturedProvider): ReplyAnchor[] {
     const id = CSS.escape(messageId);
-    return PAGES[provider].markups.map((m) => m.anchor(id));
+    return pageOf(provider).markups.map((m) => m.anchor(id));
 }
 
 /** First anchor of the reply with that id present on the page. */
 function renderedAnchor(
     root: ParentNode,
     messageId: string,
-    provider: SupportedProvider,
+    provider: CapturedProvider,
 ): ReplyAnchor | null {
     return replyAnchors(messageId, provider).find((a) => root.querySelector(a.selector)) ?? null;
 }
 
 /** Anchor of the last reply on the page, when the captured message id is not rendered. */
-export function lastReplyAnchor(root: ParentNode, provider: SupportedProvider): ReplyAnchor | null {
-    const { markups } = PAGES[provider];
+export function lastReplyAnchor(root: ParentNode, provider: CapturedProvider): ReplyAnchor | null {
+    const { markups } = pageOf(provider);
     if (markups.length === 0) return null;
     const replies = root.querySelectorAll(markups.map((m) => m.reply).join(", "));
     const last = replies[replies.length - 1];
@@ -59,7 +66,7 @@ export interface FindReplyOptions {
 export function findReplyAnchor(
     root: ParentNode & Node,
     messageId: string | null,
-    provider: SupportedProvider,
+    provider: CapturedProvider,
     options: FindReplyOptions = {},
 ): Promise<ReplyAnchor | null> {
     const {
@@ -68,7 +75,8 @@ export function findReplyAnchor(
         maxRenderingMs = 30_000,
         conversation = () => location.pathname,
     } = options;
-    const { markups, isNewConversation } = PAGES[provider];
+    const { markups, isNewConversation } = pageOf(provider);
+    if (markups.length === 0) return Promise.resolve(null);
     const startedIn = conversation();
     // A new conversation moves to its own path during the first reply, which is not a move to
     // another one; a second move is.
