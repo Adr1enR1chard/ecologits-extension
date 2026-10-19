@@ -1,0 +1,3 @@
+# Provider folders are discovered, not registered
+
+Adding a provider used to mean editing six central registries typed `Record<SupportedProvider, …>`, which made the compiler flag a missing file but broke the build the moment a provider was marked supported. We now discover each provider's files per execution context with `import.meta.glob` (and `readdir` in the `tsx` fixture scripts), so adding a provider means adding its folders. The registries become partial: the compiler no longer proves that a supported provider is complete, `src/providers/registry.test.ts` does. One glob per context keeps EcoLogits and DOM code out of the main-world interceptor bundle, which is why we did not group a provider's files into a single object instead.
