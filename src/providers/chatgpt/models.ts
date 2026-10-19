@@ -10,9 +10,13 @@ export const chatgptModels: ProviderModels = {
         "chatgpt-4o-latest": "gpt-4o",
     },
     proxies: {
-        // EcoLogits knows no `gpt-6`: ChatGPT serves GPT-6 Luna on free plans and GPT-6 Sol on
-        // paid ones, and the plan is unknown.
-        "gpt-6": { low: "gpt-6-luna", high: "gpt-6-sol" },
+        // EcoLogits knows no `gpt-6`: GPT-6 Sol answers every thinking level of GPT-6 but Pro, and
+        // only paid plans reach it, Free and Go getting GPT-5.6 Luna.
+        // https://help.openai.com/en/articles/20001354-gpt-6-and-other-models-in-chatgpt
+        "gpt-6": "gpt-6-sol",
+        // Nor `gpt-6-pro`, GPT-6 at Pro effort, which GPT-6 Astra powers. That the Pro effort
+        // sends its own slug, as `gpt-5-pro` did, is an assumption: no recording shows it.
+        "gpt-6-pro": "gpt-6-astra",
         // Nor `gpt-6-mini`, the canonical slug of GPT-6 Thinking mini (`gpt-6-t-mini`): Luna is
         // the smallest GPT-6 it knows.
         "gpt-6-mini": "gpt-6-luna",

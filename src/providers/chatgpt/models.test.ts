@@ -30,10 +30,13 @@ describe("ChatGPT slugs", () => {
         });
     });
 
-    it("estimates GPT-6 between GPT-6 Luna and GPT-6 Sol, as approximated", () => {
-        expect(resolveModel("chatgpt", "gpt-6")).toEqual({
+    it.each([
+        ["gpt-6", "gpt-6-sol"],
+        ["gpt-6-pro", "gpt-6-astra"],
+    ])("%s is estimated as %s, as approximated", (slug, model) => {
+        expect(resolveModel("chatgpt", slug)).toEqual({
             ecologitsProvider: "openai",
-            model: { low: "gpt-6-luna", high: "gpt-6-sol" },
+            model,
             approximated: true,
         });
     });
