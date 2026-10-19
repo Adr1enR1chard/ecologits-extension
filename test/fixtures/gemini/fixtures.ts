@@ -49,8 +49,15 @@ export default defineFixtures({
         // of `normal-reply.sse` before sanitising, which leaves non-UUID ids as they are.
         {
             file: "normal-reply.html",
-            markup: 0,
+            markup: 1,
             breakAnchor: removeAll("message-actions"),
+        },
+        // Signed out: the turn of `aborted.sse`, stopped, without action bar, the stop notice in
+        // the response footer. Its id was replaced by hand as for `normal-reply.html`.
+        {
+            file: "aborted.html",
+            markup: 0,
+            breakAnchor: removeAll("response-info-line"),
         },
     ],
     rules: {
