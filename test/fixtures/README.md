@@ -62,6 +62,13 @@ search results, URLs, titles, DIL code) has its letters replaced by `x` and its 
 keeping punctuation, spaces and lengths, so fragments still concatenate to their merged message.
 Structural values (`content_type`, `role`, `status`, `p`, `o`, model slugs…) are kept.
 
+Gemini streams a WebChannel back channel, `<length>\n[[id,[payload]]]` batches of base64 protobuf
+messages, without field names. Each message is decoded, its fields classified by their path of
+field numbers (`2.7.1.4.4.2.1` for the conversation id) as JSON values by their key, numbers
+kept, then encoded back, and each batch's length prefix recomputed. A length-delimited field is
+read as a sub-message when its bytes are one, else as a string. `test/committed-fixtures.test.ts`
+searches these messages by the strings they hold.
+
 ## DOM snapshots
 
 `<provider>/<case>.html` is the outerHTML of the element holding a conversation's replies, enough

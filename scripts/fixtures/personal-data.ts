@@ -1,3 +1,5 @@
+import { isWebChannel, readableWebChannel } from "./webchannel";
+
 /** What personal data looks like in a fixture, and how text is masked to remove it. */
 
 export const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
@@ -87,8 +89,12 @@ export interface PersonalDataMatch {
     match: string;
 }
 
-/** Everything in `text` that looks like personal data, in order of kind. */
+/**
+ * Everything in `text` that looks like personal data, in order of kind. The base64 messages of a
+ * WebChannel stream are searched by the strings they hold.
+ */
 export function findPersonalData(text: string): PersonalDataMatch[] {
+    if (isWebChannel(text)) text = readableWebChannel(text);
     const found = (kind: PersonalDataKind, matches: Iterable<RegExpMatchArray>) =>
         [...matches].map((m) => ({ kind, match: m[0] }));
     return [
