@@ -33,8 +33,8 @@ export default defineFixtures({
             outcome: "reply",
             howToRecord: "ask for a word repeated on ten lines and wait for the whole reply",
         },
-        // Stopped by the user after thirteen updates of the text: no final update follows, only
-        // the updates of the stopped turn and its title.
+        // Stopped by the user after a web search and several updates of the text: no final update
+        // follows, only the updates of the stopped turn and its title.
         {
             file: "aborted.sse",
             endpoint: "session",
