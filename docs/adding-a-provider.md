@@ -35,7 +35,8 @@ The `id` is stored with every result and adapter status: never rename it. The or
 
 1. Write `src/providers/<id>/meta.ts` with `status: "beta"` and add it to `PROVIDERS`.
 2. Declare the reply endpoint in `capture.ts` (copy `claude/`): endpoints only declare a method
-   (`POST` by default) and a path, hosts are checked by the interceptor. The development build
+   (`POST` by default) and a path, hosts are checked by the interceptor; an endpoint on an API
+   host that is not among the provider's hosts declares it in `host` (see `gemini/`). The development build
    only records the streams of a declared endpoint.
 3. Write `test/fixtures/<id>/fixtures.ts` (copy `claude/fixtures.ts`): an endpoint URL and the
    anonymiser's rules. Record a first stream from the DevTools console and anonymise it with
