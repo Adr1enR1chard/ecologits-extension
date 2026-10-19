@@ -63,13 +63,24 @@ describe("computeImpact", () => {
         expect(impacts.total.energy).toEqual(impacts.usage.energy);
     });
 
-    it("spans GPT-6 from the lowest to the highest bound of GPT-6 Luna and GPT-6 Sol", () => {
+    it("spans a range from the lowest to the highest bound of its two models", () => {
+        const mappings = {
+            ...MODEL_MAPPINGS,
+            chatgpt: {
+                ...MODEL_MAPPINGS.chatgpt,
+                proxies: { "next-wide": { low: "gpt-6-luna", high: "gpt-6-sol" } },
+            },
+        };
         const luna = computeImpact(capturedResponse({ rawModel: "gpt-6-luna" }), timestamp);
         const sol = computeImpact(capturedResponse({ rawModel: "gpt-6-sol" }), timestamp);
-        const result = computeImpact(capturedResponse({ rawModel: "gpt-6" }), timestamp);
+        const result = computeImpact(
+            capturedResponse({ rawModel: "next-wide" }),
+            timestamp,
+            mappings,
+        );
 
         expect(result).toMatchObject({
-            rawModel: "gpt-6",
+            rawModel: "next-wide",
             model: { low: "gpt-6-luna", high: "gpt-6-sol" },
             flags: { approximatedModel: true },
             errors: [],
