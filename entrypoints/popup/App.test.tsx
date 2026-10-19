@@ -60,7 +60,7 @@ describe("Popup", () => {
     it("explains the counts, the caveats, the equivalences and the capture statuses in tooltips", () => {
         render(<Popup aggregates={sampleAggregates(NOW)} statuses={sampleStatuses(NOW)} />);
         const tooltips = screen.getAllByRole("tooltip").map((t) => t.textContent);
-        expect(tooltips).toContain("repliesCount 5");
+        expect(tooltips).toContain("repliesCount 7");
         expect(tooltips).toContain("flagLowerBoundHelp");
         expect(tooltips.some((t) => t?.startsWith("≈ equivalenceCarKm"))).toBe(true);
         expect(tooltips.some((t) => t?.startsWith("ClaudeadapterFailing"))).toBe(true);
@@ -108,6 +108,7 @@ describe("Popup", () => {
         expect(buttons.map(accessibleText)).toEqual([
             "Claude, repliesCount 2",
             "ChatGPT, repliesCount 3",
+            "Gemini, repliesCount 2",
         ]);
         expect(screen.queryByText("claude-opus-5-5")).toBeNull();
         fireEvent.click(buttons[0]!);

@@ -58,12 +58,14 @@ const REPLIES: [WebProvider, string, number, Partial<ImpactResult["flags"]>][] =
     ["chatgpt", "gpt-5-mini", 0.0006, { partial: true }],
     ["claude", "claude-sonnet-5-5", 0.0027, {}],
     ["claude", "claude-opus-5-5", 0.0089, { approximatedModel: true }],
+    ["gemini", "gemini-3.5-flash", 0.0019, {}],
+    ["gemini", "gemini-3.5-flash-lite", 0.0008, {}],
 ];
 
 /** A few days of replies on several models of the given providers. */
 export function sampleAggregates(
     now = Date.now(),
-    providers: readonly WebProvider[] = ["chatgpt", "claude"],
+    providers: readonly WebProvider[] = ["chatgpt", "claude", "gemini"],
 ): DailyAggregates {
     let aggregates: DailyAggregates = {};
     for (let day = 0; day < 10; day++) {
@@ -89,7 +91,7 @@ export function sampleAggregates(
     return aggregates;
 }
 
-/** ChatGPT working, the last Claude capture failed. */
+/** ChatGPT and Gemini working, the last Claude capture failed. */
 export function sampleStatuses(now = Date.now()): Partial<Record<WebProvider, AdapterStatus>> {
     return {
         chatgpt: {
@@ -104,6 +106,12 @@ export function sampleStatuses(now = Date.now()): Partial<Record<WebProvider, Ad
             lastFailureAt: now - HOUR,
             lastError: "No model in the completion request",
         },
+        gemini: {
+            provider: "gemini",
+            lastSuccessAt: now - 2 * HOUR,
+            lastFailureAt: null,
+            lastError: null,
+        },
     };
 }
 
@@ -115,5 +123,5 @@ export function healthyStatuses(now = Date.now()): Partial<Record<WebProvider, A
         lastFailureAt: null,
         lastError: null,
     });
-    return { chatgpt: ok("chatgpt"), claude: ok("claude") };
+    return { chatgpt: ok("chatgpt"), claude: ok("claude"), gemini: ok("gemini") };
 }
