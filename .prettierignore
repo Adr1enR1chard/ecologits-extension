@@ -6,3 +6,6 @@ pnpm-lock.yaml
 
 # DOM snapshots are kept as recorded.
 test/fixtures/**/*.html
+
+# Épure diagrams are written by its editor.
+docs/diagrams/*.epr.layout.json
