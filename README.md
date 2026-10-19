@@ -14,11 +14,11 @@ Browser extension that estimates the environmental impact of your generative AI 
 
 ## Supported providers and browsers
 
-|                    |                                    Chrome                                     | Firefox | Edge ([#7](https://github.com/Adr1enR1chard/ecologits-extension/issues/7)) | Safari ([#8](https://github.com/Adr1enR1chard/ecologits-extension/issues/8)) |
-| ------------------ | :---------------------------------------------------------------------------: | :-----: | :------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
-| ChatGPT (OpenAI)   |                                      ✅                                       |   ✅    |                                  planned                                   |                                   planned                                    |
-| Claude (Anthropic) |                                      ✅                                       |   ✅    |                                  planned                                   |                                   planned                                    |
-| Gemini (Google)    | planned ([#6](https://github.com/Adr1enR1chard/ecologits-extension/issues/6)) | planned |                                  planned                                   |                                   planned                                    |
+|                    | Chrome | Firefox | Edge ([#7](https://github.com/Adr1enR1chard/ecologits-extension/issues/7)) | Safari ([#8](https://github.com/Adr1enR1chard/ecologits-extension/issues/8)) |
+| ------------------ | :----: | :-----: | :------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| ChatGPT (OpenAI)   |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
+| Claude (Anthropic) |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
+| Gemini (Google)    |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
 
 To add a provider, see [Adding a provider](docs/adding-a-provider.md).
 
