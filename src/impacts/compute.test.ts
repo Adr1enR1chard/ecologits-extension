@@ -67,7 +67,7 @@ describe("computeImpact", () => {
         const mappings = {
             ...MODEL_MAPPINGS,
             chatgpt: {
-                ...MODEL_MAPPINGS.chatgpt,
+                ...chatgptModels,
                 proxies: { "next-wide": { low: "gpt-6-luna", high: "gpt-6-sol" } },
             },
         };
