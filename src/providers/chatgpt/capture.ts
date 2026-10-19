@@ -5,3 +5,5 @@ import { chatgptLoggedOutEndpoint } from "./logged-out";
 export const chatgptCapture: ProviderCapture = {
     endpoints: [chatgptConversationEndpoint, chatgptLoggedOutEndpoint],
 };
+
+export default chatgptCapture;

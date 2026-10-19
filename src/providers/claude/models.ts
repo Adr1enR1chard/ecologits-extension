@@ -24,3 +24,5 @@ export const claudeModels: ProviderModels = {
     proxies: {},
     canonicalize: canonicalizeClaudeSlug,
 };
+
+export default claudeModels;

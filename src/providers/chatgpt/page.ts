@@ -27,3 +27,5 @@ export const chatgptPage: ProviderPage = {
     // "/" to "/c/<id>" (also from a GPT or project page, whose path the conversation extends).
     isNewConversation: (path) => path === "/",
 };
+
+export default chatgptPage;

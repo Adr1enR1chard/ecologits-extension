@@ -6,20 +6,20 @@ import { relay } from "@/src/capture/bridge";
 import { acceptChannel } from "@/src/capture/channel";
 import { uiLocale } from "@/src/i18n";
 import {
-    SUPPORTED_PROVIDERS,
-    isSupportedProvider,
+    CAPTURED_PROVIDERS,
+    isCapturedProvider,
     matchPatterns,
     providerForHost,
 } from "@/src/providers/registry";
 import { DEFAULT_SETTINGS, getSettings, watchSettings } from "@/src/storage/settings";
 
 export default defineContentScript({
-    matches: matchPatterns(...SUPPORTED_PROVIDERS),
+    matches: matchPatterns(...CAPTURED_PROVIDERS),
     runAt: "document_start",
     cssInjectionMode: "ui",
     async main(ctx) {
         const provider = providerForHost(window.location.hostname);
-        if (!isSupportedProvider(provider)) return;
+        if (!isCapturedProvider(provider)) return;
         const debug = import.meta.env.DEV
             ? (step: string, details?: unknown) => console.debug("[ecologits]", step, details ?? "")
             : () => undefined;

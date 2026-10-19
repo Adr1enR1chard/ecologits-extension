@@ -5,7 +5,8 @@ import type { EcoLogitsModel } from "../messaging";
  * Contracts each provider folder fills in, one file per execution context: `meta.ts` everywhere,
  * `capture.ts` in the main-world interceptor (see `ProviderCapture`), `models.ts` in the
  * background, `page.ts` in the bridge content script. Keeping them apart keeps EcoLogits and DOM
- * code out of the interceptor bundle.
+ * code out of the interceptor bundle. `capture.ts`, `models.ts` and `page.ts` default-export
+ * their contract: each context finds them by their path (see `byProvider`).
  */
 
 /** What every context may know about a provider. Dependency-free. */
@@ -15,8 +16,11 @@ export interface ProviderMeta {
     name: string;
     /** Hostnames the web app is served from. */
     hosts: readonly string[];
-    /** `"planned"` providers are only announced in the popup. */
-    status: "supported" | "planned";
+    /**
+     * `"planned"` providers are only announced in the popup. `"beta"` ones are being added:
+     * captured in development builds only, and announced like planned ones in production.
+     */
+    status: "supported" | "beta" | "planned";
     /**
      * SVG path of the company's monochrome mark (24 × 24), from Simple Icons
      * (https://simpleicons.org, CC0), only to name the service.
