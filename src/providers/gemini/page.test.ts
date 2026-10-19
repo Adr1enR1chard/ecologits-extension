@@ -5,8 +5,8 @@ import { lastReplyId, loadSnapshot } from "../page-contract";
 import { geminiPage } from "./page";
 
 describe("gemini normal-reply.html while the last reply streams", () => {
-    const [markup] = geminiPage.markups;
-    const [snapshot] = geminiFixtures.snapshots;
+    const snapshot = geminiFixtures.snapshots.find((s) => s.file === "normal-reply.html");
+    const markup = geminiPage.markups[snapshot!.markup];
 
     it("no longer matches the last reply, and is rendering", () => {
         const root = loadSnapshot("gemini", snapshot!.file);
