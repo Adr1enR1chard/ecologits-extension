@@ -39,11 +39,13 @@ export interface StreamParser {
 
 /**
  * A request returning an assistant reply stream. The interceptor checks that the request goes to
- * one of the provider's hosts, then matches its method and path.
+ * one of the provider's hosts, or to the endpoint's `host`, then matches its method and path.
  */
 export interface ReplyEndpoint {
     /** `"POST"` when omitted. */
     method?: "POST" | "GET";
+    /** The API host, when the page calls one that is not among the provider's hosts. */
+    host?: string;
     /** Matches the URL path. */
     path: RegExp;
     createParser(request: CapturedRequest): StreamParser;
