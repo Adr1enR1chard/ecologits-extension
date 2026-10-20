@@ -39,8 +39,7 @@ One assistant answer a provider's web app streams, the unit every estimate is ma
 _Avoid_: response, message, request (for the reply itself)
 
 **Partial reply**:
-A reply stopped before its end, by the user or by leaving the page; only what was generated
-until then is estimated.
+A reply stopped before its end, whose estimate covers only what was generated until then.
 _Avoid_: aborted reply, cancelled reply, interrupted reply
 
 **Skipped stream**:
@@ -53,7 +52,8 @@ skipped stream, it means the adapter needs fixing.
 _Avoid_: capture error
 
 **Capture status**:
-Whether a provider's adapter last succeeded or failed, as shown in the popup.
+Whether a provider's last capture succeeded or failed, or that no reply has been captured yet.
+_Avoid_: adapter status, adapter health
 
 **Hidden reasoning**:
 Reasoning a model did that the web app does not stream in full, only as summaries or not at
@@ -71,7 +71,7 @@ The element of the page a reply's badge is placed next to.
 The model of a reply as the web app names it, when it names it at all.
 
 **EcoLogits model**:
-A model EcoLogits knows, by its ID, that estimates are computed with.
+A model EcoLogits knows, by its id, that estimates are computed with.
 
 **Fallback model**:
 The EcoLogits model a provider's replies are estimated with when the web model is unknown or not
@@ -87,10 +87,10 @@ _Avoid_: substitute
 
 **Model range**:
 Two EcoLogits models a web model may be either of, when the web app does not tell which one
-answered; its estimates span from the lower bound of one to the upper bound of the other.
+answered; its estimates span the lowest to the highest bound of either.
 
 **Approximated model**:
-An estimate made with a proxy or the fallback model instead of the web model itself.
+The flag on an estimate made with a proxy or the fallback model, not the model that answered.
 _Avoid_: unknown model, guessed model
 
 ## Estimates
@@ -101,8 +101,7 @@ energy or water.
 _Avoid_: metric, indicator
 
 **Impact range**:
-The minimum, median and maximum EcoLogits gives for a criterion; the median is the range's
-midpoint, the value shown first.
+The minimum, median and maximum EcoLogits gives for a criterion.
 
 **Usage impacts**:
 The share of an estimate due to the electricity the model consumes while generating the reply.
@@ -112,8 +111,7 @@ The share of an estimate due to manufacturing the hardware the model runs on. Wa
 _Avoid_: manufacturing impacts
 
 **Output tokens**:
-The tokens of a reply's text and of its streamed reasoning, counted with one tokenizer for every
-provider.
+The tokens of a reply's text and of its streamed reasoning.
 
 **Lower-bound estimate**:
 An estimate of a reply with hidden reasoning, whose unstreamed reasoning tokens are not counted:
@@ -125,7 +123,7 @@ A caveat attached to an estimate: lower-bound estimate, approximated model or pa
 _Avoid_: warning (EcoLogits' own warnings are a different thing)
 
 **Equivalence**:
-An everyday comparison of an impact, such as kilometres driven, from ADEME factors.
+An everyday comparison of an impact, such as kilometres driven.
 
 ## Usage data
 
@@ -133,8 +131,13 @@ An everyday comparison of an impact, such as kilometres driven, from ADEME facto
 Everything recorded about the user's replies: the event log and the daily aggregates. Settings
 are not usage data.
 
+**Event**:
+One captured reply as recorded in usage data: its provider, models, output tokens, estimate and
+flags, never its content.
+_Avoid_: record, entry
+
 **Event log**:
-The estimates of the latest replies, metadata only, oldest dropped first.
+The events of the latest replies.
 _Avoid_: history
 
 **Daily aggregate**:
