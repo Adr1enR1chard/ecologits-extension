@@ -60,6 +60,12 @@ html {
     text-size-adjust: 100%;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
 body {
     margin: 0;
     background: var(--canvas);
@@ -323,6 +329,7 @@ svg {
 }
 
 .chat-reply {
+    position: relative;
     padding: 0.25rem 0.25rem 0;
 }
 
@@ -333,6 +340,248 @@ svg {
 .chat-reply ol {
     margin: 0 0 0.625rem;
     padding-left: 1.25rem;
+}
+
+/* The assistant thinking, while `site.js` plays the conversation. */
+.chat-typing {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 1rem 1rem 1rem 0.25rem;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.2s,
+        visibility 0s 0.2s;
+}
+
+.chat-typing span {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--fg-subtle);
+}
+
+.chat.show-typing .chat-typing {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s;
+}
+
+.chat.show-typing .chat-typing span {
+    animation: typing-dot 1s ease-in-out infinite;
+}
+
+.chat.show-typing .chat-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.chat.show-typing .chat-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes typing-dot {
+    0%,
+    60%,
+    100% {
+        transform: none;
+        opacity: 0.4;
+    }
+
+    30% {
+        transform: translateY(-0.25rem);
+        opacity: 1;
+    }
+}
+
+/* The message box: decorative, `site.js` types the question in it. */
+.chat-composer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.375rem 0.375rem 0.375rem 0.875rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+}
+
+.chat-input {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.chat-input:empty::before {
+    content: attr(data-placeholder);
+    color: var(--fg-subtle);
+}
+
+.chat.is-composing .chat-input::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 1.1em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: currentColor;
+    animation: caret 1s steps(1) infinite;
+}
+
+@keyframes caret {
+    50% {
+        opacity: 0;
+    }
+}
+
+.chat-send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: var(--line);
+    color: var(--fg-subtle);
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        transform 0.15s;
+}
+
+.chat-send svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.chat.is-composing .chat-send,
+.chat.is-sending .chat-send {
+    background: var(--accent);
+    color: var(--canvas);
+}
+
+.chat.is-sending .chat-send {
+    transform: scale(0.85);
+}
+
+.chat-replay {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+/*
+ * The conversation's starting point under `.motion`: `site.js` sends the question, streams the
+ * reply word by word, then shows the badge.
+ */
+.motion .chat .chat-prompt {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.96);
+    transform-origin: bottom right;
+    transition:
+        opacity 0.3s ease-out,
+        transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.motion .chat.show-prompt .chat-prompt {
+    opacity: 1;
+    transform: none;
+}
+
+/* Until `site.js` splits the reply into words. */
+.motion .chat:not(.is-ready) .chat-reply {
+    visibility: hidden;
+}
+
+.motion .chat .word {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+.motion .chat .word.is-shown {
+    opacity: 1;
+}
+
+.motion .chat .chat-reply li:not(.is-started)::marker {
+    color: transparent;
+}
+
+.motion .chat .badge-row {
+    opacity: 0;
+    transform: translateY(0.25rem);
+    transition:
+        opacity 0.3s ease-out,
+        transform 0.3s ease-out;
+}
+
+.motion .chat.show-badge .badge-row {
+    opacity: 1;
+    transform: none;
+}
+
+.motion .chat.show-badge .badge {
+    animation: badge-glow 1.2s ease-out 0.15s;
+}
+
+@keyframes badge-glow {
+    from {
+        color: var(--accent);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 55%, transparent);
+    }
+
+    to {
+        box-shadow: 0 0 0 0.5rem transparent;
+    }
+}
+
+/* Entrances */
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+}
+
+.motion .hero-copy > * {
+    animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.motion .hero-copy > :nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.motion .hero-copy > :nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.motion .hero .chat {
+    animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both;
+}
+
+/* Revealed by `site.js` as they scroll into view. */
+.motion .section :is(h2, .lead, .card, .download, .popup-frame, .table-scroll) {
+    opacity: 0;
+    transform: translateY(1.25rem);
+    transition:
+        opacity 0.6s ease-out,
+        transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.motion .section .is-visible:is(h2, .lead, .card, .download, .popup-frame, .table-scroll) {
+    opacity: 1;
+    transform: none;
 }
 
 /* Buttons */
@@ -351,6 +600,14 @@ svg {
     font: inherit;
     font-weight: 600;
     text-decoration: none;
+    transition:
+        border-color 0.2s,
+        background-color 0.2s,
+        transform 0.1s;
+}
+
+.button:active {
+    transform: scale(0.97);
 }
 
 .button:hover {
@@ -518,15 +775,26 @@ svg {
     left: 0;
     bottom: 100%;
     z-index: 10;
-    display: none;
     width: max-content;
     max-width: min(18rem, calc(100vw - 2rem));
     padding-bottom: 0.25rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.25rem);
+    transition:
+        opacity 0.15s,
+        transform 0.15s,
+        visibility 0s 0.15s;
 }
 
 .badge-wrap:hover .tooltip,
 .badge-wrap:focus-visible .tooltip {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+        opacity 0.15s,
+        transform 0.15s;
 }
 
 .tooltip-body {
@@ -666,6 +934,10 @@ svg {
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
 }
 
 .periods button:hover {
@@ -946,4 +1218,14 @@ svg {
 
 .prose li + li {
     margin-top: 0.375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
