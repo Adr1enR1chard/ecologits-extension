@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Politique de confidentialité – extension EcoLogits</title>
+        <meta
+            name="description"
+            content="L'extension EcoLogits garde vos données dans votre navigateur : aucun contenu de message, aucun serveur, aucune télémétrie."
+        />
+        <link rel="canonical" href="https://adr1enr1chard.github.io/ecologits-extension/fr/privacy/" />
+        <link rel="alternate" hreflang="en" href="https://adr1enr1chard.github.io/ecologits-extension/privacy/" />
+        <link rel="alternate" hreflang="fr" href="https://adr1enr1chard.github.io/ecologits-extension/fr/privacy/" />
+        <link rel="alternate" hreflang="x-default" href="https://adr1enr1chard.github.io/ecologits-extension/privacy/" />
+        <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="../../styles.css" />
+    </head>
+    <body>
+        <a class="skip-link" href="#main">Aller au contenu</a>
+        <header class="site-header">
+            <div class="container">
+                <a class="brand" href="../"><img src="../../icon.svg" alt="" width="28" height="28" />EcoLogits</a>
+                <nav class="site-nav" aria-label="Principal">
+                    <a class="nav-section" href="../#download">Télécharger</a>
+                    <a class="nav-section" href="../#features">Fonctionnalités</a>
+                    <a class="nav-section" href="./" aria-current="page">Confidentialité</a>
+                    <span class="lang-switch">
+                        <a href="../../privacy/" hreflang="en" lang="en" title="English">EN</a>
+                        <span aria-current="true" lang="fr">FR</span>
+                    </span>
+                </nav>
+            </div>
+        </header>
+
+        <main id="main" class="container">
+            <article class="prose">
+                <h1>Politique de confidentialité</h1>
+                <p class="muted">Dernière mise à jour : 20 octobre 2026</p>
+
+                <p>
+                    Cette politique couvre l'extension de navigateur EcoLogits et ce site. En bref : vos données restent
+                    dans votre navigateur, aucun contenu de message n'est conservé, rien n'est envoyé nulle part, et il
+                    n'y a aucune télémétrie.
+                </p>
+
+                <h2>Ce que l'extension lit</h2>
+                <p>
+                    Sur ChatGPT (chatgpt.com), Claude (claude.ai) et Gemini (gemini.google.com), l'extension lit une
+                    copie de chaque réponse pendant qu'elle s'affiche, et chez certains fournisseurs de la requête qui
+                    l'a demandée, pour savoir quel modèle a répondu et combien de tokens il a générés. La page elle-même
+                    n'est pas modifiée.
+                </p>
+                <p>
+                    Le texte de la réponse, et son raisonnement quand le fournisseur l'affiche, sert uniquement à compter
+                    les tokens, dans votre navigateur ; la requête sert uniquement à trouver le modèle. Les deux sont
+                    ensuite écartés : ils ne sont jamais conservés et ne quittent jamais votre navigateur.
+                </p>
+
+                <h2>Ce que l'extension conserve</h2>
+                <p>Tout est gardé dans le stockage d'extension du navigateur, sur votre appareil uniquement :</p>
+                <ul>
+                    <li>
+                        Pour chacune de vos 500 dernières réponses : le fournisseur, le modèle affiché par l'application
+                        web et le modèle utilisé pour l'estimation, l'identifiant de la réponse sur le site du
+                        fournisseur, l'heure, le nombre de tokens générés, la durée de génération, les impacts estimés,
+                        et les signaux et avertissements de l'estimation.
+                    </li>
+                    <li>Les totaux par jour des impacts et du nombre de réponses, par fournisseur et par modèle.</li>
+                    <li>
+                        Pour chaque fournisseur, l'heure de la dernière réponse capturée et celle du dernier échec de
+                        capture, avec l'erreur technique.
+                    </li>
+                    <li>Vos paramètres, comme l'affichage du badge.</li>
+                </ul>
+                <p>Elle ne conserve jamais le contenu de vos messages : ni vos questions, ni les réponses.</p>
+
+                <h2>Ce que l'extension envoie</h2>
+                <p>
+                    Rien. L'extension n'a ni serveur ni compte, ne fait aucune requête réseau de son propre chef, et ne
+                    collecte ni statistiques ni télémétrie. Les impacts sont calculés dans votre navigateur avec la
+                    bibliothèque EcoLogits, fournie avec l'extension.
+                </p>
+
+                <h2>Exporter et supprimer vos données</h2>
+                <p>Depuis les paramètres de l'extension, vous pouvez :</p>
+                <ul>
+                    <li>exporter les totaux par jour, ou vos 500 dernières réponses, en CSV ;</li>
+                    <li>tout exporter en JSON ;</li>
+                    <li><strong>supprimer toutes les données</strong>, en une fois.</li>
+                </ul>
+                <p>
+                    Les fichiers exportés sont enregistrés sur votre appareil et ne vont nulle part ailleurs. Désinstaller
+                    l'extension supprime aussi toutes ses données.
+                </p>
+
+                <h2>Permissions</h2>
+                <p>
+                    L'extension demande la permission <code>storage</code>, pour garder les données ci-dessus, et ne
+                    s'exécute que sur les sites des fournisseurs cités plus haut.
+                </p>
+
+                <h2>Ce site</h2>
+                <p>
+                    Ce site n'utilise ni statistiques ni cookies, et ne charge rien depuis des tiers : ni polices, ni
+                    scripts, ni traceurs. Il est hébergé sur GitHub Pages, et les téléchargements sont servis par GitHub
+                    Releases. GitHub peut journaliser des données techniques sur les requêtes, comme votre adresse IP,
+                    comme le décrit la
+                    <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                        >déclaration de confidentialité de GitHub</a
+                    >
+                    (en anglais).
+                </p>
+
+                <h2>Modifications et contact</h2>
+                <p>
+                    Les modifications de cette politique sont publiées sur cette page, et son historique est conservé
+                    dans le <a href="https://github.com/Adr1enR1chard/ecologits-extension">dépôt des sources</a>. Pour
+                    toute question,
+                    <a href="https://github.com/Adr1enR1chard/ecologits-extension/issues/new">ouvrez une issue</a>.
+                </p>
+            </article>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <span>Extension EcoLogits</span>
+                <ul>
+                    <li><a href="https://github.com/Adr1enR1chard/ecologits-extension">GitHub</a></li>
+                    <li>
+                        <a href="https://github.com/Adr1enR1chard/ecologits-extension/blob/main/LICENSE">Licence MPL-2.0</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/Adr1enR1chard/ecologits-extension/issues/new">Signaler un problème</a>
+                    </li>
+                    <li><a href="./">Politique de confidentialité</a></li>
+                </ul>
+            </div>
+        </footer>
+    </body>
+</html>
