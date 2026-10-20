@@ -2,6 +2,8 @@
 
 Browser extension that estimates the environmental impact of your generative AI usage, reply by reply, powered by [EcoLogits](https://ecologits.ai).
 
+**Website:** <https://adr1enr1chard.github.io/ecologits-extension/> ([en français](https://adr1enr1chard.github.io/ecologits-extension/fr/))
+
 > **Pre-release:** not on the browser stores yet ([#9](https://github.com/Adr1enR1chard/ecologits-extension/issues/9)). Install it from source (see below).
 
 ## Features
