@@ -1,0 +1,3 @@
+# Estimates use the EcoLogits default electricity mix, with no user setting
+
+The electricity a reply consumes is drawn where the provider's datacenter runs, not where the user is, and web apps do not tell which datacenter answered. So `llmImpacts` is called without an `electricityMixZone`, and EcoLogits applies each provider's default datacenter location (falling back to the world mix); a user setting for their own country would be the wrong knob, and the methodology states the default. Daily aggregates store summed estimates, not each reply's latency needed to recompute them, so changing the mix later would leave past totals computed with the old one.
