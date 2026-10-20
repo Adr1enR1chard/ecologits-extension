@@ -27,6 +27,8 @@ import type {
  *   response id without its `r_` prefix, which the message id drops too;
  * - `5: candidate { 1: id (rc_…), 2: { 1: whole text so far } }`;
  * - `43`: the model's label, as in the model picker (`3.5 Flash-Lite`);
+ * - `45: { 2: action }`: the "Answer now" action that skips the thinking, offered by a reasoning
+ *   model only (`3.8 Raisonnement` in French), whose thoughts are not streamed, nor any summary;
  * - other updates: settings, the conversation title (`11`), tokens.
  * The update with `final: 1` closes the reply; the session goes on with the title.
  */
@@ -38,6 +40,7 @@ class GeminiParser implements StreamParser {
     private text = "";
     private model: string | null = null;
     private messageId: string | null = null;
+    private hiddenReasoning = false;
     private done = false;
 
     push(text: string): void {
@@ -55,7 +58,7 @@ class GeminiParser implements StreamParser {
                 rawModel: this.model,
                 outputText: this.text,
                 reasoningText: null,
-                hiddenReasoning: false,
+                hiddenReasoning: this.hiddenReasoning,
                 messageId: this.messageId,
                 partial,
             },
@@ -72,6 +75,7 @@ class GeminiParser implements StreamParser {
         if (text) this.text = text;
         this.model = turn.string(43) ?? this.model;
         this.messageId = turn.message(2)?.string(2)?.replace(/^r_/, "") ?? this.messageId;
+        if (turn.message(45, 2)) this.hiddenReasoning = true;
         if (event.varint(1) === 1 && this.text !== "") this.done = true;
     }
 }

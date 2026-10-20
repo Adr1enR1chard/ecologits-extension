@@ -33,6 +33,20 @@ export default defineFixtures({
             outcome: "reply",
             howToRecord: "ask for a word repeated on ten lines and wait for the whole reply",
         },
+        // A reasoning model (`3.8 Raisonnement`): no thoughts nor summaries, only the updates of
+        // the text, each turn offering the "Answer now" action (`45.2`), the last one final.
+        {
+            file: "thinking.sse",
+            endpoint: "session",
+            end: "done",
+            outcome: "reply",
+            howToRecord:
+                "pick a reasoning model (Thinking), ask a question that needs thought and wait for the whole reply",
+            check: (outcome) =>
+                outcome.kind === "reply" && outcome.reply.hiddenReasoning
+                    ? undefined
+                    : "no hidden reasoning: pick a reasoning model",
+        },
         // Stopped by the user after a web search and several updates of the text: no final update
         // follows, only the updates of the stopped turn and its title.
         {
