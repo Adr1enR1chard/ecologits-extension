@@ -128,6 +128,17 @@ describe("gemini parser", () => {
         });
     });
 
+    it("flags hidden reasoning when the turn offers to skip the thinking", () => {
+        const answerNow: Field = [45, proto([2, proto([1, "Answer now"], [3, 2])])];
+        const stream = channel(
+            update(0, ids(), text("Hel"), model("3.8 Raisonnement"), answerNow),
+            update(1, ids(), text("Hello!")),
+        );
+        expect(parse(stream)).toMatchObject({
+            reply: { outputText: "Hello!", reasoningText: null, hiddenReasoning: true },
+        });
+    });
+
     it("captures a stream stopped before the final update as partial", () => {
         const stopped = channel(update(0, ids(), text("Hel"), model()));
         expect(parse(stopped, Infinity, "aborted")).toMatchObject({
