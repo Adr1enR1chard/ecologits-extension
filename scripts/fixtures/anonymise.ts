@@ -210,7 +210,7 @@ function anonymiseMessage(
         }
         if (rules.structural.has(fieldPath) && !inAccount) return field;
         const named = rules.ids.has(fieldPath) || rules.tokens.has(fieldPath);
-        if (!named && asMessage(value) !== null) {
+        if (!named && asMessage(value) !== null && !isText(value)) {
             return { ...field, value: anonymiseMessage(rules, ids, value, fieldPath, inAccount) };
         }
         const string = asString(value);
@@ -228,4 +228,21 @@ function anonymiseMessage(
         };
     });
     return encodeMessage(fields);
+}
+
+/** Whether a character is a control character, but for tabs and line breaks. */
+const isControl = (char: string) => {
+    const code = char.charCodeAt(0);
+    return (code < 0x20 && !"\t\n\r".includes(char)) || code === 0x7f;
+};
+
+/**
+ * Whether a value that reads as a message is text all the same: printable, and holding no
+ * length-delimited field. Text cut short in an update (`Il n’existe pas une techno`) can read
+ * as fixed64 and varint fields, which would leave it unmasked.
+ */
+function isText(value: Uint8Array): boolean {
+    const string = asString(value);
+    if (string === null || [...string].some(isControl)) return false;
+    return (decodeMessage(value) ?? []).every((field) => field.wire !== 2);
 }
