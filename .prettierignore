@@ -4,6 +4,9 @@ coverage/
 node_modules/
 pnpm-lock.yaml
 
+# The site is hand-written and outside the extension's tooling.
+site/
+
 # DOM snapshots are kept as recorded.
 test/fixtures/**/*.html
 
