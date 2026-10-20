@@ -14,6 +14,11 @@
         <link rel="alternate" hreflang="x-default" href="https://adr1enr1chard.github.io/ecologits-extension/" />
         <link rel="icon" href="icon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="styles.css" />
+        <script>
+            // Motion is opt-in: the styles hide what `site.js` animates only under this class.
+            if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window)
+                document.documentElement.classList.add("motion");
+        </script>
         <script src="site.js" defer></script>
     </head>
     <body>
@@ -37,7 +42,7 @@
             <!-- Hero -->
             <section class="hero">
                 <div class="container grid-2">
-                    <div>
+                    <div class="hero-copy">
                         <h1>See the environmental footprint of every AI reply</h1>
                         <p class="lead">
                             A browser extension that estimates the energy, greenhouse gas emissions and water of your
@@ -54,6 +59,7 @@
                         <div class="chat" aria-label="Example of a chat reply with the EcoLogits badge" role="figure">
                             <p class="chat-prompt">How do I keep basil alive on a windowsill?</p>
                             <div class="chat-reply">
+                                <span class="chat-typing" aria-hidden="true"><span></span><span></span><span></span></span>
                                 <p>Basil likes warmth and light. A few habits go a long way:</p>
                                 <ol>
                                     <li>Give it at least six hours of sun a day.</li>
@@ -81,8 +87,14 @@
                                     </span>
                                 </div>
                             </div>
+                            <div class="chat-composer" aria-hidden="true">
+                                <span class="chat-input" data-placeholder="Ask anything"></span>
+                                <span class="chat-send"
+                                    ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg
+                                ></span>
+                            </div>
                         </div>
-                        <p class="hint">Hover the badge to see the min–max range. Sample figures.</p>
+                        <p class="hint">Hover the badge to see the min–max range. Sample figures. <button type="button" class="chat-replay" hidden>Replay</button></p>
                     </div>
                 </div>
             </section>

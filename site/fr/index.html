@@ -14,6 +14,11 @@
         <link rel="alternate" hreflang="x-default" href="https://adr1enr1chard.github.io/ecologits-extension/" />
         <link rel="icon" href="../icon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="../styles.css" />
+        <script>
+            // Motion is opt-in: the styles hide what `site.js` animates only under this class.
+            if (matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window)
+                document.documentElement.classList.add("motion");
+        </script>
         <script src="../site.js" defer></script>
     </head>
     <body>
@@ -37,7 +42,7 @@
             <!-- Hero -->
             <section class="hero">
                 <div class="container grid-2">
-                    <div>
+                    <div class="hero-copy">
                         <h1>Voyez l'empreinte environnementale de chaque réponse d'IA</h1>
                         <p class="lead">
                             Une extension de navigateur qui estime l'énergie, les émissions de gaz à effet de serre et l'eau
@@ -54,6 +59,7 @@
                         <div class="chat" aria-label="Exemple de réponse de chat avec le badge EcoLogits" role="figure">
                             <p class="chat-prompt">Comment garder un basilic en vie sur un rebord de fenêtre ?</p>
                             <div class="chat-reply">
+                                <span class="chat-typing" aria-hidden="true"><span></span><span></span><span></span></span>
                                 <p>Le basilic aime la chaleur et la lumière. Quelques habitudes suffisent :</p>
                                 <ol>
                                     <li>Donnez-lui au moins six heures de soleil par jour.</li>
@@ -81,8 +87,14 @@
                                     </span>
                                 </div>
                             </div>
+                            <div class="chat-composer" aria-hidden="true">
+                                <span class="chat-input" data-placeholder="Posez votre question"></span>
+                                <span class="chat-send"
+                                    ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg
+                                ></span>
+                            </div>
                         </div>
-                        <p class="hint">Survolez le badge pour voir la fourchette min–max. Chiffres d'exemple.</p>
+                        <p class="hint">Survolez le badge pour voir la fourchette min–max. Chiffres d'exemple. <button type="button" class="chat-replay" hidden>Rejouer</button></p>
                     </div>
                 </div>
             </section>
