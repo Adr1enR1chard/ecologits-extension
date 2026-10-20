@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>EcoLogits – the environmental impact of your AI replies</title>
+        <meta
+            name="description"
+            content="A browser extension that estimates the energy, GHG emissions and water of every ChatGPT, Claude and Gemini reply, powered by EcoLogits. Your data stays in your browser."
+        />
+        <link rel="canonical" href="https://adr1enr1chard.github.io/ecologits-extension/" />
+        <link rel="alternate" hreflang="en" href="https://adr1enr1chard.github.io/ecologits-extension/" />
+        <link rel="alternate" hreflang="fr" href="https://adr1enr1chard.github.io/ecologits-extension/fr/" />
+        <link rel="alternate" hreflang="x-default" href="https://adr1enr1chard.github.io/ecologits-extension/" />
+        <link rel="icon" href="icon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="styles.css" />
+        <script src="site.js" defer></script>
+    </head>
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+        <header class="site-header">
+            <div class="container">
+                <a class="brand" href="./"><img src="icon.svg" alt="" width="28" height="28" />EcoLogits</a>
+                <nav class="site-nav" aria-label="Main">
+                    <a class="nav-section" href="#download">Download</a>
+                    <a class="nav-section" href="#features">Features</a>
+                    <a class="nav-section" href="privacy/">Privacy</a>
+                    <span class="lang-switch">
+                        <span aria-current="true" lang="en">EN</span>
+                        <a href="fr/" hreflang="fr" lang="fr" title="Français">FR</a>
+                    </span>
+                </nav>
+            </div>
+        </header>
+
+        <main id="main">
+            <!-- Hero -->
+            <section class="hero">
+                <div class="container grid-2">
+                    <div>
+                        <h1>See the environmental footprint of every AI reply</h1>
+                        <p class="lead">
+                            A browser extension that estimates the energy, greenhouse gas emissions and water of your
+                            ChatGPT, Claude and Gemini replies, right under each one, powered by
+                            <a href="https://ecologits.ai">EcoLogits</a>.
+                        </p>
+                        <div class="hero-actions">
+                            <a class="button button-primary" href="#download">Download</a>
+                            <a class="button" href="#how-it-works">How it works</a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="chat" aria-label="Example of a chat reply with the EcoLogits badge" role="figure">
+                            <p class="chat-prompt">How do I keep basil alive on a windowsill?</p>
+                            <div class="chat-reply">
+                                <p>Basil likes warmth and light. A few habits go a long way:</p>
+                                <ol>
+                                    <li>Give it at least six hours of sun a day.</li>
+                                    <li>Water when the top of the soil feels dry, never leave it soaking.</li>
+                                    <li>Pinch off the tips to keep it bushy, and remove flowers.</li>
+                                </ol>
+                                <div class="badge-row">
+                                    <span class="badge-wrap" tabindex="0" aria-describedby="hero-badge-details">
+                                        <span class="badge">
+                                            <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2c-6.5 0-11 2.6-11 7.3 0 1.2.4 2.3 1 3.1L2.3 14l1 1 1.7-1.7c.8.6 1.9 1 3.1 1C12.6 14.3 14 9 14 2Zm-8.4 9.8-.5-.5C7 9.4 9 7.8 11.4 6.6 9.3 8 7.3 9.7 5.6 11.8Z" /></svg>
+                                            <span class="sr-only">Estimated impact of this reply</span>
+                                            <span>4.2&nbsp;Wh</span><span aria-hidden="true">·</span><span>1.76&nbsp;gCO₂eq</span><span aria-hidden="true">·</span><span>7.56&nbsp;mL</span>
+                                        </span>
+                                        <span class="tooltip" role="tooltip" id="hero-badge-details">
+                                            <span class="tooltip-body">
+                                                <span class="tooltip-title">Estimated impact of this reply</span>
+                                                <span class="tooltip-grid">
+                                                    <span>Energy</span><span>2.1&nbsp;Wh – 6.3&nbsp;Wh</span>
+                                                    <span>GHG emissions</span><span>0.882&nbsp;gCO₂eq – 2.65&nbsp;gCO₂eq</span>
+                                                    <span>Water (usage only)</span><span>3.78&nbsp;mL – 11.3&nbsp;mL</span>
+                                                </span>
+                                                <span class="tooltip-note">Output tokens: 742</span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="hint">Hover the badge to see the min–max range. Sample figures.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Download and install -->
+            <section class="section section-alt" id="download">
+                <div class="container">
+                    <h2>Download and install</h2>
+                    <p class="lead">
+                        The extension is not on the browser stores yet. Download the zip for your browser from the latest
+                        release, then load it by hand.
+                    </p>
+
+                    <div class="downloads">
+                        <div class="download" data-browser="chrome">
+                            <a
+                                class="button"
+                                href="https://github.com/Adr1enR1chard/ecologits-extension/releases/download/v{{version}}/ecologits-extension-{{version}}-chrome.zip"
+                                >Chrome <small>· v{{version}}</small></a
+                            >
+                            <ol>
+                                <li>Unzip the downloaded file.</li>
+                                <li>Open <code>chrome://extensions</code>.</li>
+                                <li>Turn on <strong>Developer mode</strong>, top right.</li>
+                                <li>Click <strong>Load unpacked</strong> and pick the unzipped folder.</li>
+                            </ol>
+                            <p class="download-note">
+                                Also works in other Chromium-based browsers, such as Edge or Brave.
+                            </p>
+                        </div>
+
+                        <div class="download" data-browser="firefox">
+                            <a
+                                class="button"
+                                href="https://github.com/Adr1enR1chard/ecologits-extension/releases/download/v{{version}}/ecologits-extension-{{version}}-firefox.zip"
+                                >Firefox <small>· v{{version}}</small></a
+                            >
+                            <ol>
+                                <li>Open <code>about:debugging</code>.</li>
+                                <li>Click <strong>This Firefox</strong>.</li>
+                                <li>Click <strong>Load Temporary Add-on…</strong> and pick the downloaded zip.</li>
+                            </ol>
+                            <p class="warning" role="note">
+                                <strong>Temporary on Firefox:</strong> the add-on is removed when Firefox restarts, and
+                                must be loaded again.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features -->
+            <section class="section" id="features">
+                <div class="container grid-2">
+                    <div>
+                        <h2>Features</h2>
+                        <ul class="cards">
+                            <li class="card">
+                                <h3>A badge under each reply</h3>
+                                <p class="muted">
+                                    Its estimated energy, GHG emissions and water, with the min–max range on hover. It
+                                    can be turned off in the settings.
+                                </p>
+                            </li>
+                            <li class="card">
+                                <h3>A popup with your totals</h3>
+                                <p class="muted">
+                                    Today, 7 days, 30 days and all time, by provider and model, with everyday
+                                    equivalents from ADEME Impact CO2, abiotic resources and primary energy, split into
+                                    usage and embodied impacts.
+                                </p>
+                            </li>
+                            <li class="card">
+                                <h3>Flags on uncertain estimates</h3>
+                                <p class="muted">
+                                    A lower bound, a stopped reply or an approximated model: the figures never read as
+                                    more exact than they are.
+                                </p>
+                            </li>
+                            <li class="card">
+                                <h3>English and French</h3>
+                                <p class="muted">The extension follows your browser's language.</p>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="popup-frame">
+                        <div class="popup" role="figure" aria-label="The extension's popup, with sample data">
+                            <div class="popup-header">
+                                <p class="popup-title">
+                                    <span class="logo-mark"
+                                        ><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2c-6.5 0-11 2.6-11 7.3 0 1.2.4 2.3 1 3.1L2.3 14l1 1 1.7-1.7c.8.6 1.9 1 3.1 1C12.6 14.3 14 9 14 2Zm-8.4 9.8-.5-.5C7 9.4 9 7.8 11.4 6.6 9.3 8 7.3 9.7 5.6 11.8Z" /></svg
+                                    ></span>
+                                    EcoLogits
+                                </p>
+                                <span class="sample-tag">Sample data</span>
+                            </div>
+
+                            <div class="periods" role="group" aria-label="Period">
+                                <button type="button" data-period="today" aria-pressed="true">Today</button>
+                                <button type="button" data-period="7d" aria-pressed="false">7 days</button>
+                                <button type="button" data-period="30d" aria-pressed="false">30 days</button>
+                                <button type="button" data-period="all" aria-pressed="false">All time</button>
+                            </div>
+
+                            <div aria-live="polite">
+                                <div class="headlines">
+                                    <div class="headline">
+                                        <span class="headline-label">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                                            Energy
+                                        </span>
+                                        <span class="headline-value"
+                                            ><span data-values="22.2|161|597|1.34">22.2</span>&nbsp;<span
+                                                class="unit"
+                                                data-values="Wh|Wh|Wh|kWh"
+                                                >Wh</span
+                                            ></span
+                                        >
+                                    </div>
+                                    <div class="headline">
+                                        <span class="headline-label">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></svg>
+                                            <abbr title="GHG emissions">GHG</abbr>
+                                        </span>
+                                        <span class="headline-value"
+                                            ><span data-values="9.32|67.6|251|563">9.32</span>&nbsp;<span class="unit"
+                                                >gCO₂eq</span
+                                            ></span
+                                        >
+                                    </div>
+                                    <div class="headline">
+                                        <span class="headline-label">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
+                                            Water
+                                        </span>
+                                        <span class="headline-value"
+                                            ><span data-values="40|290|1.07|2.41">40</span>&nbsp;<span
+                                                class="unit"
+                                                data-values="mL|mL|L|L"
+                                                >mL</span
+                                            ></span
+                                        >
+                                    </div>
+                                </div>
+                                <ul class="popup-stats">
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                                        Replies: <strong data-values="7|49|186|412">7</strong>
+                                    </li>
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4v16" /><path d="M17 4v16" /><path d="M19 4H9.5a4.5 4.5 0 0 0 0 9H13" /></svg>
+                                        Output tokens: <strong data-values="5.1K|36K|136K|301K">5.1K</strong>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <p class="popup-heading">GHG emissions equivalent to</p>
+                                <ul class="equivalences">
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
+                                        <strong data-values="0.084|0.61|2.3|5.1">0.084</strong>
+                                        km by car
+                                    </li>
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m10 8 6 4-6 4z" /></svg>
+                                        <strong data-values="0.15|1.1|3.9|8.8">0.15</strong>
+                                        h of video
+                                    </li>
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
+                                        <strong data-values="3.8|27|100|230">3.8</strong>
+                                        emails
+                                    </li>
+                                    <li>
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                                        <strong data-values="7.6|55|200|460">7.6</strong>
+                                        web searches
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <p class="popup-heading">Breakdown</p>
+                                <table class="breakdown">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col"><span class="sr-only">Provider</span></th>
+                                            <th scope="col">Energy</th>
+                                            <th scope="col"><abbr title="GHG emissions">GHG</abbr></th>
+                                            <th scope="col">Water</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row">ChatGPT</th>
+                                            <td data-values="7.9 Wh|57.3 Wh|213 Wh|477 Wh">7.9 Wh</td>
+                                            <td data-values="3.32 gCO₂eq|24.1 gCO₂eq|89.3 gCO₂eq|200 gCO₂eq">3.32 gCO₂eq</td>
+                                            <td data-values="14.2 mL|103 mL|383 mL|859 mL">14.2 mL</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Claude</th>
+                                            <td data-values="11.6 Wh|84 Wh|312 Wh|699 Wh">11.6 Wh</td>
+                                            <td data-values="4.87 gCO₂eq|35.3 gCO₂eq|131 gCO₂eq|294 gCO₂eq">4.87 gCO₂eq</td>
+                                            <td data-values="20.9 mL|151 mL|561 mL|1.26 L">20.9 mL</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Gemini</th>
+                                            <td data-values="2.71 Wh|19.6 Wh|72.8 Wh|163 Wh">2.71 Wh</td>
+                                            <td data-values="1.14 gCO₂eq|8.25 gCO₂eq|30.6 gCO₂eq|68.7 gCO₂eq">1.14 gCO₂eq</td>
+                                            <td data-values="4.88 mL|35.4 mL|131 mL|294 mL">4.88 mL</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p class="popup-footer">Estimates by EcoLogits</p>
+                        </div>
+                        <p class="hint">The extension's popup, rebuilt here with sample data.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Flags -->
+            <section class="section section-alt" id="flags">
+                <div class="container">
+                    <h2>Flags on uncertain estimates</h2>
+                    <p class="lead">
+                        When an estimate is less certain, a symbol next to the badge says why. Hover it in the extension
+                        for the explanation.
+                    </p>
+                    <ul class="cards">
+                        <li class="card flag-card">
+                            <div class="badge-row">
+                                <span class="badge"
+                                    ><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2c-6.5 0-11 2.6-11 7.3 0 1.2.4 2.3 1 3.1L2.3 14l1 1 1.7-1.7c.8.6 1.9 1 3.1 1C12.6 14.3 14 9 14 2Zm-8.4 9.8-.5-.5C7 9.4 9 7.8 11.4 6.6 9.3 8 7.3 9.7 5.6 11.8Z" /></svg
+                                    ><span>2.9&nbsp;Wh</span><span aria-hidden="true">·</span><span>1.22&nbsp;gCO₂eq</span><span aria-hidden="true">·</span><span>5.22&nbsp;mL</span></span
+                                >
+                                <span class="flag" aria-hidden="true">≥</span>
+                            </div>
+                            <h3>Lower-bound estimate</h3>
+                            <p class="muted">
+                                The model reasoned without showing all of its reasoning: hidden reasoning tokens are not
+                                counted, so the actual impact is higher.
+                            </p>
+                        </li>
+                        <li class="card flag-card">
+                            <div class="badge-row">
+                                <span class="badge"
+                                    ><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2c-6.5 0-11 2.6-11 7.3 0 1.2.4 2.3 1 3.1L2.3 14l1 1 1.7-1.7c.8.6 1.9 1 3.1 1C12.6 14.3 14 9 14 2Zm-8.4 9.8-.5-.5C7 9.4 9 7.8 11.4 6.6 9.3 8 7.3 9.7 5.6 11.8Z" /></svg
+                                    ><span>0.61&nbsp;Wh</span><span aria-hidden="true">·</span><span>0.256&nbsp;gCO₂eq</span><span aria-hidden="true">·</span><span>1.1&nbsp;mL</span></span
+                                >
+                                <span class="flag" aria-hidden="true">…</span>
+                            </div>
+                            <h3>Stopped reply</h3>
+                            <p class="muted">
+                                The reply was stopped before its end: only the part generated until then is counted.
+                            </p>
+                        </li>
+                        <li class="card flag-card">
+                            <div class="badge-row">
+                                <span class="badge"
+                                    ><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2c-6.5 0-11 2.6-11 7.3 0 1.2.4 2.3 1 3.1L2.3 14l1 1 1.7-1.7c.8.6 1.9 1 3.1 1C12.6 14.3 14 9 14 2Zm-8.4 9.8-.5-.5C7 9.4 9 7.8 11.4 6.6 9.3 8 7.3 9.7 5.6 11.8Z" /></svg
+                                    ><span>8.9&nbsp;Wh</span><span aria-hidden="true">·</span><span>3.74&nbsp;gCO₂eq</span><span aria-hidden="true">·</span><span>16&nbsp;mL</span></span
+                                >
+                                <span class="flag" aria-hidden="true">≈</span>
+                            </div>
+                            <h3>Approximated model</h3>
+                            <p class="muted">
+                                The model used by the web app is not exposed or unknown to EcoLogits: the impact is
+                                computed with a comparable model, or as a range between two models.
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Supported providers and browsers -->
+            <section class="section" id="support">
+                <div class="container">
+                    <h2>Supported providers and browsers</h2>
+                    <div class="table-scroll">
+                        <table class="support">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Provider</th>
+                                    <th scope="col">Chrome</th>
+                                    <th scope="col">Firefox</th>
+                                    <th scope="col">Edge</th>
+                                    <th scope="col">Safari</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">ChatGPT</th>
+                                    <td class="yes">Yes</td>
+                                    <td class="yes">Yes</td>
+                                    <td class="planned">Planned</td>
+                                    <td class="planned">Planned</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Claude</th>
+                                    <td class="yes">Yes</td>
+                                    <td class="yes">Yes</td>
+                                    <td class="planned">Planned</td>
+                                    <td class="planned">Planned</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Gemini</th>
+                                    <td class="yes">Yes</td>
+                                    <td class="yes">Yes</td>
+                                    <td class="planned">Planned</td>
+                                    <td class="planned">Planned</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How it works -->
+            <section class="section section-alt" id="how-it-works">
+                <div class="container">
+                    <h2>How it works</h2>
+                    <ol class="cards steps">
+                        <li class="card">
+                            <h3>Read the reply</h3>
+                            <p class="muted">
+                                While the reply streams in, the extension reads a copy of it, leaving the page
+                                untouched.
+                            </p>
+                        </li>
+                        <li class="card">
+                            <h3>Count the tokens</h3>
+                            <p class="muted">It counts the tokens the model generated, and notes which model it was.</p>
+                        </li>
+                        <li class="card">
+                            <h3>Compute the impacts</h3>
+                            <p class="muted">
+                                <a href="https://ecologits.ai">EcoLogits</a> turns the model and the token count into
+                                energy, GHG emissions, water and more, with a min–max range.
+                            </p>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Privacy -->
+            <section class="section" id="privacy">
+                <div class="container">
+                    <h2>Privacy</h2>
+                    <p class="lead">
+                        Your data stays in your browser. The extension stores no message content, only metadata and
+                        impacts, sends nothing anywhere and has no telemetry. You can export or delete everything from
+                        its settings.
+                    </p>
+                    <p><a href="privacy/">Read the privacy policy</a></p>
+                </div>
+            </section>
+
+            <!-- Methodology and credits -->
+            <section class="section section-alt" id="credits">
+                <div class="container">
+                    <h2>Methodology and credits</h2>
+                    <ul class="cards">
+                        <li class="card">
+                            <h3><a href="https://ecologits.ai">EcoLogits</a></h3>
+                            <p class="muted">
+                                The impacts are computed with EcoLogits, a methodology and library by GenAI Impact that
+                                estimates the environmental impacts of generative AI models. The extension's settings
+                                explain its approximations.
+                            </p>
+                        </li>
+                        <li class="card">
+                            <h3><a href="https://impactco2.fr">ADEME Impact CO2</a></h3>
+                            <p class="muted">The everyday equivalents of the GHG emissions come from ADEME Impact CO2.</p>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <span>EcoLogits extension</span>
+                <ul>
+                    <li><a href="https://github.com/Adr1enR1chard/ecologits-extension">GitHub</a></li>
+                    <li>
+                        <a href="https://github.com/Adr1enR1chard/ecologits-extension/blob/main/LICENSE">MPL-2.0 license</a>
+                    </li>
+                    <li><a href="https://github.com/Adr1enR1chard/ecologits-extension/issues/new">Report an issue</a></li>
+                    <li><a href="privacy/">Privacy policy</a></li>
+                </ul>
+            </div>
+        </footer>
+    </body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Privacy policy – EcoLogits extension</title>
+        <meta
+            name="description"
+            content="The EcoLogits extension keeps your data in your browser: no message content, no server, no telemetry."
+        />
+        <link rel="canonical" href="https://adr1enr1chard.github.io/ecologits-extension/privacy/" />
+        <link rel="alternate" hreflang="en" href="https://adr1enr1chard.github.io/ecologits-extension/privacy/" />
+        <link rel="alternate" hreflang="fr" href="https://adr1enr1chard.github.io/ecologits-extension/fr/privacy/" />
+        <link rel="alternate" hreflang="x-default" href="https://adr1enr1chard.github.io/ecologits-extension/privacy/" />
+        <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="../styles.css" />
+    </head>
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+        <header class="site-header">
+            <div class="container">
+                <a class="brand" href="../"><img src="../icon.svg" alt="" width="28" height="28" />EcoLogits</a>
+                <nav class="site-nav" aria-label="Main">
+                    <a class="nav-section" href="../#download">Download</a>
+                    <a class="nav-section" href="../#features">Features</a>
+                    <a class="nav-section" href="./" aria-current="page">Privacy</a>
+                    <span class="lang-switch">
+                        <span aria-current="true" lang="en">EN</span>
+                        <a href="../fr/privacy/" hreflang="fr" lang="fr" title="Français">FR</a>
+                    </span>
+                </nav>
+            </div>
+        </header>
+
+        <main id="main" class="container">
+            <article class="prose">
+                <h1>Privacy policy</h1>
+                <p class="muted">Last updated: 20 October 2026</p>
+
+                <p>
+                    This policy covers the EcoLogits browser extension and this website. In short: your data stays in
+                    your browser, no message content is stored, nothing is sent anywhere, and there is no telemetry.
+                </p>
+
+                <h2>What the extension reads</h2>
+                <p>
+                    On ChatGPT (chatgpt.com), Claude (claude.ai) and Gemini (gemini.google.com), the extension reads a
+                    copy of each reply as it streams in, and on some providers of the request that asked for it, to
+                    know which model answered and how many tokens it generated. The page itself is left untouched.
+                </p>
+                <p>
+                    The text of the reply, and its reasoning when the provider shows it, is only used to count tokens,
+                    inside your browser; the request is only used to find the model. Both are then discarded: they are
+                    never stored and never leave your browser.
+                </p>
+
+                <h2>What the extension stores</h2>
+                <p>Everything is kept in the browser's extension storage, on your device only:</p>
+                <ul>
+                    <li>
+                        For each of your last 500 replies: the provider, the model shown by the web app and the model
+                        used for the estimate, the reply's identifier on the provider's site, the time, the number of
+                        output tokens, the generation time, the estimated impacts, and the flags and warnings of the
+                        estimate.
+                    </li>
+                    <li>Daily totals of the impacts and of the number of replies, per provider and model.</li>
+                    <li>
+                        For each provider, when the last reply was captured, and when the last capture failed, with the
+                        technical error.
+                    </li>
+                    <li>Your settings, such as whether the badge is shown.</li>
+                </ul>
+                <p>It never stores the content of your messages: neither your prompts nor the replies.</p>
+
+                <h2>What the extension sends</h2>
+                <p>
+                    Nothing. The extension has no server and no account, makes no network request of its own, and
+                    collects no analytics or telemetry. The impacts are computed inside your browser with the EcoLogits
+                    library, which ships with the extension.
+                </p>
+
+                <h2>Export and delete your data</h2>
+                <p>From the extension's settings, you can:</p>
+                <ul>
+                    <li>export the daily totals, or your last 500 replies, as CSV;</li>
+                    <li>export everything as JSON;</li>
+                    <li><strong>delete all data</strong>, at once.</li>
+                </ul>
+                <p>
+                    The exported files are saved on your device and go nowhere else. Removing the extension also
+                    deletes all of its data.
+                </p>
+
+                <h2>Permissions</h2>
+                <p>
+                    The extension asks for the <code>storage</code> permission, to keep the data above, and runs only
+                    on the providers' sites listed above.
+                </p>
+
+                <h2>This website</h2>
+                <p>
+                    This site uses no analytics and no cookies, and loads nothing from third parties: no fonts, no
+                    scripts, no trackers. It is hosted on GitHub Pages, and the downloads are served by GitHub
+                    Releases. GitHub may log technical data about the requests, such as your IP address, as described in
+                    the
+                    <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                        >GitHub General Privacy Statement</a
+                    >.
+                </p>
+
+                <h2>Changes and contact</h2>
+                <p>
+                    Changes to this policy are published on this page, and its history is kept in the
+                    <a href="https://github.com/Adr1enR1chard/ecologits-extension">source repository</a>. For any
+                    question,
+                    <a href="https://github.com/Adr1enR1chard/ecologits-extension/issues/new">open an issue</a>.
+                </p>
+            </article>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <span>EcoLogits extension</span>
+                <ul>
+                    <li><a href="https://github.com/Adr1enR1chard/ecologits-extension">GitHub</a></li>
+                    <li>
+                        <a href="https://github.com/Adr1enR1chard/ecologits-extension/blob/main/LICENSE">MPL-2.0 license</a>
+                    </li>
+                    <li><a href="https://github.com/Adr1enR1chard/ecologits-extension/issues/new">Report an issue</a></li>
+                    <li><a href="./">Privacy policy</a></li>
+                </ul>
+            </div>
+        </footer>
+    </body>
+</html>
