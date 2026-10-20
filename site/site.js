@@ -52,8 +52,20 @@ var motion = document.documentElement.classList.contains("motion");
     var figures = chat.querySelectorAll(".badge > span:not([class]):not([aria-hidden])");
     var timers = [];
 
+    // Time budgets in ms, so the conversation lasts about 5s whatever the language's lengths.
+    var typingTime = 1000;
+    var streamTime = 1700;
+    var pause = 80;
+
     blocks.forEach(splitWords);
     chat.classList.add("is-ready");
+
+    // Spreads the reply's words over its budget, less the pauses after sentences.
+    var words = chat.querySelectorAll(".word");
+    var stops = Array.prototype.filter.call(words, function (word) {
+        return /[.:]$/.test(word.textContent);
+    }).length;
+    var wordTime = (streamTime - stops * pause) / words.length;
 
     // Wraps each word of the block's text in a `.word`, keeping the spaces between them as text.
     function splitWords(block) {
@@ -110,51 +122,51 @@ var motion = document.documentElement.classList.contains("motion");
         input.textContent = "";
         if (replay) replay.hidden = true;
 
-        var time = 500;
+        var time = 300;
         at(time, function () {
             chat.classList.add("is-composing");
         });
         question.split("").forEach(function (_, index) {
-            time += 25 + Math.random() * 40;
+            time += (typingTime / question.length) * (0.6 + Math.random() * 0.8);
             at(time, function () {
                 input.textContent = question.slice(0, index + 1);
                 input.scrollLeft = input.scrollWidth;
             });
         });
 
-        time += 400;
+        time += 250;
         at(time, function () {
             chat.classList.remove("is-composing");
             chat.classList.add("is-sending", "show-prompt");
             input.textContent = "";
         });
-        time += 350;
+        time += 250;
         at(time, function () {
             chat.classList.remove("is-sending");
             chat.classList.add("show-typing");
         });
 
-        time += 1200;
+        time += 600;
         at(time, function () {
             chat.classList.remove("show-typing");
         });
         blocks.forEach(function (block) {
             block.querySelectorAll(".word").forEach(function (word) {
-                time += 30 + Math.random() * 35;
+                time += wordTime * (0.6 + Math.random() * 0.8);
                 at(time, function () {
                     block.classList.add("is-started");
                     word.classList.add("is-shown");
                 });
-                if (/[.:]$/.test(word.textContent)) time += 150;
+                if (/[.:]$/.test(word.textContent)) time += pause;
             });
         });
 
-        time += 400;
+        time += 300;
         at(time, function () {
             chat.classList.add("show-badge");
             figures.forEach(countUp);
         });
-        time += 1000;
+        time += 700;
         at(time, function () {
             if (replay) replay.hidden = false;
         });
