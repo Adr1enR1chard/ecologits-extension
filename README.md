@@ -16,11 +16,13 @@ Browser extension that estimates the environmental impact of your generative AI 
 
 ## Supported providers and browsers
 
-|                    | Chrome | Firefox | Edge ([#7](https://github.com/Adr1enR1chard/ecologits-extension/issues/7)) | Safari ([#8](https://github.com/Adr1enR1chard/ecologits-extension/issues/8)) |
-| ------------------ | :----: | :-----: | :------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
-| ChatGPT (OpenAI)   |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
-| Claude (Anthropic) |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
-| Gemini (Google)    |   ✅   |   ✅    |                                  planned                                   |                                   planned                                    |
+|                    | Chrome, Edge & other Chromium browsers | Firefox | Safari ([#8](https://github.com/Adr1enR1chard/ecologits-extension/issues/8)) |
+| ------------------ | :------------------------------------: | :-----: | :--------------------------------------------------------------------------: |
+| ChatGPT (OpenAI)   |                   ✅                   |   ✅    |                                   planned                                    |
+| Claude (Anthropic) |                   ✅                   |   ✅    |                                   planned                                    |
+| Gemini (Google)    |                   ✅                   |   ✅    |                                   planned                                    |
+
+The Chrome build runs as is in Chromium-based browsers: it is tested on Chrome and Edge, and uses only standard Manifest V3 extension APIs, so Brave, Opera, Vivaldi and others should work too.
 
 To add a provider, see [Adding a provider](docs/adding-a-provider.md).
 
@@ -37,7 +39,7 @@ The options page explains the methodology and its approximations.
 
 ```sh
 pnpm install
-pnpm build            # Chrome: load .output/chrome-mv3 as an unpacked extension
+pnpm build            # Chrome, Edge and other Chromium browsers: load .output/chrome-mv3 as an unpacked extension
 pnpm build:firefox    # Firefox: load .output/firefox-mv3/manifest.json as a temporary add-on
 ```
 
