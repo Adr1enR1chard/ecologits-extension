@@ -266,6 +266,17 @@ describe("anonymiseStream: WebChannel", () => {
         expect(findPersonalData(anonymised)).toEqual([]);
     });
 
+    it("masks text whose bytes also read as a message of numbers only", () => {
+        // `I` is the key of a fixed64 field 9, and so on to the end of the text.
+        const cut = "Il n’existe pas une techno";
+        const text = webChannel([update(0, [5, proto([2, proto([1, cut])])])]);
+        const anonymised = anonymiseStream(geminiFixtures.rules, text);
+
+        const payloads = new WebChannelDecoder().push(anonymised) as string[][];
+        const turn = ProtoMessage.fromBase64(payloads[0]![0]!)!.message(2, 7, 1, 4, 4)!;
+        expect(turn.message(5, 2)!.string(1)).toBe("xx x’xxxxxx xxx xxx xxxxxx");
+    });
+
     it("finds personal data in the protobuf messages of a stream", () => {
         const text = webChannel([update(0, [2, proto([1, ID_A])])]);
         // Once per message holding it, read as a string.
