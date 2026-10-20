@@ -1,8 +1,3 @@
 # The interceptor talks to the extension over a private channel
 
-The main-world interceptor cannot reach the extension's APIs, so it hands replies to the
-isolated content script. Rather than `window.postMessage` with a per-page token, the two set up a
-private `MessageChannel` at `document_start`: replies never transit on `window`, so page scripts
-can neither read them nor inject fake ones through window messages. This is best effort, not a
-security boundary, since the interceptor shares its realm with the page; the content script
-still validates every message.
+The main-world interceptor cannot reach the extension's APIs, so it hands replies to the isolated content script. Rather than a `window.postMessage` per reply with a per-page token, which page scripts could still read, the two set up a private `MessageChannel` at `document_start`, so replies never transit on `window` and page scripts can neither read them nor inject fake ones through window messages. The price is a handshake (offer, hello, acknowledgement, and a queue until it completes), since neither script is guaranteed to load first. This is best effort, not a security boundary: the interceptor shares its realm with the page, which can patch the built-ins it relies on and distort what is captured, so the content script still validates everything it receives and the worst outcome is wrong local usage data for that user.
