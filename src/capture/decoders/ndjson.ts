@@ -7,6 +7,8 @@ export class NdjsonDecoder {
 
     push(text: string): string[] {
         this.buffer += text;
+        // Splitting only when a line ends keeps long lines pushed in small chunks linear.
+        if (!text.includes("\n")) return [];
         const lines = this.buffer.split("\n");
         // The last item is the incomplete line.
         this.buffer = lines.pop() ?? "";

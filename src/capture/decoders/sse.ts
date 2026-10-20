@@ -20,6 +20,8 @@ export class SseDecoder {
         if (this.skipLineFeed && text.startsWith("\n")) text = text.slice(1);
         this.skipLineFeed = text.endsWith("\r");
         this.buffer += text;
+        // Splitting only when a line ends keeps long lines pushed in small chunks linear.
+        if (!/[\r\n]/.test(text)) return [];
         const events: SseEvent[] = [];
         const lines = this.buffer.split(/\r\n|\r|\n/);
         // The last item is the incomplete line.
